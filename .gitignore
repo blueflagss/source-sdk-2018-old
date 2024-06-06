@@ -24,9 +24,14 @@
 *.lai
 *.la
 *.a
-*.lib
 
 # Executables
 *.exe
 *.out
 *.app
+cmake-build-debug
+.idea
+.vs
+out
+packages
+vcpkg_installed

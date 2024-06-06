@@ -1,0 +1,679 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="core\config.hpp" />
+    <ClInclude Include="core\hooks.hpp" />
+    <ClInclude Include="core\interfaces.hpp" />
+    <ClInclude Include="core\variables.hpp" />
+    <ClInclude Include="dependencies\blur\bBlur.hpp" />
+    <ClInclude Include="dependencies\blur\blur.hpp" />
+    <ClInclude Include="dependencies\blur\blur_binary.h" />
+    <ClInclude Include="features\engine_prediction\netvar_compression.hpp" />
+    <ClInclude Include="features\penetration\penetration.hpp" />
+    <ClInclude Include="features\resolver\resolver.hpp" />
+    <ClInclude Include="features\ui\elements\tooltip\tooltip.hpp" />
+    <ClInclude Include="hooks\base_interpolate_part1\base_interpolate_part1.hpp" />
+    <ClInclude Include="hooks\build_transformations\build_transformations.hpp" />
+    <ClInclude Include="hooks\calc_viewmodel_bob\calc_viewmodel_bob.hpp" />
+    <ClInclude Include="hooks\calc_viewmodel_view\calc_viewmodel_view.hpp" />
+    <ClInclude Include="hooks\calc_view\calc_view.hpp" />
+    <ClInclude Include="hooks\check_for_sequence_change\check_for_sequence_change.hpp" />
+    <ClInclude Include="hooks\do_extra_bone_processing\do_extra_bone_processing.hpp" />
+    <ClInclude Include="hooks\do_post_screen_space_effects\do_post_screen_space_effects.hpp" />
+    <ClInclude Include="hooks\estimate_abs_velocity\estimate_abs_velocity.hpp" />
+    <ClInclude Include="hooks\get_bool\get_bool.hpp" />
+    <ClInclude Include="hooks\get_viewmodel_fov\get_viewmodel_fov.hpp" />
+    <ClInclude Include="hooks\hud_scope_paint\hud_scope_paint.hpp" />
+    <ClInclude Include="hooks\is_hltv\is_hltv.hpp" />
+    <ClInclude Include="hooks\is_using_static_props_debug_modes\is_using_static_props_debug_modes.hpp" />
+    <ClInclude Include="hooks\get_alpha_modulation\get_alpha_modulation.hpp" />
+    <ClInclude Include="hooks\list_leaves_in_box\list_leaves_in_box.hpp" />
+    <ClInclude Include="hooks\lock_cursor\lock_cursor.hpp" />
+    <ClInclude Include="hooks\modify_eye_position\modify_eye_position.hpp" />
+    <ClInclude Include="hooks\override_view\override_view.hpp" />
+    <ClInclude Include="hooks\post_network_data_received\post_network_data_received.hpp" />
+    <ClInclude Include="hooks\pre_entity_packet_received\pre_entity_packet_received.hpp" />
+    <ClInclude Include="hooks\process_interpolated_list\process_interpolated_list.hpp" />
+    <ClInclude Include="hooks\process_movement\process_movement.hpp" />
+    <ClInclude Include="hooks\render_smoke_overlay\render_smoke_overlay.hpp" />
+    <ClInclude Include="hooks\run_command\run_command.hpp" />
+    <ClInclude Include="hooks\setup_bones\setup_bones.hpp" />
+    <ClInclude Include="hooks\should_skip_animation_frame\should_skip_animation_frame.hpp" />
+    <ClInclude Include="hooks\standard_blending_rules\standard_blending_rules.hpp" />
+    <ClInclude Include="sdk\interfaces\glow_object_manager.hpp" />
+    <ClInclude Include="sdk\interfaces\physics_surface_props.hpp" />
+    <ClInclude Include="sdk\other\prediction_copy.hpp" />
+    <ClInclude Include="sdk\player_animstate.hpp" />
+    <ClInclude Include="sdk\cs_base_weapon.hpp" />
+    <ClInclude Include="sdk\cs_player.hpp" />
+    <ClInclude Include="sdk\datamap.hpp" />
+    <ClInclude Include="sdk\interfaces\studio_render.hpp" />
+    <ClInclude Include="utils\circular_buffer.hpp" />
+    <ClInclude Include="utils\datamaps\datamaps.hpp" />
+    <ClInclude Include="dependencies\dlg\dlg.h" />
+    <ClInclude Include="dependencies\dlg\output.h" />
+    <ClInclude Include="dependencies\freetype\config\ftconfig.h" />
+    <ClInclude Include="dependencies\freetype\config\ftheader.h" />
+    <ClInclude Include="dependencies\freetype\config\ftmodule.h" />
+    <ClInclude Include="dependencies\freetype\config\ftoption.h" />
+    <ClInclude Include="dependencies\freetype\config\ftstdlib.h" />
+    <ClInclude Include="dependencies\freetype\config\integer-types.h" />
+    <ClInclude Include="dependencies\freetype\config\mac-support.h" />
+    <ClInclude Include="dependencies\freetype\config\public-macros.h" />
+    <ClInclude Include="dependencies\freetype\freetype.h" />
+    <ClInclude Include="dependencies\freetype\ftadvanc.h" />
+    <ClInclude Include="dependencies\freetype\ftbbox.h" />
+    <ClInclude Include="dependencies\freetype\ftbdf.h" />
+    <ClInclude Include="dependencies\freetype\ftbitmap.h" />
+    <ClInclude Include="dependencies\freetype\ftbzip2.h" />
+    <ClInclude Include="dependencies\freetype\ftcache.h" />
+    <ClInclude Include="dependencies\freetype\ftchapters.h" />
+    <ClInclude Include="dependencies\freetype\ftcid.h" />
+    <ClInclude Include="dependencies\freetype\ftcolor.h" />
+    <ClInclude Include="dependencies\freetype\ftdriver.h" />
+    <ClInclude Include="dependencies\freetype\fterrdef.h" />
+    <ClInclude Include="dependencies\freetype\fterrors.h" />
+    <ClInclude Include="dependencies\freetype\ftfntfmt.h" />
+    <ClInclude Include="dependencies\freetype\ftgasp.h" />
+    <ClInclude Include="dependencies\freetype\ftglyph.h" />
+    <ClInclude Include="dependencies\freetype\ftgxval.h" />
+    <ClInclude Include="dependencies\freetype\ftgzip.h" />
+    <ClInclude Include="dependencies\freetype\ftimage.h" />
+    <ClInclude Include="dependencies\freetype\ftincrem.h" />
+    <ClInclude Include="dependencies\freetype\ftlcdfil.h" />
+    <ClInclude Include="dependencies\freetype\ftlist.h" />
+    <ClInclude Include="dependencies\freetype\ftlogging.h" />
+    <ClInclude Include="dependencies\freetype\ftlzw.h" />
+    <ClInclude Include="dependencies\freetype\ftmac.h" />
+    <ClInclude Include="dependencies\freetype\ftmm.h" />
+    <ClInclude Include="dependencies\freetype\ftmodapi.h" />
+    <ClInclude Include="dependencies\freetype\ftmoderr.h" />
+    <ClInclude Include="dependencies\freetype\ftotval.h" />
+    <ClInclude Include="dependencies\freetype\ftoutln.h" />
+    <ClInclude Include="dependencies\freetype\ftparams.h" />
+    <ClInclude Include="dependencies\freetype\ftpfr.h" />
+    <ClInclude Include="dependencies\freetype\ftrender.h" />
+    <ClInclude Include="dependencies\freetype\ftsizes.h" />
+    <ClInclude Include="dependencies\freetype\ftsnames.h" />
+    <ClInclude Include="dependencies\freetype\ftstroke.h" />
+    <ClInclude Include="dependencies\freetype\ftsynth.h" />
+    <ClInclude Include="dependencies\freetype\ftsystem.h" />
+    <ClInclude Include="dependencies\freetype\fttrigon.h" />
+    <ClInclude Include="dependencies\freetype\fttypes.h" />
+    <ClInclude Include="dependencies\freetype\ftwinfnt.h" />
+    <ClInclude Include="dependencies\freetype\internal\autohint.h" />
+    <ClInclude Include="dependencies\freetype\internal\cffotypes.h" />
+    <ClInclude Include="dependencies\freetype\internal\cfftypes.h" />
+    <ClInclude Include="dependencies\freetype\internal\compiler-macros.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftcalc.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftdebug.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftdrv.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftgloadr.h" />
+    <ClInclude Include="dependencies\freetype\internal\fthash.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftmemory.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftmmtypes.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftobjs.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftpsprop.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftrfork.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftserv.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftstream.h" />
+    <ClInclude Include="dependencies\freetype\internal\fttrace.h" />
+    <ClInclude Include="dependencies\freetype\internal\ftvalid.h" />
+    <ClInclude Include="dependencies\freetype\internal\psaux.h" />
+    <ClInclude Include="dependencies\freetype\internal\pshints.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svbdf.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svcfftl.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svcid.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svfntfmt.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svgldict.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svgxval.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svkern.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svmetric.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svmm.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svotval.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svpfr.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svpostnm.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svprop.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svpscmap.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svpsinfo.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svsfnt.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svttcmap.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svtteng.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svttglyf.h" />
+    <ClInclude Include="dependencies\freetype\internal\services\svwinfnt.h" />
+    <ClInclude Include="dependencies\freetype\internal\sfnt.h" />
+    <ClInclude Include="dependencies\freetype\internal\svginterface.h" />
+    <ClInclude Include="dependencies\freetype\internal\t1types.h" />
+    <ClInclude Include="dependencies\freetype\internal\tttypes.h" />
+    <ClInclude Include="dependencies\freetype\internal\wofftypes.h" />
+    <ClInclude Include="dependencies\freetype\otsvg.h" />
+    <ClInclude Include="dependencies\freetype\t1tables.h" />
+    <ClInclude Include="dependencies\freetype\ttnameid.h" />
+    <ClInclude Include="dependencies\freetype\tttables.h" />
+    <ClInclude Include="dependencies\freetype\tttags.h" />
+    <ClInclude Include="dependencies\ft2build.h" />
+    <ClInclude Include="dependencies\icons_fa.hpp" />
+    <ClInclude Include="dependencies\imgui\imconfig.h" />
+    <ClInclude Include="dependencies\imgui\imgui.h" />
+    <ClInclude Include="dependencies\imgui\imgui_freetype.h" />
+    <ClInclude Include="dependencies\imgui\imgui_impl_dx9.h" />
+    <ClInclude Include="dependencies\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="dependencies\imgui\imgui_internal.h" />
+    <ClInclude Include="dependencies\imgui\imstb_rectpack.h" />
+    <ClInclude Include="dependencies\imgui\imstb_textedit.h" />
+    <ClInclude Include="dependencies\imgui\imstb_truetype.h" />
+    <ClInclude Include="dependencies\nlohmann\adl_serializer.hpp" />
+    <ClInclude Include="dependencies\nlohmann\byte_container_with_subtype.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\abi_macros.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\conversions\from_json.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\conversions\to_chars.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\conversions\to_json.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\exceptions.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\hash.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\input\binary_reader.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\input\input_adapters.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\input\json_sax.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\input\lexer.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\input\parser.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\input\position_t.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\iterators\internal_iterator.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\iterators\iteration_proxy.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\iterators\iterator_traits.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\iterators\iter_impl.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\iterators\json_reverse_iterator.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\iterators\primitive_iterator.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\json_pointer.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\json_ref.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\macro_scope.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\macro_unscope.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\meta\call_std\begin.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\meta\call_std\end.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\meta\cpp_future.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\meta\detected.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\meta\identity_tag.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\meta\is_sax.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\meta\std_fs.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\meta\type_traits.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\meta\void_t.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\output\binary_writer.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\output\output_adapters.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\output\serializer.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\string_concat.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\string_escape.hpp" />
+    <ClInclude Include="dependencies\nlohmann\detail\value_t.hpp" />
+    <ClInclude Include="dependencies\nlohmann\json.hpp" />
+    <ClInclude Include="dependencies\nlohmann\json_fwd.hpp" />
+    <ClInclude Include="dependencies\nlohmann\ordered_map.hpp" />
+    <ClInclude Include="dependencies\nlohmann\thirdparty\hedley\hedley.hpp" />
+    <ClInclude Include="dependencies\nlohmann\thirdparty\hedley\hedley_undef.hpp" />
+    <ClInclude Include="dependencies\precompiled.hpp" />
+    <ClInclude Include="dependencies\safetyhook\safetyhook.hpp" />
+    <ClInclude Include="dependencies\stb\stb.hpp" />
+    <ClInclude Include="dependencies\threadutils\atomic_lock.h" />
+    <ClInclude Include="dependencies\threadutils\includes.hpp" />
+    <ClInclude Include="dependencies\threadutils\mutex.h" />
+    <ClInclude Include="dependencies\threadutils\named_semaphores.h" />
+    <ClInclude Include="dependencies\threadutils\packed_heap.h" />
+    <ClInclude Include="dependencies\threadutils\semaphores.h" />
+    <ClInclude Include="dependencies\threadutils\shared_mutex.h" />
+    <ClInclude Include="dependencies\threadutils\threading.h" />
+    <ClInclude Include="dependencies\xorstr.hpp" />
+    <ClInclude Include="features\aimbot\aimbot.hpp" />
+    <ClInclude Include="features\antiaim\antiaim.hpp" />
+    <ClInclude Include="features\engine_prediction\engine_prediction.hpp" />
+    <ClInclude Include="features\event_handler\event_handler.hpp" />
+    <ClInclude Include="features\exploits\exploits.hpp" />
+    <ClInclude Include="features\features.hpp" />
+    <ClInclude Include="features\miscellaneous\miscellaneous.hpp" />
+    <ClInclude Include="features\movement\movement.hpp" />
+    <ClInclude Include="features\renderer\renderer.hpp" />
+    <ClInclude Include="features\tickbase\tickbase.hpp" />
+    <ClInclude Include="features\ui\animations\animations.hpp" />
+    <ClInclude Include="features\ui\elements\button\button.hpp" />
+    <ClInclude Include="features\ui\elements\checkbox\checkbox.hpp" />
+    <ClInclude Include="features\ui\elements\child\child.hpp" />
+    <ClInclude Include="features\ui\elements\colorpicker\colorpicker.hpp" />
+    <ClInclude Include="features\ui\elements\combobox\combobox.hpp" />
+    <ClInclude Include="features\ui\elements\elements.hpp" />
+    <ClInclude Include="features\ui\elements\hotkey\hotkey.hpp" />
+    <ClInclude Include="features\ui\elements\indicator\indicator.hpp" />
+    <ClInclude Include="features\ui\elements\label\label.hpp" />
+    <ClInclude Include="features\ui\elements\listbox\listbox.hpp" />
+    <ClInclude Include="features\ui\elements\multi_combobox\multi_combobox.hpp" />
+    <ClInclude Include="features\ui\elements\object\object.hpp" />
+    <ClInclude Include="features\ui\elements\slider\slider.hpp" />
+    <ClInclude Include="features\ui\elements\tab\tab.hpp" />
+    <ClInclude Include="features\ui\elements\textbox\textbox.hpp" />
+    <ClInclude Include="features\ui\elements\window\window.hpp" />
+    <ClInclude Include="features\ui\notifications\notifications.hpp" />
+    <ClInclude Include="features\ui\input\input.hpp" />
+    <ClInclude Include="features\ui\window_setup.hpp" />
+    <ClInclude Include="features\visuals\chams.hpp" />
+    <ClInclude Include="features\visuals\visuals.hpp" />
+    <ClInclude Include="hooks\create_move\create_move.hpp" />
+    <ClInclude Include="hooks\draw_model_execute\draw_model_execute.hpp" />
+    <ClInclude Include="hooks\end_scene\end_scene.hpp" />
+    <ClInclude Include="hooks\frame_stage_notify\frame_stage_notify.hpp" />
+    <ClInclude Include="hooks\on_screen_size_changed\on_screen_size_changed.hpp" />
+    <ClInclude Include="hooks\reset\reset.hpp" />
+    <ClInclude Include="hooks\wnd_proc\wnd_proc.hpp" />
+    <ClInclude Include="includes.hpp" />
+    <ClInclude Include="features\animations\anims.hpp" />
+    <ClInclude Include="resources\font_awesome.hpp" />
+    <ClInclude Include="resources\montserrat.hpp" />
+    <ClInclude Include="resources\montserrat_semibold.hpp" />
+    <ClInclude Include="resources\small_font_recreate.hpp" />
+    <ClInclude Include="sdk\base_entity.hpp" />
+    <ClInclude Include="sdk\base_player.hpp" />
+    <ClInclude Include="sdk\hash\fnv1a.hpp" />
+    <ClInclude Include="sdk\interfaces\base_client.hpp" />
+    <ClInclude Include="sdk\interfaces\client_mode.hpp" />
+    <ClInclude Include="sdk\interfaces\client_state.hpp" />
+    <ClInclude Include="sdk\interfaces\collideable.hpp" />
+    <ClInclude Include="sdk\interfaces\cvar.hpp" />
+    <ClInclude Include="sdk\interfaces\debug_overlay.hpp" />
+    <ClInclude Include="sdk\interfaces\engine.hpp" />
+    <ClInclude Include="sdk\interfaces\engine_trace.hpp" />
+    <ClInclude Include="sdk\interfaces\entity_list.hpp" />
+    <ClInclude Include="sdk\interfaces\event_manager.hpp" />
+    <ClInclude Include="sdk\interfaces\game_movement.hpp" />
+    <ClInclude Include="sdk\interfaces\game_rules.hpp" />
+    <ClInclude Include="sdk\interfaces\global_vars_base.hpp" />
+    <ClInclude Include="sdk\interfaces\handle_entity.hpp" />
+    <ClInclude Include="sdk\interfaces\input.hpp" />
+    <ClInclude Include="sdk\interfaces\input_system.hpp" />
+    <ClInclude Include="sdk\interfaces\localize.hpp" />
+    <ClInclude Include="sdk\interfaces\material.hpp" />
+    <ClInclude Include="sdk\interfaces\material_system.hpp" />
+    <ClInclude Include="sdk\interfaces\mem_alloc.hpp" />
+    <ClInclude Include="sdk\interfaces\model_cache.hpp" />
+    <ClInclude Include="sdk\interfaces\model_info.hpp" />
+    <ClInclude Include="sdk\interfaces\model_render.hpp" />
+    <ClInclude Include="sdk\interfaces\move_helper.hpp" />
+    <ClInclude Include="sdk\interfaces\net_channel.hpp" />
+    <ClInclude Include="sdk\interfaces\panel.hpp" />
+    <ClInclude Include="sdk\interfaces\prediction.hpp" />
+    <ClInclude Include="sdk\interfaces\render_view.hpp" />
+    <ClInclude Include="sdk\interfaces\surface.hpp" />
+    <ClInclude Include="sdk\math\aligned_vector.hpp" />
+    <ClInclude Include="sdk\math\matrix3x4.hpp" />
+    <ClInclude Include="sdk\math\qangle.hpp" />
+    <ClInclude Include="sdk\math\ray.hpp" />
+    <ClInclude Include="sdk\math\vector.hpp" />
+    <ClInclude Include="sdk\multiplayer_animstate.hpp" />
+    <ClInclude Include="sdk\base_object.hpp" />
+    <ClInclude Include="sdk\other\bitbuf.h" />
+    <ClInclude Include="sdk\other\crc32.h" />
+    <ClInclude Include="sdk\other\key_values.hpp" />
+    <ClInclude Include="sdk\other\networkable.hpp" />
+    <ClInclude Include="sdk\other\net_msg_type.hpp" />
+    <ClInclude Include="sdk\other\renderable.hpp" />
+    <ClInclude Include="sdk\other\thinkable.hpp" />
+    <ClInclude Include="sdk\other\unknown.hpp" />
+    <ClInclude Include="sdk\other\utlvector.hpp" />
+    <ClInclude Include="sdk\steam_api\isteamapplist.h" />
+    <ClInclude Include="sdk\steam_api\isteamapps.h" />
+    <ClInclude Include="sdk\steam_api\isteamappticket.h" />
+    <ClInclude Include="sdk\steam_api\isteamclient.h" />
+    <ClInclude Include="sdk\steam_api\isteamcontroller.h" />
+    <ClInclude Include="sdk\steam_api\isteamdualsense.h" />
+    <ClInclude Include="sdk\steam_api\isteamfriends.h" />
+    <ClInclude Include="sdk\steam_api\isteamgamecoordinator.h" />
+    <ClInclude Include="sdk\steam_api\isteamgameserver.h" />
+    <ClInclude Include="sdk\steam_api\isteamgameserverstats.h" />
+    <ClInclude Include="sdk\steam_api\isteamhtmlsurface.h" />
+    <ClInclude Include="sdk\steam_api\isteamhttp.h" />
+    <ClInclude Include="sdk\steam_api\isteaminput.h" />
+    <ClInclude Include="sdk\steam_api\isteaminventory.h" />
+    <ClInclude Include="sdk\steam_api\isteammatchmaking.h" />
+    <ClInclude Include="sdk\steam_api\isteammusic.h" />
+    <ClInclude Include="sdk\steam_api\isteammusicremote.h" />
+    <ClInclude Include="sdk\steam_api\isteamnetworking.h" />
+    <ClInclude Include="sdk\steam_api\isteamnetworkingmessages.h" />
+    <ClInclude Include="sdk\steam_api\isteamnetworkingsockets.h" />
+    <ClInclude Include="sdk\steam_api\isteamnetworkingutils.h" />
+    <ClInclude Include="sdk\steam_api\isteamparentalsettings.h" />
+    <ClInclude Include="sdk\steam_api\isteamps3overlayrenderer.h" />
+    <ClInclude Include="sdk\steam_api\isteamremoteplay.h" />
+    <ClInclude Include="sdk\steam_api\isteamremotestorage.h" />
+    <ClInclude Include="sdk\steam_api\isteamscreenshots.h" />
+    <ClInclude Include="sdk\steam_api\isteamugc.h" />
+    <ClInclude Include="sdk\steam_api\isteamuser.h" />
+    <ClInclude Include="sdk\steam_api\isteamuserstats.h" />
+    <ClInclude Include="sdk\steam_api\isteamutils.h" />
+    <ClInclude Include="sdk\steam_api\isteamvideo.h" />
+    <ClInclude Include="sdk\steam_api\matchmakingtypes.h" />
+    <ClInclude Include="sdk\steam_api\steamclientpublic.h" />
+    <ClInclude Include="sdk\steam_api\steamencryptedappticket.h" />
+    <ClInclude Include="sdk\steam_api\steamhttpenums.h" />
+    <ClInclude Include="sdk\steam_api\steamnetworkingfakeip.h" />
+    <ClInclude Include="sdk\steam_api\steamnetworkingtypes.h" />
+    <ClInclude Include="sdk\steam_api\steamps3params.h" />
+    <ClInclude Include="sdk\steam_api\steamtypes.h" />
+    <ClInclude Include="sdk\steam_api\steamuniverse.h" />
+    <ClInclude Include="sdk\steam_api\steam_api.h" />
+    <ClInclude Include="sdk\steam_api\steam_api_common.h" />
+    <ClInclude Include="sdk\steam_api\steam_api_flat.h" />
+    <ClInclude Include="sdk\steam_api\steam_api_internal.h" />
+    <ClInclude Include="sdk\steam_api\steam_gameserver.h" />
+    <ClInclude Include="sdk\user_cmd.hpp" />
+    <ClInclude Include="utils\globals\globals.hpp" />
+    <ClInclude Include="utils\logging\logging.hpp" />
+    <ClInclude Include="utils\math\math.hpp" />
+    <ClInclude Include="utils\netvars\netvars.hpp" />
+    <ClInclude Include="utils\padding.hpp" />
+    <ClInclude Include="utils\signature\signature.hpp" />
+    <ClInclude Include="utils\threading\threading.hpp" />
+    <ClInclude Include="utils\utils.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="core\config.cpp" />
+    <ClCompile Include="core\entry_point.cpp" />
+    <ClCompile Include="core\hooks.cpp" />
+    <ClCompile Include="core\interfaces.cpp" />
+    <ClCompile Include="dependencies\blur\blur.cpp" />
+    <ClCompile Include="features\engine_prediction\netvar_compression.cpp" />
+    <ClCompile Include="features\penetration\penetration.cpp" />
+    <ClCompile Include="features\resolver\resolver.cpp" />
+    <ClCompile Include="features\ui\elements\tooltip\tooltip.cpp" />
+    <ClCompile Include="hooks\base_interpolate_part1\base_interpolate_part1.cpp" />
+    <ClCompile Include="hooks\build_transformations\build_transformations.cpp" />
+    <ClCompile Include="hooks\calc_viewmodel_bob\calc_viewmodel_bob.cpp" />
+    <ClCompile Include="hooks\calc_viewmodel_view\calc_viewmodel_view.cpp" />
+    <ClCompile Include="hooks\calc_view\calc_view.cpp" />
+    <ClCompile Include="hooks\check_for_sequence_change\check_for_sequence_change.cpp" />
+    <ClCompile Include="hooks\do_extra_bone_processing\do_extra_bone_processing.cpp" />
+    <ClCompile Include="hooks\do_post_screen_space_effects\do_post_screen_space_effects.cpp" />
+    <ClCompile Include="hooks\estimate_abs_velocity\estimate_abs_velocity.cpp" />
+    <ClCompile Include="hooks\get_bool\get_bool.cpp" />
+    <ClCompile Include="hooks\get_viewmodel_fov\get_viewmodel_fov.cpp" />
+    <ClCompile Include="hooks\hud_scope_paint\hud_scope_paint.cpp" />
+    <ClCompile Include="hooks\is_hltv\is_hltv.cpp" />
+    <ClCompile Include="hooks\is_using_static_props_debug_modes\is_using_static_props_debug_modes.cpp" />
+    <ClCompile Include="hooks\get_alpha_modulation\get_alpha_modulation.cpp" />
+    <ClCompile Include="hooks\list_leaves_in_box\list_leaves_in_box.cpp" />
+    <ClCompile Include="hooks\lock_cursor\lock_cursor.cpp" />
+    <ClCompile Include="hooks\modify_eye_position\modify_eye_position.cpp" />
+    <ClCompile Include="hooks\override_view\override_view.cpp" />
+    <ClCompile Include="hooks\post_network_data_received\post_network_data_received.cpp" />
+    <ClCompile Include="hooks\pre_entity_packet_received\pre_entity_packet_received.cpp" />
+    <ClCompile Include="hooks\process_interpolated_list\process_interpolated_list.cpp" />
+    <ClCompile Include="hooks\process_movement\process_movement.cpp" />
+    <ClCompile Include="hooks\render_smoke_overlay\render_smoke_overlay.cpp" />
+    <ClCompile Include="hooks\run_command\run_command.cpp" />
+    <ClCompile Include="hooks\setup_bones\setup_bones.cpp" />
+    <ClCompile Include="hooks\should_skip_animation_frame\should_skip_animation_frame.cpp" />
+    <ClCompile Include="hooks\standard_blending_rules\standard_blending_rules.cpp" />
+    <ClCompile Include="sdk\cs_base_weapon.cpp" />
+    <ClCompile Include="sdk\cs_player.cpp" />
+    <ClCompile Include="sdk\interfaces\prediction.cpp" />
+    <ClCompile Include="sdk\other\prediction_copy.cpp" />
+    <ClCompile Include="utils\datamaps\datamaps.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_demo.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_draw.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_freetype.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_impl_dx9.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_tables.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="dependencies\precompiled.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="dependencies\safetyhook\safetyhook.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="dependencies\threadutils\atomic_lock.cpp" />
+    <ClCompile Include="dependencies\threadutils\mutex.cpp" />
+    <ClCompile Include="dependencies\threadutils\named_semaphores.cpp" />
+    <ClCompile Include="dependencies\threadutils\packed_heap.cpp" />
+    <ClCompile Include="dependencies\threadutils\semaphores.cpp" />
+    <ClCompile Include="dependencies\threadutils\shared_mutex.cpp" />
+    <ClCompile Include="dependencies\threadutils\threading.cpp" />
+    <ClCompile Include="features\aimbot\aimbot.cpp" />
+    <ClCompile Include="features\antiaim\antiaim.cpp" />
+    <ClCompile Include="features\engine_prediction\engine_prediction.cpp" />
+    <ClCompile Include="features\event_handler\event_handler.cpp" />
+    <ClCompile Include="features\exploits\exploits.cpp" />
+    <ClCompile Include="features\miscellaneous\miscellaneous.cpp" />
+    <ClCompile Include="features\movement\movement.cpp" />
+    <ClCompile Include="features\renderer\renderer.cpp" />
+    <ClCompile Include="features\tickbase\tickbase.cpp" />
+    <ClCompile Include="features\ui\animations\animations.cpp" />
+    <ClCompile Include="features\ui\elements\button\button.cpp" />
+    <ClCompile Include="features\ui\elements\checkbox\checkbox.cpp" />
+    <ClCompile Include="features\ui\elements\child\child.cpp" />
+    <ClCompile Include="features\ui\elements\colorpicker\colorpicker.cpp" />
+    <ClCompile Include="features\ui\elements\combobox\combobox.cpp" />
+    <ClCompile Include="features\ui\elements\hotkey\hotkey.cpp" />
+    <ClCompile Include="features\ui\elements\indicator\indicator.cpp" />
+    <ClCompile Include="features\ui\elements\label\label.cpp" />
+    <ClCompile Include="features\ui\elements\listbox\listbox.cpp" />
+    <ClCompile Include="features\ui\elements\multi_combobox\multi_combobox.cpp" />
+    <ClCompile Include="features\ui\elements\object\object.cpp" />
+    <ClCompile Include="features\ui\elements\slider\slider.cpp" />
+    <ClCompile Include="features\ui\elements\tab\tab.cpp" />
+    <ClCompile Include="features\ui\elements\textbox\textbox.cpp" />
+    <ClCompile Include="features\ui\elements\window\window.cpp" />
+    <ClCompile Include="features\ui\notifications\notifications.cpp" />
+    <ClCompile Include="features\ui\input\input.cpp" />
+    <ClCompile Include="features\ui\window_setup.cpp" />
+    <ClCompile Include="features\visuals\chams.cpp" />
+    <ClCompile Include="features\visuals\visuals.cpp" />
+    <ClCompile Include="hooks\create_move\create_move.cpp" />
+    <ClCompile Include="hooks\draw_model_execute\draw_model_execute.cpp" />
+    <ClCompile Include="hooks\end_scene\end_scene.cpp" />
+    <ClCompile Include="hooks\frame_stage_notify\frame_stage_notify.cpp" />
+    <ClCompile Include="hooks\on_screen_size_changed\on_screen_size_changed.cpp" />
+    <ClCompile Include="hooks\reset\reset.cpp" />
+    <ClCompile Include="hooks\wnd_proc\wnd_proc.cpp" />
+    <ClCompile Include="includes.cpp" />
+    <ClCompile Include="features\animations\anims.cpp" />
+    <ClCompile Include="sdk\base_entity.cpp" />
+    <ClCompile Include="sdk\base_player.cpp" />
+    <ClCompile Include="sdk\interfaces\cvar.cpp" />
+    <ClCompile Include="sdk\interfaces\engine_trace.cpp" />
+    <ClCompile Include="sdk\base_object.cpp" />
+    <ClCompile Include="sdk\other\bitbuf.cpp" />
+    <ClCompile Include="sdk\other\crc32.cpp" />
+    <ClCompile Include="sdk\other\key_values.cpp" />
+    <ClCompile Include="sdk\other\utlvector.cpp" />
+    <ClCompile Include="utils\globals\globals.cpp" />
+    <ClCompile Include="utils\logging\logging.cpp" />
+    <ClCompile Include="utils\math\math.cpp" />
+    <ClCompile Include="utils\netvars\netvars.cpp" />
+    <ClCompile Include="utils\signature\signature.cpp" />
+    <ClCompile Include="utils\utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="dependencies\freetype.lib" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{985dff8b-1c31-4fc1-8888-e898400fd41f}</ProjectGuid>
+    <RootNamespace>TF</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <VcpkgTriplet Condition="'$(Platform)'=='Win32'">x86-windows-static</VcpkgTriplet>
+    <VcpkgTriplet Condition="'$(Platform)'=='x64'">x64-windows-static</VcpkgTriplet>
+    <ProjectName>internal</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)out</OutDir>
+    <IntDir>$(SolutionDir)out\intermediates\debug</IntDir>
+    <TargetName>debug</TargetName>
+    <IncludePath>$(DXSDK_DIR)Include;$(ProjectDir)features\ui\elements;$(ProjectDir)utils\globals;$(ProjectDir)dependencies;$(ProjectDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath);$(DXSDK_DIR)Lib\x86;$(ProjectDir)dependencies</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)out</OutDir>
+    <IntDir>$(SolutionDir)out\intermediates\release</IntDir>
+    <TargetName>release</TargetName>
+    <IncludePath>$(DXSDK_DIR)Include;$(ProjectDir)features\ui\elements;$(ProjectDir)utils\globals;$(ProjectDir)dependencies;$(ProjectDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath);$(DXSDK_DIR)Lib\x86;$(ProjectDir)dependencies</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgEnabled>true</VcpkgEnabled>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <VcpkgUseStatic>false</VcpkgUseStatic>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <VcpkgUseStatic>false</VcpkgUseStatic>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;ZYDIS_STATIC_BUILD;_DEBUG;TF_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>precompiled.hpp</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(ProjectDir)dependencies</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>precompiled.hpp</ForcedIncludeFiles>
+      <BuildStlModules>false</BuildStlModules>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>d3dx9.lib;d3d9.lib;fmtd.lib;spdlogd.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;ZYDIS_STATIC_BUILD;NDEBUG;TF_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>precompiled.hpp</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(ProjectDir)dependencies</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>precompiled.hpp</ForcedIncludeFiles>
+      <BuildStlModules>false</BuildStlModules>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>d3dx9.lib;d3d9.lib;fmt.lib;spdlog.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;TF_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;TF_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
+  </ImportGroup>
+</Project>

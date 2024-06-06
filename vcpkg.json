@@ -1,0 +1,31 @@
+{
+  "name" : "tf2",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "64adda19c86e89526b5e27703a193c14477cce07",
+  "dependencies": [
+    {
+      "name": "glm",
+      "version>=": "0.9.9.8#2"
+    },
+    {
+      "name": "spdlog",
+      "version>=": "1.11.0#1"
+    },
+    {
+      "name": "fmt",
+      "version>=": "10.1.1"
+    },
+    {
+      "name": "vcpkg-cmake",
+      "version>=": "2023-05-04"
+    },
+    {
+      "name": "zydis",
+      "version>=": "4.0.0"
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "version>=": "2022-02-06#1"
+    }
+  ]
+}
