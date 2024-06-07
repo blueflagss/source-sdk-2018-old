@@ -40,8 +40,8 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
 
     const auto ret = original.fastcall< bool >( REGISTERS_OUT, input_sample_time, cmd );
 
-    if ( cmd && ret )
-        g_interfaces.engine_client->set_view_angles( cmd->view_angles );
+    //if ( cmd && ret )
+    //    g_interfaces.engine_client->set_view_angles( cmd->view_angles );
 
     if ( !cmd || !cmd->command_number )
         return ret;

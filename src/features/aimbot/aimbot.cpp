@@ -216,8 +216,13 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
     if ( !globals::local_player->alive( ) )
         return;
 
-    //if ( globals::local_weapon->is_melee( ) )
-    //    return;
+    auto data = globals::local_weapon->get_weapon_data( );
+
+    if ( data->weapon_type == weapon_type::type_knife || data->weapon_type >= weapon_type::type_c4 )
+        return;
+
+    if ( !globals::local_player->can_attack( ) )
+        return;
 
     search_targets( );
 

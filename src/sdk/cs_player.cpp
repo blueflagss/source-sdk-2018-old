@@ -78,6 +78,21 @@ void c_cs_player::modify_eye_position( c_csgo_player_animstate *state, vector_3d
     }
 }
 
+bool c_cs_player::can_attack( ) {
+    const auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( this->weapon_handle( ) );
+
+    if ( !weapon )
+        return false;
+
+    const auto next_primary_attack = weapon->next_primary_attack( );
+    const auto time = g_interfaces.global_vars->interval_per_tick * this->tick_base( );
+
+    if ( weapon->clip_1( ) == 0 )
+        return false;
+
+    return next_primary_attack <= time && this->next_attack( ) <= time;
+}
+
 bool c_cs_player::get_aim_matrix( vector_3d angle, matrix_3x4 *bones ) { /* inure */
     return false;
 }

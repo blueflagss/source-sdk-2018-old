@@ -60,7 +60,7 @@ public:
     OFFSET( last_cmd, c_user_cmd, 0x3298 );
     OFFSET( anim_overlays, c_animation_layer *, 0x2970 );
     OFFSET( buttons, int, 0x31E8 );
-    OFFSET( cstudiohdr, c_studio_hdr *, 0x293C );
+    OFFSET( cstudio_hdr, c_studio_hdr *, 0x293C );
 
     void *get_view_model( ) {
         return g_interfaces.entity_list->get_client_entity_from_handle< void * >( this->viewmodel_handle( ) );
@@ -79,6 +79,7 @@ public:
     void get_bone_position( int bone, vector_3d &out, vector_3d &q );
     int lookup_bone( const char *name );
     void modify_eye_position( c_csgo_player_animstate *state, vector_3d *input_eye_pos, matrix_3x4 *bones );
+    bool can_attack( );
     bool get_aim_matrix( vector_3d angle, matrix_3x4 *bones );
     vector_3d get_shoot_position( );
 

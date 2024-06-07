@@ -123,6 +123,9 @@ public:
     NETVAR( recoil_index, float, "DT_WeaponCSBase", "m_flRecoilIndex" );
     NETVAR( item_definition_index, short, "DT_BaseAttributableItem", "iItemDefinitionIndex" );
     NETVAR( accuracy_penalty, float, "DT_WeaponCSBase", "fAccuracyPenalty" );
+    NETVAR( next_primary_attack, float, "DT_WeaponCSBase", "m_flNextPrimaryAttack" );
+    NETVAR( clip_1, int, "DT_WeaponCSBase", "m_iClip1" );
+    NETVAR( clip_2, int, "DT_WeaponCSBase", "m_iClip2" );
 
     float get_spread( );
     float get_inaccuracy( );
