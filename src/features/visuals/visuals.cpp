@@ -104,6 +104,7 @@ void visuals::render_player( c_cs_player *player ) {
         auto &log = g_animations.lag_info[ player->index( ) ];
 
         if ( g_vars.visuals_player_skeleton_history.value && !log.lag_records.empty( ) ) {
+            
             for ( auto &record : log.lag_records ) {
                 if ( !record ) continue;
 

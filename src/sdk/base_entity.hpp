@@ -122,6 +122,8 @@ public:
     void set_abs_origin( const vector_3d &origin );
     void invalidate_physics_recursive( int change_flags );
     void set_abs_angles( const vector_3d &angles );
+    void set_collision_bounds( const vector_3d &mins, const vector_3d &maxs );
+    void invalidate_bone_cache( );
     bool physics_run_think( int think_method = 0 );
     void set_next_think( int context_index, float think_time = 0 );
     vector_3d get_bone_position( const int bone, matrix_3x4 *bone_matrix );

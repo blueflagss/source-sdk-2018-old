@@ -50,6 +50,7 @@ public:
     std::deque< int > hitboxes = { };
     std::deque< aim_player > targets = { };
     target_info best = { };
+    backup_record m_backup[ 64 ];
 
     void reset( );
     bool hitchance( c_cs_player *player, const vector_3d &angle, lag_record *record );

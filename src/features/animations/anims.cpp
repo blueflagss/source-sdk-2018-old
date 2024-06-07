@@ -17,6 +17,7 @@ void lag_record::reset( c_cs_player *player ) {
     velocity = player->velocity( );
     index = player->index( );
     eye_angles = player->eye_angles( );
+    anim_time = player->old_simtime( ) + g_interfaces.global_vars->interval_per_tick;
     choked = std::clamp< int >( game::time_to_ticks( player->simtime( ) - old_sim_time ), 0, 16 );
 
     if ( player->bone_cache( ) )
@@ -36,14 +37,37 @@ bool lag_record::is_valid( ) {
     if ( !net_channel )
         return false;
 
-    const auto correct = std::clamp< float >( net_channel->get_latency( 1 ) + globals::lerp_amount, 0.0f, globals::cvars::sv_maxunlag->get_float( ) );
+    const float curtime = game::ticks_to_time( globals::local_player->tick_base( ) );
+    float correct = 0.0f;
+    correct += net_channel->get_latency( 1 );
+    correct += net_channel->get_latency( 0 );
+    correct += globals::lerp_amount;
 
-    return fabs( correct - ( g_interfaces.global_vars->curtime - this->sim_time ) ) <= 0.2f - game::ticks_to_time( 1 );
+    correct = std::clamp< float >( correct, 0.0f, globals::cvars::sv_maxunlag->get_float( ) );
+
+    const float dead_time = curtime - globals::cvars::sv_maxunlag->get_float( );
+    if ( this->sim_time <= dead_time )
+        return false;
+
+    return std::fabs( correct - ( curtime - this->sim_time ) ) < 0.2f;
 }
 
-template< class T >
-T animation_lerp( const T &current, const T &target, const int progress, const int max ) {
-    return current + ( ( ( target - current ) / max ) * progress );
+void lag_record::cache( ) {
+    if ( !this || !this->player )
+        return;
+
+    auto cache = this->player->bone_cache( );
+    if ( !cache )
+        return;
+
+    this->player->origin( ) = this->origin;
+    this->player->set_collision_bounds( this->mins, this->maxs );
+
+    this->player->set_abs_angles( this->abs_angles );
+    this->player->set_abs_origin( this->origin );
+
+    this->player->invalidate_bone_cache( );
+    std::memcpy( cache, this->bones.data( ), sizeof( matrix_3x4 ) * this->player->bone_count( ) );
 }
 
 bool animation_sync::get_lagcomp_bones( c_cs_player *player, std::array< matrix_3x4, 128 > &out ) {
@@ -144,6 +168,77 @@ bool animation_sync::build_bones( c_cs_player *player, matrix_3x4 *out, float cu
     return setup;
 }
 
+void update_land( c_cs_player *ptr, lag_record *record, lag_record *last_record ) {
+    if ( !last_record )
+        return;
+
+    bool on_ground = ptr->flags( ) & FL_ONGROUND;
+    record->on_ground = false;
+    record->real_on_ground = on_ground;
+
+    if ( on_ground && last_record->real_on_ground ) {
+        record->on_ground = true;
+    } else {
+        if ( record->layer_records[ ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL ].weight != 1.f &&
+             record->layer_records[ ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL ].weight == 1.f && record->layer_records[ ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB ].weight != 0.f ) {
+            record->on_ground = true;
+        }
+
+        if ( on_ground ) {
+            bool ground = record->on_ground;
+            if ( !last_record->real_on_ground )
+                ground = false;
+
+            record->on_ground = ground;
+        }
+    }
+}
+
+void update_velocity( c_cs_player *ptr, lag_record *record, lag_record *previous ) {
+    if ( !previous )
+        return;
+
+    auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( ptr->weapon_handle( ) );
+    if ( !weapon )
+        return;
+
+    if ( record->choked > 0 && record->choked < 16 && previous && !previous->dormant )
+        record->velocity = ( record->origin - previous->origin ) * ( 1.f / game::ticks_to_time( record->choked ) );
+
+    record->anim_velocity = record->velocity;
+
+    if ( record->flags & FL_ONGROUND && record->velocity.length( ) > 0.1f && record->layer_records[ ANIMATION_LAYER_LEAN ].weight == 0.f &&
+         record->layer_records[ ANIMATION_LAYER_MOVEMENT_MOVE ].weight < 0.1f )
+        record->fake_walk = true;
+
+    if ( ptr->flags( ) & FL_ONGROUND && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight > 0.f && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight < 1.f &&
+         record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].cycle > previous->layer_records[ ANIMATION_LAYER_ALIVELOOP ].cycle ) {
+        if ( weapon ) {
+            float max_speed = 260.f;
+            auto weapon_info = weapon->get_weapon_data( );
+
+            if ( weapon_info )
+                max_speed = ptr->scoped( ) ? weapon_info->max_speed_alt : weapon_info->max_speed;
+
+            float modifier = 0.35f * ( 1.f - record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight );
+
+            if ( modifier > 0.f && modifier < 1.f )
+                record->anim_speed = max_speed * ( modifier + 0.55f );
+        }
+    }
+
+    if ( record->anim_speed > 0.f ) {
+        record->anim_speed /= glm::length( glm::vec2( record->velocity ) );
+
+        record->anim_velocity.x *= record->anim_speed;
+        record->anim_velocity.y *= record->anim_speed;
+    }
+
+    if ( record->fake_walk )
+        record->anim_velocity = { 0.f, 0.f, 0.f };
+}
+
+
 void animation_sync::update_player_animation( c_cs_player *player, lag_record &record, lag_record *previous ) {
     record.reset( player );
 
@@ -191,80 +286,58 @@ void animation_sync::update_player_animation( c_cs_player *player, lag_record &r
     c_global_vars_base backup_vars{ };
     backup_vars.backup( g_interfaces.global_vars );
 
-    auto ticks_choked = record.choked;
-
-    if ( previous ) {
-        int simulation_ticks = game::time_to_ticks( player->simtime( ) - previous->sim_time );
-
-        if ( simulation_ticks > 0 && simulation_ticks < 31 )
-            ticks_choked = simulation_ticks;
-    }
+    g_interfaces.global_vars->curtime = record.anim_time;
+    g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
+    g_interfaces.global_vars->realtime = record.anim_time;
+    g_interfaces.global_vars->abs_frametime = g_interfaces.global_vars->interval_per_tick;
+    g_interfaces.global_vars->framecount = game::time_to_ticks( record.anim_time );
+    g_interfaces.global_vars->tick_count = game::time_to_ticks( record.anim_time );
+    g_interfaces.global_vars->interpolation_amount = 0.f;
 
     player->set_abs_origin( record.origin );
-    player->eflags( ) &= ~( 1 << 12 );
 
-    state->m_flLastUpdateTime = player->old_simtime( );
-    player->effects( ) &= ~0x1800;// force velocity.
+    update_land( player, &record, previous );
+    update_velocity( player, &record, previous );
 
-    const auto speed = math::length_2d( record.velocity );
-
-    if ( ( record.flags & player_flags::on_ground ) && speed > 0.1f )
-        record.mode = resolve_mode::walk;
-
-    if ( ( record.flags & player_flags::on_ground ) && ( speed <= 0.1f ) )
-        record.mode = resolve_mode::stand;
-
-    else if ( !( record.flags & player_flags::on_ground ) )
-        record.mode = resolve_mode::air;
-
-    if ( record.choked <= 1 || !previous ) {
-        auto current_simulation_tick = game::time_to_ticks( record.sim_time );
-
-        g_interfaces.global_vars->curtime = record.sim_time;
-        g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
-        g_interfaces.global_vars->realtime = record.sim_time;
-        g_interfaces.global_vars->abs_frametime = g_interfaces.global_vars->interval_per_tick;
-        g_interfaces.global_vars->framecount = current_simulation_tick;
-        g_interfaces.global_vars->tick_count = current_simulation_tick;
-        g_interfaces.global_vars->interpolation_amount = 0.f;
-
-        player->eye_angles( ) = record.eye_angles;
-        player->velocity( ) = record.velocity;
-        player->abs_velocity( ) = record.velocity;
-
-        update_client_side_animations( player );
+    // fix various issues with the game
+    // these issues can only occur when a player is choking data.
+    if ( record.choked > 1 && previous && !previous->dormant ) {
+        if ( record.on_ground )
+            player->flags( ) |= FL_ONGROUND;
+        else
+            player->flags( ) &= ~FL_ONGROUND;
     }
 
-    else {
-        for ( int simulation_tick = 1; simulation_tick <= record.choked; simulation_tick++ ) {
-            auto simtime = previous->sim_time + game::ticks_to_time( simulation_tick );
-            auto current_simulation_tick = game::ticks_to_time( simtime );
+    player->origin( ) = record.origin;
+    player->velocity( ) = player->abs_velocity( ) = record.anim_velocity;
 
-            g_interfaces.global_vars->curtime = simtime;
-            g_interfaces.global_vars->realtime = simtime;
-            g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
-            g_interfaces.global_vars->abs_frametime = g_interfaces.global_vars->interval_per_tick;
-            g_interfaces.global_vars->framecount = current_simulation_tick;
-            g_interfaces.global_vars->tick_count = current_simulation_tick;
+    player->eflags( ) &= ~( 0x1000 | 0x800 );
 
-            player->origin( ).x = animation_lerp< float >( previous->origin.x, record.origin.x, simulation_tick, record.choked );
-            player->origin( ).y = animation_lerp< float >( previous->origin.y, record.origin.y, simulation_tick, record.choked );
-            player->origin( ).z = animation_lerp< float >( previous->origin.z, record.origin.z, simulation_tick, record.choked );
+    // call resolver here.
+    {
+        const auto speed = math::length_2d( record.velocity );
 
-            player->set_abs_origin( player->origin( ) );
+        if ( ( record.flags & player_flags::on_ground ) && speed > 0.1f )
+            record.mode = resolve_mode::walk;
 
-            auto &velocity = player->velocity( );
+        if ( ( record.flags & player_flags::on_ground ) && ( speed <= 0.1f ) )
+            record.mode = resolve_mode::stand;
 
-            velocity.x = animation_lerp< float >( previous->velocity.x, record.velocity.x, simulation_tick, record.choked );
-            velocity.y = animation_lerp< float >( previous->velocity.y, record.velocity.y, simulation_tick, record.choked );
-
-            player->abs_velocity( ) = velocity;
-
-            update_client_side_animations( player );
-        }
+        else if ( !( record.flags & player_flags::on_ground ) )
+            record.mode = resolve_mode::air;
     }
 
-    record.has_velocity = fix_velocity( player, player->velocity( ), record.layer_records, record.origin );
+    player->eye_angles( ) = record.eye_angles;
+
+    // fix animating in same frame.
+    if ( state->m_nLastUpdateFrame == g_interfaces.global_vars->framecount )
+        state->m_nLastUpdateFrame = g_interfaces.global_vars->framecount - 1;
+
+    // fix animating in same frame.
+    if ( state->m_flLastUpdateTime == g_interfaces.global_vars->curtime )
+        state->m_flLastUpdateTime = g_interfaces.global_vars->curtime - g_interfaces.global_vars->interval_per_tick;
+
+    update_client_side_animations( player );
 
     player->flags( ) = backup_flags;
     player->eflags( ) = backup_eflags;
@@ -273,13 +346,13 @@ void animation_sync::update_player_animation( c_cs_player *player, lag_record &r
     player->abs_velocity( ) = backup_abs_velocity;
     player->set_abs_origin( backup_abs_origin );
     player->pose_parameters( ) = record.pose_parameters;
+    player->set_abs_angles( vector_3d( 0.f, state->m_flFootYaw, 0.f ) );
 
     std::memcpy( player->anim_overlays( ), record.layer_records.data( ), record.layer_records.size( ) );
     player->anim_state( ) = record.anim_state;
 
     g_interfaces.global_vars->restore( backup_vars );
     build_bones( player, record.bones.data( ), record.sim_time );
-    player->invalidate_physics_recursive( invalidate_physics_bits::animation_changed | invalidate_physics_bits::position_changed | invalidate_physics_bits::velocity_changed );
 }
 
 bool animation_sync::fix_velocity( c_cs_player *entity, vector_3d &velocity, const std::array< c_animation_layer, 15 > &anim_state, const vector_3d &origin ) {

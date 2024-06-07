@@ -10,6 +10,54 @@ enum class resolve_mode : int {
     air
 };
 
+struct backup_record {
+public:
+    matrix_3x4 m_bones[ 128 ];
+    int m_bone_count;
+    float m_sim_time;
+    int m_flags;
+    vector_3d m_origin, m_abs_origin;
+    vector_3d m_mins;
+    vector_3d m_maxs;
+    vector_3d m_abs_ang;
+
+public:
+    __forceinline void store( c_cs_player *player ) {
+        // get bone cache ptr.
+        auto cache = player->bone_cache( );
+        if ( !cache )
+            return;
+
+        // store bone data.
+        std::memcpy( m_bones, cache, sizeof( matrix_3x4 ) * 128 );
+
+        m_bone_count = player->bone_count( );
+        m_origin = player->origin( );
+        m_mins = player->mins( );
+        m_sim_time = player->simtime( );
+        m_flags = player->flags( );
+        m_maxs = player->maxs( );
+        m_abs_origin = player->get_abs_origin( );
+        m_abs_ang = player->get_abs_angles( );
+    }
+
+    __forceinline void restore( c_cs_player *player ) {
+        // get bone cache ptr.
+        auto cache = player->bone_cache( );
+        if ( !cache )
+            return;
+
+        std::memcpy( cache, m_bones, sizeof( matrix_3x4 ) * m_bone_count );
+        player->bone_count( ) = m_bone_count;
+
+        player->origin( ) = m_origin;
+        player->set_collision_bounds( m_mins, m_maxs );
+        player->set_abs_angles( m_abs_ang );
+        player->set_abs_origin( m_origin );
+    }
+};
+
+
 struct lag_record {
 public:
     lag_record( ) = default;
@@ -20,16 +68,22 @@ public:
 
     int flags;
     vector_3d origin;
+    bool on_ground;
+    bool real_on_ground;
     vector_3d angles;
     vector_3d abs_origin;
     vector_3d velocity;
+    vector_3d anim_velocity;
     vector_3d abs_angles;
+    float anim_speed;
     vector_3d mins;
     vector_3d maxs;
+    bool fake_walk;
     c_cs_player *player;
     vector_3d eye_angles;
     resolve_mode mode;
     float sim_time;
+    float anim_time;
     int index;
     float old_sim_time;
     bool break_lc;
@@ -44,6 +98,7 @@ public:
 
     void reset( c_cs_player *player );
     bool is_valid( );
+    void cache( );
 
     void apply( ) {
     }
@@ -66,7 +121,7 @@ public:
 
     struct animation_info {
         util::circular_buffer< lag_record > anim_records;
-        std::deque< lag_record * > lag_records; 
+        std::deque< lag_record * > lag_records;
         float spawn_time;
         int index;
         c_cs_player *player;
