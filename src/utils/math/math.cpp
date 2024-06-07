@@ -205,8 +205,6 @@ void math::matrix_position( const matrix_3x4 &matrix, vector_3d &position ) {
 void math::angle_vectors( vector_3d angles, vector_3d *forward ) {
     auto clamped = clamp_angle( angles );
 
-    vector_3d ret;
-
     float sp, sy, cp, cy;
 
     sin_cos( deg_to_rad( clamped.y ), &sy, &cy );
@@ -215,6 +213,22 @@ void math::angle_vectors( vector_3d angles, vector_3d *forward ) {
     forward->x = cp * cy;
     forward->y = cp * sy;
     forward->z = -sp;
+}
+
+vector_3d math::angle_vectors( vector_3d angles ) {
+    vector_3d forward;
+
+    auto clamped = clamp_angle( angles );
+    float sp, sy, cp, cy;
+
+    sin_cos( deg_to_rad( clamped.y ), &sy, &cy );
+    sin_cos( deg_to_rad( clamped.x ), &sp, &cp );
+
+    forward.x = cp * cy;
+    forward.y = cp * sy;
+    forward.z = -sp;
+
+    return forward;
 }
 
 vector_3d math::clamp_angle( const vector_3d &angle ) {

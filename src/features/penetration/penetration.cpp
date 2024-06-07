@@ -54,100 +54,103 @@ c_fire_bullet_data penetration_system::run( const vector_3d src, const vector_3d
     if ( result && info.damage < 1.0f )
         return { };
 
+    spdlog::info( "dmg: {}", info.out_damage );
+
     return info;
 }
 
 bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vector_3d src, vector_3d pos, c_fire_bullet_data &fire_info, bool is_zeus, c_cs_player *ent ) {
+    vector_3d direction = math::normalize_angle( pos - src );
+    
     fire_info.penetrate_count = 4;
+    auto length = 0.f;
+    c_game_trace enter_trace{ }, final_trace{ };
+    bool did_hit = false;
 
-    float penetration = data->penetration;
-    float current_distance = 0.0f, damage_modifier = 0.5f, penetration_power = 35.0f, penetration_modifier = 1.0f;
-    float weapon_range = data->range;
+    c_trace_filter_hitscan filter;
+    filter.player = globals::local_player;
 
-    vector_3d dir = math::normalize_angle( pos - src );
+    matrix_3x4 *temp_mat[ 128 ];
 
-    if ( globals::cvars::sv_penetration_type->get_int( ) == 1 )
-        penetration_power = penetration;
+    ray_t r{ };
+    r.init( src, src + direction * (data->range + ray_extension));
 
-    int penetration_count = fire_info.penetrate_count;
+    c_game_trace tr{ };
+    tr.start_pos = r.start + r.start_offset;
+    tr.end_pos = tr.start_pos + r.delta;
 
-    c_base_entity *last_hit_entity = nullptr;
-    c_trace_filter_skip_two_entities filter_skip2;
+    for ( int i = 0; i < 128; i++ )
+        temp_mat[ i ] = const_cast< matrix_3x4 * >( &ent->bone_cache( )[ i ] );
 
-    filter_skip2.skip1 = globals::local_player;
-    filter_skip2.skip2 = nullptr;
+    const auto ret = proxy_trace_to_studio_csgo_hitgroups_priority( ent, mask_shot_hull | contents_hitbox, &ent->origin( ), &tr, &r, temp_mat );
+
+    final_trace = tr;
+
+    if ( !ret )
+        return true;
 
     while ( fire_info.penetrate_count > 0 && fire_info.damage > 0.0f ) {
-        float trace_length_remaining = ( weapon_range - current_distance );
+        const auto length_remaining = data->range - length;
+        auto end = src + direction * length_remaining;
 
-        vector_3d end = src + ( dir * trace_length_remaining );
+        if ( enter_trace.entity )
+            filter.player = enter_trace.entity;
 
-        c_game_trace exit_trace, enter_trace;
-        ray_t ray;
+        ray_t r{ };
+        r.init( src, end );
+        g_interfaces.engine_trace->trace_ray( r, mask_shot, &filter, &enter_trace );
 
-        ray.init( src, end );
-        filter_skip2.skip1 = globals::local_player;
-        filter_skip2.skip2 = last_hit_entity ? last_hit_entity : nullptr;
+        if (!did_hit) {
+            const auto dist = glm::length( src - ent->get_abs_origin( ) );
+            const auto behind = glm::length( src - enter_trace.end_pos ) > dist;
 
-        g_interfaces.engine_trace->trace_ray( ray, mask_shot_hull | contents_hitbox, &filter_skip2, &enter_trace );
+            if ( behind || enter_trace.fraction == 1.f ) {
+                ray_t r2{ };
+                r2.init( src, src + direction * (data->range + ray_extension));
+                final_trace.fraction = glm::length( final_trace.end_pos - r2.start ) / r2.delta.length( );
+                enter_trace = final_trace;
 
-        // get last hit entity for trace.
-        last_hit_entity = enter_trace.entity ? enter_trace.entity : nullptr;
+                auto smallest_fraction = glm::length( src - enter_trace.end_pos ) / length_remaining;
+                const auto final_length = length + smallest_fraction * (length_remaining + ray_extension);
 
-        clip_trace_to_player( ent, src, end + ( dir * 40.f ), mask_shot_hull | contents_hitbox, &filter_skip2, &enter_trace );
+                if ( final_length >= data->range )
+                    break;
 
-        if ( enter_trace.fraction == 1.0f )
-            break;
+                const auto final_damage = fire_info.damage * std::powf( data->range_modifier, final_length * 0.002f );
+                const auto new_damage = scale_damage( ent, final_damage, data->armor_ratio, enter_trace.hit_group, is_zeus );
 
-        auto surface_data = g_interfaces.physics_props->get_surface_data( enter_trace.surface.surface_props );
+                did_hit = true;
+                fire_info.out_damage = new_damage;
+                fire_info.out_hitgroup = enter_trace.hit_group;
 
-        current_distance += enter_trace.fraction * trace_length_remaining;
-        fire_info.damage *= std::pow( data->range_modifier, ( current_distance / 500.f ) );
-
-        if ( enter_trace.entity && enter_trace.entity == ent && ( enter_trace.hit_group >= 0 && enter_trace.hit_group <= 7 ) ) {
-            fire_info.out_damage = scale_damage( ent, fire_info.damage, data->armor_ratio, enter_trace.hit_group, is_zeus ); /* return our damage if our ray is visible. */
-
-            return fire_info.out_damage >= fire_info.in_damage;
+                break;
+            }
         }
+        
 
-        fire_info.out_damage = data->damage;
+        length += enter_trace.fraction * length_remaining;
+        fire_info.damage *= std::powf( data->range_modifier, length * 0.002f );
 
-        int enter_material = surface_data->game.material;
-
-        penetration_modifier = surface_data->game.penetration_modifier;
-        damage_modifier = surface_data->game.damage_modifier;
-        penetration = data->penetration;
-
-        if ( ( current_distance > 3000.0f && data->penetration > 0.0f ) || penetration_modifier < 0.1f )
+        if ( length > glm::length( src - pos ) )
             break;
 
-        bool hit_grate = ( enter_trace.contents & contents_grate ) != 0;
-
-        bool bullet_stopped = handle_bullet_penetration(
-                ent,
-                penetration,
-                enter_material,
-                hit_grate,
-                enter_trace,
-                dir,
-                surface_data,
-                penetration_modifier,
-                damage_modifier,
-                penetration_power,
-                penetration_count,
-                src,
-                weapon_range,
-                fire_info.trace_length,
-                fire_info.damage,
-                exit_trace );
-
-        if ( bullet_stopped )
+        if ( enter_trace.fraction == 1.f )
             break;
 
-        fire_info.out_hitgroup = exit_trace.hit_group;
+        const auto enter_surf = g_interfaces.physics_props->get_surface_data( enter_trace.surface.surface_props );
+        if ( ( length > 3000.f && data->penetration > 0.f ) || ( !enter_surf || enter_surf->game.penetration_modifier < 0.1f ) )
+            fire_info.penetrate_count = 0;
+
+        if (!handle_bullet_penetration(data, enter_trace, src, direction, fire_info.penetrate_count, fire_info.damage, data->penetration)) {
+            fire_info.damage = 0.f;
+            break;
+        }
     }
 
-    return true;
+    if ( !did_hit )
+        fire_info.out_damage = fire_info.damage;
+
+    return false;
 }
 
 bool penetration_system::is_breakable_entity( c_cs_player *ent ) {
@@ -169,146 +172,111 @@ bool penetration_system::is_breakable_entity( c_cs_player *ent ) {
     return ret;
 }
 
-bool penetration_system::trace_to_exit( vector_3d start, vector_3d dir, vector_3d &end, c_game_trace &trace_enter, c_game_trace &trace_exit, float step_size, float max_distance ) {
-    float dist = 0.f;
-    vector_3d last = start;
-    int contents, start_contents = 0;
+bool penetration_system::trace_to_exit( c_game_trace &enter_trace, c_game_trace &exit_trace, vector_3d start_position, vector_3d direction ) {
+    static constexpr auto max_distance = 90.f;
+    static constexpr auto ray_extension = 4.f;
 
-    while ( dist <= max_distance ) {
-        dist += step_size;
+    float current_distance = 0;
+    auto first_contents = 0;
 
-        end = start + ( dir * dist );
+    while (current_distance <= max_distance) {
+        current_distance += ray_extension;
 
-        vector_3d trace_end = end - ( dir * step_size );
+        auto start = start_position + direction * current_distance;
+        const auto point_contents = g_interfaces.engine_trace->get_point_contents( start, mask_shot_hull | contents_hitbox );
 
-        if ( !start_contents )
-            start_contents = g_interfaces.engine_trace->get_point_contents( end, mask_shot_hull | contents_hitbox, nullptr );
+        if ( !first_contents )
+            first_contents = point_contents;
 
-        contents = g_interfaces.engine_trace->get_point_contents( end, mask_shot_hull | contents_hitbox, nullptr );
+        if ( !( point_contents & mask_shot_hull ) || ( ( point_contents & contents_hitbox ) && point_contents != first_contents ) ) {
+            const auto end = start - direction * ray_extension;
 
-        if ( ( contents & 0x600400B ) && ( !( contents & contents_hitbox ) || ( contents == start_contents ) ) )
-            continue;
+            ray_t r{ };
+            r.init( start, end );
 
-        ray_t ray_world{ };
+            c_trace_filter_skip_two_entities filter{ };
+            filter.skip1 = globals::local_player;
+            filter.skip2 = nullptr;
 
-        ray_world.init( end, trace_end );
-        g_interfaces.engine_trace->trace_ray( ray_world, 0x4600400B, nullptr, &trace_exit );
+            g_interfaces.engine_trace->trace_ray( r, mask_shot_hull | contents_hitbox, &filter, &exit_trace );
 
-        if ( globals::cvars::sv_clip_penetration_traces_to_players->get_int( ) )
-            clip_trace_to_players( end, trace_end, 0x4600400B, nullptr, &trace_exit );
+            if (exit_trace.start_solid && exit_trace.surface.flags & surf_hitbox) {
+                r.init( start, start_position );
+                filter.skip1 = exit_trace.entity;
+                g_interfaces.engine_trace->trace_ray( r, mask_shot_hull | contents_hitbox, &filter, &exit_trace );
 
-        if ( trace_exit.start_solid && ( trace_exit.surface.flags & surf_hitbox ) ) {
-            ray_t ray{ };
-            c_trace_filter_world_and_props filter;
-            ray.init( end, start );
-
-            g_interfaces.engine_trace->trace_ray( ray, 0x600400B, &filter, &trace_enter );
-
-            if ( trace_exit.did_hit( ) && !trace_exit.start_solid ) {
-                end = trace_exit.end_pos;
-
-                return true;
-            }
-        }
-
-        if ( trace_exit.did_hit( ) && !trace_exit.start_solid ) {
-            bool start_is_no_draw = !!( trace_enter.surface.flags & surf_nodraw );
-            bool exit_is_no_draw = !!( trace_exit.surface.flags & surf_nodraw );
-
-            if ( exit_is_no_draw && is_breakable_entity( static_cast< c_cs_player * >( trace_enter.entity ) ) && is_breakable_entity( static_cast< c_cs_player * >( trace_enter.entity ) ) ) {
-                end = trace_exit.end_pos;
-                return true;
-            }
-
-            if ( exit_is_no_draw == false || ( start_is_no_draw && exit_is_no_draw ) ) {
-                float dot_val = glm::dot( dir, trace_exit.plane.normal );
-
-                if ( dot_val <= 1.0f ) {
-                    end = end - ( dir * ( step_size * trace_exit.fraction ) );
-
+                if ( exit_trace.did_hit( ) && !exit_trace.start_solid )
                     return true;
-                }
+            } else if ( exit_trace.did_hit( ) && !exit_trace.start_solid ) {
+                if ( enter_trace.surface.flags & surf_nodraw && is_breakable_entity( static_cast< c_cs_player * >( enter_trace.entity ) ) &&
+                     is_breakable_entity( static_cast< c_cs_player * >( exit_trace.entity ) ) )
+                    return true;
+                else if ( ( !( exit_trace.surface.flags & surf_nodraw ) || enter_trace.surface.flags & surf_nodraw ) && glm::dot( exit_trace.plane.normal, direction ) <= 1.f )
+                    return true;
+            } else if ( enter_trace.did_hit_non_world_entity( ) && is_breakable_entity( static_cast< c_cs_player * >( enter_trace.entity ) ) ) {
+                exit_trace = enter_trace;
+                exit_trace.end_pos = start + direction;
+                return true;
             }
-        }
-
-        if ( trace_enter.did_hit_non_world_entity( ) && is_breakable_entity( static_cast< c_cs_player * >( trace_enter.entity ) ) ) {
-            trace_exit = trace_enter;
-            trace_exit.end_pos = start + dir;
-
-            return true;
         }
     }
 
     return false;
 }
 
-bool penetration_system::handle_bullet_penetration( c_cs_player *ent, float &penetration, int &enter_material, bool &hit_grate, c_game_trace &tr, vector_3d &direction, surfacedata_t *surface_data, float penetration_modifier, float damage_modifier, float penetration_power, int &penetration_count, vector_3d &src, float distance, float current_distance, float &current_damage, c_game_trace &exit_trace ) {
-    bool is_no_draw = !!( tr.surface.flags & surf_nodraw );
-
-    if ( penetration_count == 0 && !hit_grate && !is_no_draw && enter_material != char_tex_glass && enter_material != char_tex_grate )
-        return false;
-
-    if ( penetration <= 0 || penetration_count <= 0 )
-        return false;
+bool penetration_system::handle_bullet_penetration( const c_cs_weapon_info *weapon_data, c_game_trace &enter_trace, vector_3d &eye_position, vector_3d direction, int &penetration_count, float &current_damage, float penetration_power ) {
+    c_game_trace exit_trace{ };
+    auto enemy = reinterpret_cast< c_cs_player * >( enter_trace.entity );
+    const auto enter_surface_data = g_interfaces.physics_props->get_surface_data( enter_trace.surface.surface_props );
+    const int enter_material = enter_surface_data->game.material;
+    const bool is_grate = enter_trace.contents & contents_grate;
+    const bool is_no_draw = !!( enter_trace.surface.flags & surf_nodraw );
 
     vector_3d penetration_end;
 
-    if ( !trace_to_exit( tr.end_pos, direction, penetration_end, tr, exit_trace, 4.0f, 90.0f ) ) {
-        if ( ( g_interfaces.engine_trace->get_point_contents( tr.end_pos, mask_shot_hull ) & mask_shot_hull ) == 0 ) {
-            return false;
-        }
-    }
+    if ( weapon_data->penetration <= 0.f || penetration_count <= 0 || ( !trace_to_exit( enter_trace, exit_trace, enter_trace.end_pos, direction ) &&
+        ( !( g_interfaces.engine_trace->get_point_contents( enter_trace.end_pos, mask_shot_hull ) & mask_shot_hull ) ) ) )
+        return false;
 
-    surfacedata_t *exit_surface_data = g_interfaces.physics_props->get_surface_data( exit_trace.surface.surface_props );
+    const auto exit_surface_data = g_interfaces.physics_props->get_surface_data( exit_trace.surface.surface_props );
+    const auto exit_material = exit_surface_data->game.material;
 
-    int exit_material = exit_surface_data->game.material;
+    auto damage_lost = .16f;
+    auto penetration_modifier = enter_surface_data->game.penetration_modifier;
 
-    float damage_lost_percentage = 0.16f;
-
-    if ( hit_grate || is_no_draw || enter_material == char_tex_glass || enter_material == char_tex_grate ) {
-        if ( enter_material == char_tex_glass || enter_material == char_tex_grate ) {
-            penetration_modifier = 3.0f;
-            damage_lost_percentage = 0.05f;
-        } else
-            penetration_modifier = 1.0f;
-
-        damage_modifier = 0.99f;
-    } else if ( enter_material == char_tex_flesh && globals::cvars::ff_damage_reduction_bullets->get_float( ) == 0 && ( ent && tr.entity && static_cast< c_cs_player * >( tr.entity )->is_player( ) && tr.entity->team( ) == ent->team( ) ) ) {
-        if ( globals::cvars::ff_damage_bullet_penetration->get_float( ) == 0 ) {
-            penetration_modifier = 0.f;
-            return true;
-        }
-
-        penetration_modifier = globals::cvars::ff_damage_bullet_penetration->get_float( );
-    } else {
-        float exit_penetration_modifier = exit_surface_data->game.penetration_modifier;
-        float exit_damage_modifier = exit_surface_data->game.damage_modifier;
-
-        penetration_modifier = ( penetration_modifier + exit_penetration_modifier ) / 2;
-    }
-
-    if ( enter_material == exit_material ) {
-        if ( exit_material == char_tex_wood || exit_material == char_tex_cardboard ) {
+    if (is_grate || is_no_draw || enter_material == char_tex_grate || enter_material == char_tex_glass) {
+        if (enter_material == char_tex_grate || enter_material == char_tex_glass) {
             penetration_modifier = 3.f;
-        } else if ( exit_material == char_tex_plastic ) {
+            damage_lost = 0.05f;
+        } else
+            penetration_modifier = 1.f;
+    } else if ( enter_material == char_tex_flesh && enemy && ( enemy->team( ) == globals::local_player->team( ) ) && globals::cvars::ff_damage_reduction_bullets->get_float( ) == 0.f ) {
+        const auto damage_bullet_penetration = globals::cvars::ff_damage_bullet_penetration->get_float( );
+        if ( damage_bullet_penetration == 0.f )
+            return false;
+
+        penetration_modifier = damage_bullet_penetration;
+    } else
+        penetration_modifier = ( penetration_modifier + exit_surface_data->game.penetration_modifier ) / 2.f;
+
+    if (enter_material == exit_material) {
+        if ( exit_material == char_tex_cardboard || exit_material == char_tex_wood )
+            penetration_modifier = 3.f;
+        else if ( exit_material == char_tex_plastic )
             penetration_modifier = 2.f;
-        }
     }
 
-    float trace_distance = glm::length( exit_trace.end_pos - tr.end_pos );
-    float penetration_mod = std::fmaxf( 0.f, ( 1.f / penetration_modifier ) );
-    float percent_damage_chunk = current_damage * damage_lost_percentage;
-    float pen_wep_mod = percent_damage_chunk + std::fmaxf( 0.f, ( 3.f / penetration_power ) * 1.25f ) * ( penetration_mod * 3.0f );
-    float lost_damage_object = ( ( penetration_mod * ( trace_distance * trace_distance ) ) / 24.f );
-    float total_lost_damage = pen_wep_mod + lost_damage_object;
-
-    current_damage -= std::fmaxf( 0.f, total_lost_damage );
+    const auto dist = glm::length( exit_trace.end_pos - enter_trace.end_pos );
+    const auto pen_mod = max( 0.f, ( 1.f / penetration_modifier ) );
+    const auto wpn_mod = current_damage * damage_lost + max( 0.f, ( 3.f / penetration_power ) * 1.25f ) * ( pen_mod * 3.f );
+    const auto lost_damage = wpn_mod + ( pen_mod * dist * dist ) / 24.f;
+    current_damage -= max( 0.f, lost_damage );
 
     if ( current_damage < 1.f )
         return false;
 
-    src = exit_trace.end_pos;
-    penetration_count--;
+    eye_position = exit_trace.end_pos;
+    --penetration_count;
 
     return true;
 }
@@ -437,4 +405,33 @@ void penetration_system::clip_trace_to_players( const vector_3d &start, const ve
         if ( player )
             clip_trace_to_player( player, start, end, mask, filter, tr );
     }
+}
+
+bool penetration_system::proxy_trace_to_studio_csgo_hitgroups_priority( c_cs_player *ent, uint32_t contents_mask, vector_3d *origin, c_game_trace *tr, ray_t *ray, matrix_3x4 **mat ) {
+    const auto studio_model = ent->cstudiohdr()->studio_hdr;
+    const auto r_ = uintptr_t( ray );
+    const auto tr_ = uintptr_t( tr );
+    const auto scale_ = ent->model_scale();
+    const auto origin_ = uintptr_t( origin );
+    const auto mat_ = uintptr_t( mat );
+    const auto set_ = uintptr_t( studio_model->hitbox_set( ent->hitbox_set() ) );
+    const auto fn_ = g_addresses.trace_to_studio_csgo_hitgroups_priority.get<uintptr_t>();
+    const auto chdr_ = uintptr_t( ent->cstudiohdr( ) );
+    auto rval = false;
+    __asm
+    {
+			mov edx, r_
+			push tr_
+			push scale_
+			push origin_
+			push contents_mask
+			push mat_
+			push set_
+			push chdr_
+			mov eax, [fn_]
+			call eax
+			add esp, 0x1C
+			mov rval, al
+    }
+    return rval;
 }

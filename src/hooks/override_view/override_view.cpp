@@ -29,8 +29,9 @@ void __fastcall hooks::override_view::hook( REGISTERS, c_view_setup *setup ) {
         math::angle_vectors( angles, &fwd );
         angles.z = g_vars.visuals_other_thirdperson_distance.value;
 
-        c_trace_filter_hitscan filter;
-        filter.skip = globals::local_player;
+        c_trace_filter_skip_two_entities filter;
+        filter.skip1 = globals::local_player;
+        filter.skip2 = nullptr;
 
         c_game_trace tr;
         ray_t ray;

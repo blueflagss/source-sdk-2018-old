@@ -2,6 +2,7 @@
 
 void interfaces::init( ) {
     g_addresses.get_shotgun_spread = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? EB 38 83 EC 08" ) ).add( 0x1 ).rel32( );
+    g_addresses.trace_to_studio_csgo_hitgroups_priority = signature::find( XOR( "client.dll" ), XOR( "55 8B EC 83 E4 ? 81 EC ? ? ? ? 8B C2" ) );
 
     engine_client = create_interface< c_engine_client * >( "engine.dll", HASH_CT( "VEngineClient014" ) );
     client = create_interface< c_base_client * >( "client.dll", HASH_CT( "VClient018" ) );

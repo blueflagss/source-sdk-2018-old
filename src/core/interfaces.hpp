@@ -89,6 +89,7 @@ inline interfaces g_interfaces = { };
 class addresses {
 public:
     address get_shotgun_spread;
+    address trace_to_studio_csgo_hitgroups_priority;
 };
 
 inline addresses g_addresses = { };

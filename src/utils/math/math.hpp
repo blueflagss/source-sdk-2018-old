@@ -8,6 +8,12 @@ struct box {
     float x, y, w, h;
 };
 
+typedef __declspec( align( 16 ) ) union {
+    float f[ 4 ];
+    uint32_t u[ 4 ];
+    __m128 v;
+} m128;
+
 namespace math
 {
     inline constexpr float deg_to_rad( float x ) {
@@ -33,6 +39,13 @@ namespace math
         };
     }
 
+    __forceinline float sqrt_ps( const float squared ) {
+        m128 tmp;
+        tmp.f[ 0 ] = squared;
+        tmp.v = _mm_sqrt_ps( tmp.v );
+        return tmp.f[ 0 ];
+    }
+
     void rotate_point( int &x, int &y, float rotation );
     void rotate_point( glm::vec2 &point, float rotation );
     void random_seed( int seed );
@@ -40,6 +53,7 @@ namespace math
     vector_3d normalize_angle( vector_3d angle );
     void vector_transform( const vector_3d in1, const matrix_3x4 &in2, vector_3d &out );
     void angle_vectors( vector_3d angles, vector_3d *forward );
+    vector_3d angle_vectors( vector_3d angles );
     void sin_cos( float radians, float *sine, float *cosine );
     void angle_vectors( const vector_3d &angles, vector_3d *forward, vector_3d *right, vector_3d *up );
     float dot_product( const vector_3d &a, const vector_3d &b );

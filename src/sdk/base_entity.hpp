@@ -84,6 +84,7 @@ public:
     NETVAR( simtime, float, "DT_BaseEntity", "m_flSimulationTime" );
     NETVAR( old_simtime, float, "DT_BaseEntity", "m_flSimulationTime", +0x4 );
     NETVAR( ground_entity_handle, uint32_t, "DT_BasePlayer", "m_hGroundEntity" );
+    NETVAR( model_scale, float, "DT_BaseAnimating", "m_flModelScale" );
     OFFSET( bone_count, int, 0x2908 );
     OFFSET( bone_cache, matrix_3x4 *, 0x28FC );
 

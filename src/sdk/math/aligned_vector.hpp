@@ -29,5 +29,12 @@ public:
         return *this;
     }
 
+    __forceinline float length( ) const {
+        m128 tmp;
+        tmp.f[ 0 ] = x * x + y * y + z * z;
+        tmp.v = _mm_sqrt_ps( tmp.v );
+        return tmp.f[ 0 ];
+    }
+
     float w;
 };

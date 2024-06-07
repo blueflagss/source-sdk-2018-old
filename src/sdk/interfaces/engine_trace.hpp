@@ -102,7 +102,7 @@ class c_trace_filter_hitscan : public c_trace_filter {
 public:
     virtual bool should_hit_entity( void *entity_handle, int contents_mask );
     virtual trace_type get_trace_type( ) const;
-    c_base_entity *skip = nullptr;
+    c_base_entity *player = nullptr;
 };
 
 class c_trace_filter_skip_two_entities : public c_trace_filter {
