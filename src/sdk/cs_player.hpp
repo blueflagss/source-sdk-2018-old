@@ -79,6 +79,7 @@ public:
     void get_bone_position( int bone, vector_3d &out, vector_3d &q );
     int lookup_bone( const char *name );
     void modify_eye_position( c_csgo_player_animstate *state, vector_3d *input_eye_pos, matrix_3x4 *bones );
+    void invalidate_bone_cache( );
     bool can_attack( );
     bool get_aim_matrix( vector_3d angle, matrix_3x4 *bones );
     vector_3d get_shoot_position( );

@@ -141,7 +141,10 @@ void aimbot::search_targets( ) {
                 if ( !player || !player->alive( ) )
                     break;
 
-                targets.emplace_back( aim_player{ player, player->index( ), player->health( ), glm::length( player->origin( ) - globals::local_player->origin( ) ), math::calculate_fov( globals::view_angles, math::clamp_angle( player->get_shoot_position( ) ) ), 0, &g_animations.lag_info[ player->index( ) ].anim_records.front( ) } );
+                if ( g_animations.lag_info[ player->index( ) ].anim_records.empty( ) )
+                    continue;
+
+                targets.emplace_back( aim_player{ player, player->index( ), player->health( ), glm::length( player->origin( ) - globals::local_player->origin( ) ), math::calculate_fov( globals::view_angles, math::clamp_angle( player->get_shoot_position( ) ) ), 0, g_animations.lag_info[ player->index( ) ].lag_records.front( ) } );
             } break;
         }
     }

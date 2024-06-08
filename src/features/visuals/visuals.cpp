@@ -238,6 +238,9 @@ void visuals::render_offscreen( c_cs_player *player, const player_info_t &player
     if ( !player->alive( ) || player->dormant( ) )
         return;
 
+    if ( g_animations.lag_info[ player->index( ) ].anim_records.empty( ) )
+        return;
+
     auto &log = g_animations.lag_info[ player->index( ) ].anim_records.front( );
 
     vector_2d origin_screen;

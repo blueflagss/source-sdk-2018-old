@@ -28,9 +28,6 @@ void lag_record::reset( c_cs_player *player ) {
 }
 
 bool lag_record::is_valid( ) {
-    if ( sim_time <= old_sim_time )
-        return false;
-
     auto net_channel = g_interfaces.engine_client->get_net_channel_info( );
 
     if ( !net_channel )
@@ -38,7 +35,7 @@ bool lag_record::is_valid( ) {
 
     const auto correct = std::clamp< float >( net_channel->get_latency( 1 ) + globals::lerp_amount, 0.0f, globals::cvars::sv_maxunlag->get_float( ) );
 
-    return fabs( correct - ( g_interfaces.global_vars->curtime - this->sim_time ) ) <= 0.2f - game::ticks_to_time( 1 );
+    return abs( correct - ( game::ticks_to_time( globals::local_player->tick_base( ) ) - this->sim_time ) ) <= 0.2f;
 }
 
 template< class T >
@@ -60,36 +57,38 @@ bool animation_sync::get_lagcomp_bones( c_cs_player *player, std::array< matrix_
 
     auto &log = g_animations.lag_info[ player->index( ) ];
 
-    if ( !log.anim_records.empty( ) ) {
-        const auto lag_records = log.anim_records;
+    if ( !log.lag_records.empty( ) ) {
+        const auto lag_records = log.lag_records;
 
         for ( int i = static_cast< int >( lag_records.size( ) ) - 1; i >= 0; i-- ) {
             auto &record = lag_records[ i ];
 
-            if ( time_valid_no_deadtime( lag_records[ i ].sim_time ) ) {
-                if ( glm::length( record.origin - player->origin( ) ) < 1.0f )
+            if ( !record ) continue;
+
+            if ( time_valid_no_deadtime( lag_records[ i ]->sim_time ) ) {
+                if ( glm::length( lag_records[ i ]->origin - player->origin( ) ) < 1.0f )
                     return false;
 
                 bool end = ( i - 1 ) <= 0;
-                vector_3d next = end ? player->origin( ) : lag_records[ i - 1 ].origin;
-                float time_next = end ? player->simtime( ) : lag_records[ i - 1 ].sim_time;
+                vector_3d next = end ? player->origin( ) : lag_records[ i - 1 ]->origin;
+                float time_next = end ? player->simtime( ) : lag_records[ i - 1 ]->sim_time;
 
                 float correct = net_channel->get_latency( 0 ) + net_channel->get_latency( 1 ) + globals::lerp_amount;
-                float time_delta = time_next - lag_records[ i ].sim_time;
+                float time_delta = time_next - lag_records[ i ]->sim_time;
                 float add = end ? 0.2f : time_delta;
-                float deadtime = lag_records[ i ].sim_time;
+                float deadtime = lag_records[ i ]->sim_time;
 
                 float curtime = g_interfaces.global_vars->curtime;
                 float delta = deadtime - curtime;
 
                 float mul = 1.f / add;
 
-                auto lerp = next + ( lag_records[ i ].origin - next ) * std::clamp( delta * mul, 0.0f, 1.0f );
+                auto lerp = next + ( lag_records[ i ]->origin - next ) * std::clamp( delta * mul, 0.0f, 1.0f );
 
-                out = lag_records[ i ].bones;
+                out = lag_records[ i ]->bones;
 
                 for ( auto &iter : out )
-                    iter.set_origin( iter.get_origin( ) - lag_records[ i ].origin + lerp );
+                    iter.set_origin( iter.get_origin( ) - lag_records[ i ]->origin + lerp );
 
                 return true;
             }
@@ -274,6 +273,7 @@ void animation_sync::update_player_animation( c_cs_player *player, lag_record &r
     player->set_abs_origin( backup_abs_origin );
     player->pose_parameters( ) = record.pose_parameters;
 
+    player->invalidate_bone_cache( );
     std::memcpy( player->anim_overlays( ), record.layer_records.data( ), record.layer_records.size( ) );
     player->anim_state( ) = record.anim_state;
 
@@ -409,7 +409,7 @@ void animation_sync::on_net_update_end( ) {
             }
 
             /* dead time (more expensive, but serves as a backup) */
-            if ( record.sim_time < g_interfaces.engine_client->get_last_time_stamp( ) + game::ticks_to_time( net_channel->get_latency( 0 ) ) - globals::cvars::sv_maxunlag->get_float( ) ) {
+            if ( record.sim_time < g_interfaces.engine_client->get_last_time_stamp( ) + game::ticks_to_time( net_channel->get_latency( 0 ) + net_channel->get_latency( 1 ) ) - globals::cvars::sv_maxunlag->get_float( ) ) {
                 info.anim_records.current += ( info.anim_records.size( ) - i );
                 info.anim_records.count -= ( info.anim_records.size( ) - i );
                 break;

@@ -78,6 +78,13 @@ void c_cs_player::modify_eye_position( c_csgo_player_animstate *state, vector_3d
     }
 }
 
+void c_cs_player::invalidate_bone_cache( ) {
+    static auto &g_model_bone_counter = *signature::find( XOR( "client.dll" ), XOR( "3B 05 ? ? ? ? 0F 84 ? ? ? ? 8B 47" ) ).add( 2 ).deref( ).get< int * >( );
+
+    *reinterpret_cast< float * >( reinterpret_cast< uintptr_t >( this ) + 0x2914 ) = 0xFF7FFFFF;
+    *reinterpret_cast< int * >( reinterpret_cast< uintptr_t >( this ) + 0x2680 ) = g_model_bone_counter - 1;
+}
+
 bool c_cs_player::can_attack( ) {
     const auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( this->weapon_handle( ) );
 
