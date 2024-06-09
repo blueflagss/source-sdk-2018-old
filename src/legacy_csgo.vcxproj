@@ -276,7 +276,7 @@
     <ClInclude Include="hooks\reset\reset.hpp" />
     <ClInclude Include="hooks\wnd_proc\wnd_proc.hpp" />
     <ClInclude Include="includes.hpp" />
-    <ClInclude Include="features\animations\anims.hpp" />
+    <ClInclude Include="features\animations\animation_sync.hpp" />
     <ClInclude Include="resources\font_awesome.hpp" />
     <ClInclude Include="resources\montserrat.hpp" />
     <ClInclude Include="resources\montserrat_semibold.hpp" />
@@ -487,7 +487,7 @@
     <ClCompile Include="hooks\reset\reset.cpp" />
     <ClCompile Include="hooks\wnd_proc\wnd_proc.cpp" />
     <ClCompile Include="includes.cpp" />
-    <ClCompile Include="features\animations\anims.cpp" />
+    <ClCompile Include="features\animations\animation_sync.cpp" />
     <ClCompile Include="sdk\base_entity.cpp" />
     <ClCompile Include="sdk\base_player.cpp" />
     <ClCompile Include="sdk\interfaces\cvar.cpp" />

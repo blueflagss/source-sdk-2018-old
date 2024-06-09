@@ -144,7 +144,7 @@ void aimbot::search_targets( ) {
                 if ( g_animations.lag_info[ player->index( ) ].anim_records.empty( ) )
                     continue;
 
-                targets.emplace_back( aim_player{ player, player->index( ), player->health( ), glm::length( player->origin( ) - globals::local_player->origin( ) ), math::calculate_fov( globals::view_angles, math::clamp_angle( player->get_shoot_position( ) ) ), 0, g_animations.lag_info[ player->index( ) ].lag_records.front( ) } );
+                targets.emplace_back( aim_player{ player, player->index( ), player->health( ), glm::length( player->origin( ) - globals::local_player->origin( ) ), math::calculate_fov( globals::view_angles, math::clamp_angle( player->get_shoot_position( ) ) ), 0, &g_animations.lag_info[ player->index( ) ].anim_records.front( ) } );
             } break;
         }
     }
@@ -276,12 +276,23 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
 
         vector_3d out_position = { };
 
+        const auto backup_origin = target.entity->origin( );
+        const auto backup_mins = target.entity->collideable( )->mins( );
+        const auto backup_maxs = target.entity->collideable( )->maxs( );
+        const auto backup_angles = target.entity->get_abs_angles( );
+        const auto backup_bones = target.entity->bone_cache( );
+
         if ( get_best_aim_position( target, out_damage, out_position, ideal ) ) {
             best.target = target.entity;
             best.best_point = out_position;
             best.damage = out_damage;
             best.record = ideal;
         }
+
+        target.entity->origin( ) = backup_origin;
+        target.entity->set_collision_bounds( backup_mins, backup_maxs );
+        target.entity->set_abs_angles( backup_angles );
+        target.entity->bone_cache( ) = backup_bones;
 
         auto last = g_resolver.find_last_record( &target );
 
@@ -294,6 +305,11 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
             best.damage = out_damage;
             best.record = last;
         }
+
+                target.entity->origin( ) = backup_origin;
+        target.entity->set_collision_bounds( backup_mins, backup_maxs );
+        target.entity->set_abs_angles( backup_angles );
+        target.entity->bone_cache( ) = backup_bones;
     };
 
     if ( !best.record || !best.target || best.damage <= 0.f )
@@ -309,16 +325,23 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
     const auto ret = g_animations.build_bones( globals::local_player, bones.data( ), g_interfaces.global_vars->curtime );
 
     globals::local_player->pose_parameters( )[ 12 ] = backup_pose;
-    
+
     const auto state = globals::local_player->anim_state( );
 
     if ( ret && state )
         globals::local_player->modify_eye_position( state, &best.best_point, bones.data( ) );
 
-    const bool targetting_record = ( best.target && best.target->alive( ) && best.record );
+    const auto targetting_record = ( best.target && best.target->alive( ) && best.record );
     const auto calc_pos = math::vector_angle( best.best_point - globals::shoot_position );
 
     bool should_target = g_vars.aimbot_automatic_shoot.value || cmd->buttons & buttons::attack;
+
+    /* restore player data */
+    const auto backup_origin = best.target->origin( );
+    const auto backup_mins = best.target->collideable( )->mins( );
+    const auto backup_maxs = best.target->collideable( )->maxs( );
+    const auto backup_angles = best.target->get_abs_angles( );
+    const auto backup_bones = best.target->bone_cache( );
 
     best.record->cache( );
 
@@ -335,8 +358,13 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
         if ( !g_vars.aimbot_silent.value )
             g_interfaces.engine_client->set_view_angles( cmd->view_angles );
 
-        cmd->tick_count = game::time_to_ticks( best.record->sim_time ) + game::time_to_ticks( globals::lerp_amount );
+        cmd->tick_count = game::time_to_ticks( best.record->sim_time + globals::lerp_amount );
 
         *globals::packet = true;
     }
+
+    best.target->origin( ) = backup_origin;
+    best.target->set_collision_bounds( backup_mins, backup_maxs );
+    best.target->set_abs_angles( backup_angles );
+    best.target->bone_cache( ) = backup_bones;
 }

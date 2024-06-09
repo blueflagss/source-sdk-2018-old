@@ -912,7 +912,7 @@
     <ClInclude Include="resources\montserrat_semibold.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="features\animations\anims.hpp">
+    <ClInclude Include="features\animations\animation_sync.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="features\tickbase\tickbase.hpp">
@@ -1292,7 +1292,7 @@
     <ClCompile Include="features\ui\window_setup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="features\animations\anims.cpp">
+    <ClCompile Include="features\animations\animation_sync.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="features\tickbase\tickbase.cpp">
