@@ -144,6 +144,10 @@ public:
     float foot_yaw;
     float last_angle;
     float simtime;
+    vector_3d radar_angle;
+    bool updating_lby;
+    float body;
+    bool on_ground;
     std::array< float, 24 > pose_parameters;
     std::array< c_animation_layer, 13 > animation_layers;
 

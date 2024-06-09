@@ -81,7 +81,9 @@ namespace globals
     inline int target_index{ -1 };
     inline c_user_cmd *user_cmd{ nullptr };
     inline vector_3d view_angles{ };
+    inline vector_3d sent_angles{ };
     inline v_matrix view_matrix{ };
+    inline bool lby_updating{ false };
     inline bool *packet{ nullptr };
     inline bool old_packet{ false };
     inline vector_2d screen_size{ };

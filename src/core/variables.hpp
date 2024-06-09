@@ -75,6 +75,7 @@ namespace config
 
 #pragma region exploits
         CONFIG_VARIABLE( exploits_antiaim, bool, false );
+        CONFIG_VARIABLE( exploits_antiaim_leg_movement, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_pitch_type, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_dir_type, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_yaw_type, int, 0 );

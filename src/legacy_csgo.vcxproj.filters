@@ -936,9 +936,6 @@
     <ClInclude Include="sdk\base_object.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="utils\threading\threading.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="dependencies\threadutils\atomic_lock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1114,6 +1111,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hooks\notify_on_layer_change_weight\notify_on_layer_change_weight.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\do_procedural_footplant\do_procedural_footplant.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\threading\dispatch.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\update_animation_state\update_animation_state.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1464,6 +1470,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks\notify_on_layer_change_weight\notify_on_layer_change_weight.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\do_procedural_footplant\do_procedural_footplant.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\threading\dispatch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\update_animation_state\update_animation_state.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

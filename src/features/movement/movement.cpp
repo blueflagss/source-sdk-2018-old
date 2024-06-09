@@ -1,6 +1,52 @@
 #include "movement.hpp"
 #include <features/engine_prediction/engine_prediction.hpp>
 
+void apply_leg_movement( c_user_cmd *cmd ) { /* premium */
+    float sidemove;   // xmm2_4
+    int new_buttons;  // eax
+    float forwardmove;// xmm1_4
+
+    sidemove = cmd->side_move;
+    new_buttons = cmd->buttons & ~0x618u;
+    forwardmove = cmd->forward_move;
+
+    if ( !g_vars.exploits_antiaim_leg_movement.value ) {
+        if ( forwardmove <= 0.0 ) {
+            if ( forwardmove < 0.0 )
+                new_buttons |= buttons::back;
+        } else {
+            new_buttons |= buttons::forward;
+        }
+
+        if ( sidemove > 0.0 )
+            goto LABEL_15;
+
+        if ( sidemove >= 0.0 )
+            goto LABEL_18;
+        goto LABEL_17;
+    }
+
+    if ( g_vars.exploits_antiaim_leg_movement.value != 1 )
+        goto LABEL_18;
+
+    if ( forwardmove <= 0.0 ) {
+        if ( forwardmove < 0.0 )
+            new_buttons |= buttons::forward;
+    } else {
+        new_buttons |= buttons::back;
+    }
+    if ( sidemove > 0.0 ) {
+    LABEL_17:
+        new_buttons |= buttons::move_left;
+        goto LABEL_18;
+    }
+    if ( sidemove < 0.0 )
+    LABEL_15:
+        new_buttons |= buttons::move_right;
+LABEL_18:
+    cmd->buttons = new_buttons;
+}
+
 void movement::on_create_move( c_user_cmd *cmd, const vector_3d &old_angles ) {
     if ( !globals::local_player )
         return;
@@ -10,21 +56,23 @@ void movement::on_create_move( c_user_cmd *cmd, const vector_3d &old_angles ) {
 
     if ( globals::local_player->move_type( ) == move_types::ladder || globals::local_player->move_type( ) == move_types::noclip )
         return;
-
+    
     ground_ticks = 0;
 
     if ( globals::local_player->flags( ) & player_flags::on_ground ) {
         if ( ground_ticks <= 3 )
             ground_ticks++;
-    } 
-    
+    }
+
     else {
         ground_ticks = 0;
     }
 
+    apply_leg_movement( cmd );
+
     if ( !( globals::local_player->flags( ) & player_flags::on_ground ) ) {
         if ( g_vars.misc_bunny_hop.value )
-                cmd->buttons &= ~buttons::jump;
+            cmd->buttons &= ~buttons::jump;
 
         if ( math::length_2d( g_prediction.predicted_velocity ) >= 30.0f ) {
             switch ( g_vars.misc_auto_strafe_type.value ) {
@@ -35,7 +83,6 @@ void movement::on_create_move( c_user_cmd *cmd, const vector_3d &old_angles ) {
                         cmd->side_move = cmd->command_number % 2 ? -globals::cvars::cl_sidespeed->get_float( ) : globals::cvars::cl_sidespeed->get_float( );
                         cmd->forward_move = globals::cvars::cl_forwardspeed->get_float( );
                     }
-
                 } break;
                 case strafe_type::movement_keys: {
                     directional_strafe( cmd, old_angles );
@@ -163,14 +210,14 @@ void movement::correct_movement( c_user_cmd *cmd, const vector_3d &wish_directio
     if ( !( globals::local_player->flags( ) & FL_ONGROUND ) && cmd->view_angles.z != 0.f )
         cmd->side_move = 0.f;
 
-    vector_3d move = { cmd->forward_move, cmd->side_move, 0.f };
-    float len = math::normalize_place( move );
+    auto move_dir = vector_3d( cmd->forward_move, cmd->side_move, 0.f );
+    auto len = math::normalize_place( move_dir );
+
     if ( !len )
         return;
 
-    vector_3d move_angle = math::vector_angle( move );
-
-    float delta = cmd->view_angles.y - wish_direction.y;
+    auto move_angle = math::vector_angle( move_dir );
+    auto delta = cmd->view_angles.y - wish_direction.y;
 
     move_angle.y += delta;
 
@@ -178,7 +225,7 @@ void movement::correct_movement( c_user_cmd *cmd, const vector_3d &wish_directio
 
     dir *= len;
 
-    if (globals::local_player->move_type() == move_types::ladder) {
+    if ( globals::local_player->move_type( ) == move_types::ladder ) {
         if ( cmd->view_angles.x >= 45.f && wish_direction.x < 45.f && std::abs( delta ) <= 65.f )
             dir.x = -dir.x;
 

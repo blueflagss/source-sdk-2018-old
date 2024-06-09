@@ -174,12 +174,7 @@ public:
     int m_nAnimstateModelVersion;
 
     void update( const vector_3d &angle ) {
-        static auto update = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 0F 57 C0 0F 11 86" ) ).add( 0x1 ).rel32( ).get< void( __vectorcall * )( void *, void *, float, float, float, void * ) >( );
-
-        if ( !update )
-            return;
-
-        update( this, nullptr, angle.z, angle.y, angle.x, nullptr );
+        return g_addresses.update_animation_state.get< void( __vectorcall * )( void *, void *, float, float, float, void * ) >( )( this, nullptr, angle.z, angle.y, angle.x, nullptr );
     }
 
     const char *get_weapon_prefix( ) {

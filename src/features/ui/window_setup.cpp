@@ -47,7 +47,7 @@ void menu::init( ) {
     auto window_center = vector_2d( ( globals::ui::screen_size.x - this->main_window_dimensions.x ) / 2, ( globals::ui::screen_size.y - this->main_window_dimensions.y ) / 2 );
 
     /* initialize menu. */
-    main_window = this->add_window( "Hypnotic", "", nullptr, window_center, this->main_window_dimensions, WINDOW_MAIN );
+    main_window = this->add_window( "", "", nullptr, window_center, this->main_window_dimensions, WINDOW_MAIN );
     {
         auto ragebot = main_window->add_tab( "Ragebot", ICON_FA_CROSSHAIRS, 3 );
         {
@@ -79,7 +79,7 @@ void menu::init( ) {
                 general->add_object< penumbra::slider< int > >( "Minimum damage", &g_vars.aimbot_min_damage.value, 0, 100, "%" );
             }
 
-            auto antiaim = ragebot->add_child( "Anti-aim", 2, false );
+            auto antiaim = ragebot->add_child( "Anti-aim", 1, false );
             {
                 antiaim->add_object< penumbra::checkbox >( "Enabled#Anti-aim", &g_vars.exploits_antiaim.value );
                 antiaim->add_object< penumbra::combobox >( "Pitch type", &g_vars.exploits_antiaim_pitch_type.value, std::deque< std::string >{ "Down", "Up", "Zero" } );
@@ -88,9 +88,10 @@ void menu::init( ) {
                 antiaim->add_object< penumbra::slider< float > >( "Jitter/Spin Range", &g_vars.exploits_antiaim_range.value, 0.f, 360.f, "" );
                 antiaim->add_object< penumbra::slider< float > >( "Spin Speed", &g_vars.exploits_antiaim_spin_speed.value, 0.f, 10.f, "" );
                 antiaim->add_object< penumbra::checkbox >( "Fake angles", &g_vars.exploits_antiaim_fake.value );
-                antiaim->add_object< penumbra::combobox >( "Fake Yaw type", &g_vars.exploits_antiaim_fake_yaw_type.value, std::deque< std::string >{ "Default", "Opposite" } );
-                antiaim->add_object< penumbra::checkbox >( "Fakelag", &g_vars.exploits_fakelag.value );
+                antiaim->add_object< penumbra::combobox >( "Fake yaw type", &g_vars.exploits_antiaim_fake_yaw_type.value, std::deque< std::string >{ "Default", "Opposite" } );
+                antiaim->add_object< penumbra::checkbox >( "Fake lag", &g_vars.exploits_fakelag.value );
                 antiaim->add_object< penumbra::slider< int > >( "Limit#fakelag", &g_vars.exploits_fakelag_limit.value, 0, 16, " ticks" );
+                antiaim->add_object< penumbra::combobox >( "Leg movement", &g_vars.exploits_antiaim_leg_movement.value, std::deque< std::string >{ "None", "Slide", "Never slide" } );
             }
         }
 

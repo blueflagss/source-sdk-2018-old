@@ -39,10 +39,12 @@
 #include <hooks/notify_on_layer_change_cycle/notify_on_layer_change_cycle.hpp>
 #include <hooks/notify_on_layer_change_weight/notify_on_layer_change_weight.hpp>
 #include <hooks/do_procedural_footplant/do_procedural_footplant.hpp>
+#include <hooks/update_animation_state/update_animation_state.hpp>
 
 std::unique_ptr< event_handler > game_event_handler = nullptr;
 
 void hooks::impl::init( ) {
+    update_animation_state::init( );
     do_procedural_footplant::init( );
     notify_on_layer_change_cycle::init( );
     notify_on_layer_change_weight::init( );
@@ -85,6 +87,7 @@ void hooks::impl::init( ) {
 }
 
 void hooks::impl::remove( ) {
+    update_animation_state::original = { };
     do_procedural_footplant::original = { };
     hud_scope_paint::original = { };
     notify_on_layer_change_cycle::original = { };

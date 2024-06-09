@@ -91,6 +91,7 @@ public:
     address get_shotgun_spread;
     address trace_to_studio_csgo_hitgroups_priority;
     address tier0_allocated_thread_ids;
+    address update_animation_state;
 };
 
 inline addresses g_addresses = { };

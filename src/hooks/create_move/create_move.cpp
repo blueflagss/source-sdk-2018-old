@@ -95,15 +95,16 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         }
         g_prediction.finish( cmd );
 
-        vector_3d old_angles = math::clamp_angle( globals::view_angles );
-
         vector_3d engine_angles;
         g_interfaces.engine_client->get_view_angles( engine_angles );
 
         auto angle = math::clamp_angle( engine_angles );
 
         g_interfaces.engine_client->set_view_angles( angle );
-        g_movement.correct_movement( cmd, old_angles );
+        g_movement.correct_movement( cmd, math::clamp_angle( globals::view_angles ) );
+
+        if ( *globals::packet )
+            globals::sent_angles = cmd->view_angles;
     }
 
     backup_players( true );

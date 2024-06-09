@@ -243,10 +243,9 @@ void animation_sync::update_velocity( c_cs_player *player, lag_record *record, l
 }
 
 void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
-    if ( !globals::local_player )
-        return;
+    globals::lby_updating = false;
 
-    if ( g_interfaces.client_state->choked_commands( ) != 0 )
+    if ( !globals::local_player )
         return;
 
     auto state = globals::local_player->anim_state( );
@@ -255,11 +254,17 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
         return;
     }
 
+    if ( g_interfaces.client_state->choked_commands( ) != 0 ) {
+        foot_yaw = state->m_flFootYaw;
+        globals::local_angles = user_cmd->view_angles;
+        return;
+    }
+
     const auto backup_angle = globals::local_player->pl( ).v_angle;
 
     last_angle = user_cmd->view_angles.y;
 
-    glm::vec3 angles = user_cmd->view_angles;
+    auto angles = user_cmd->view_angles;
 
     if ( state->m_bLanding ) {
         angles.x = -10.f;
@@ -278,7 +283,7 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
     const auto client_side_backup = globals::local_player->client_side_animation( );
 
     globals::allow_animations[ globals::local_player->index( ) ] = globals::local_player->client_side_animation( ) = true;
-    g_rebuilt.update_animation_state( state, globals::local_angles, globals::local_player->simtime( ) );
+    g_rebuilt.update_animation_state( state, globals::sent_angles, globals::local_player->simtime( ) );
     globals::allow_animations[ globals::local_player->index( ) ] = false;
     globals::local_player->client_side_animation( ) = client_side_backup;
 
@@ -289,12 +294,18 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
         globals::local_player->flags( ) |= player_flags::on_ground;
     }
 
+    if ( !on_ground && state->m_bOnGround ) {
+        body = globals::sent_angles.y;
+        lower_body_realign_timer = g_interfaces.global_vars->curtime;
+    }
+
     if ( state->m_bOnGround ) {
         if ( state->m_flVelocityLengthXY > 0.1f ) {
             lower_body_realign_timer = g_interfaces.global_vars->curtime + 0.22f;
         }
 
         else if ( g_interfaces.global_vars->curtime > lower_body_realign_timer && std::abs( valve_math::angle_diff( state->m_flFootYaw, state->m_flEyeYaw ) ) > 35.f ) {
+            globals::lby_updating = true;
             lower_body_realign_timer = g_interfaces.global_vars->curtime + 1.1f;
         }
     }
@@ -302,6 +313,7 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
     memcpy( globals::local_player->anim_overlays( ), animation_layers.data( ), sizeof( c_animation_layer ) * 13 );
     globals::local_player->pose_parameters( ) = pose_parameters;
 
+    on_ground = state->m_bOnGround;
     foot_yaw = state->m_flFootYaw;
     globals::local_player->pl( ).v_angle = backup_angle;
 }
@@ -313,9 +325,12 @@ void animation_sync::maintain_local_animations( ) {
     if ( !g_interfaces.client_state->choked_commands( ) )
         memcpy( animation_layers.data( ), globals::local_player->anim_overlays( ), sizeof( c_animation_layer ) * 13 );
 
-    globals::local_player->set_abs_angles( glm::vec3{ 0.f, foot_yaw, 0.f } );
+    globals::local_player->set_abs_angles( vector_3d( 0.f, foot_yaw, 0.f ) );
     memcpy( globals::local_player->anim_overlays( ), animation_layers.data( ), sizeof( c_animation_layer ) * 13 );
     globals::local_player->pose_parameters( ) = pose_parameters;
+
+    if ( g_interfaces.input->camera_in_thirdperson )
+        g_interfaces.prediction->set_local_view_angles( radar_angle );
 }
 
 void animation_sync::update_player_animation( c_cs_player *player, lag_record &record, lag_record *previous ) {
