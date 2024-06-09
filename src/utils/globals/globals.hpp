@@ -54,6 +54,7 @@ namespace globals
         inline convar *cl_predict{ nullptr };
         inline convar *cl_lagcompensation{ nullptr };
         inline convar *sv_maxupdaterate{ nullptr };
+        inline convar *cam_ideallag{ nullptr };
         inline convar *sv_minupdaterate{ nullptr };
         inline convar *r_DrawSpecificStaticProp{ nullptr };
         inline convar *cl_foot_contact_shadows{ nullptr };
@@ -82,9 +83,11 @@ namespace globals
     inline vector_3d view_angles{ };
     inline v_matrix view_matrix{ };
     inline bool *packet{ nullptr };
+    inline bool old_packet{ false };
     inline vector_2d screen_size{ };
     inline vector_3d shoot_position{ };
     inline c_cs_player *local_player{ nullptr };
+    inline vector_3d local_angles{ };
     inline c_cs_weapon_base *local_weapon{ nullptr };
     inline std::array< bool, 64 > allow_animations{ };
     inline std::array< bool, 65 > is_building_bones{ };

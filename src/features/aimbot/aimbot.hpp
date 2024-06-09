@@ -1,5 +1,5 @@
 #pragma once
-#include <features/animations/anims.hpp>
+#include <features/animations/animation_sync.hpp>
 #include <globals.hpp>
 
 struct aim_player {
@@ -54,7 +54,6 @@ public:
 
     void reset( );
     bool hitchance( c_cs_player *player, const vector_3d &angle, lag_record *record );
-    void search_building( c_base_object *building );
     void on_create_move( c_user_cmd *cmd );
     bool setup_point_for_scan( c_cs_player *player, lag_record &record, int hit_group );
     bool get_hitbox_position( c_cs_player *player, matrix_3x4 *bones, int hitbox, vector_3d &position );

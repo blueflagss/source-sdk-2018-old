@@ -11,6 +11,17 @@ void movement::on_create_move( c_user_cmd *cmd, const vector_3d &old_angles ) {
     if ( globals::local_player->move_type( ) == move_types::ladder || globals::local_player->move_type( ) == move_types::noclip )
         return;
 
+    ground_ticks = 0;
+
+    if ( globals::local_player->flags( ) & player_flags::on_ground ) {
+        if ( ground_ticks <= 3 )
+            ground_ticks++;
+    } 
+    
+    else {
+        ground_ticks = 0;
+    }
+
     if ( !( globals::local_player->flags( ) & player_flags::on_ground ) ) {
         if ( g_vars.misc_bunny_hop.value )
                 cmd->buttons &= ~buttons::jump;

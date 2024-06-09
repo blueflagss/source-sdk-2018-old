@@ -1,10 +1,11 @@
 #include "aimbot.hpp"
+
 #include <core/config.hpp>
-#include <threadutils/threading.h>
+#include <features/engine_prediction/engine_prediction.hpp>
 #include <features/penetration/penetration.hpp>
 #include <features/resolver/resolver.hpp>
-#include <features/engine_prediction/engine_prediction.hpp>
 #include <features/ui/notifications/notifications.hpp>
+#include <threadutils/threading.h>
 
 bool aimbot::setup_point_for_scan( c_cs_player *player, lag_record &record, int hit_group ) {
     return true;
@@ -167,8 +168,10 @@ void aimbot::search_targets( ) {
 bool aimbot::get_best_aim_position( aim_player &target, float &dmg, vector_3d &position, lag_record *record ) {
     bool done = false;
 
-    if ( !target.entity || target.entity->dormant( ) )
+    if ( !record || !target.entity || target.entity->dormant( ) )
         return false;
+
+    record->cache( );
 
     float scan_damage = 0.0f;
     vector_3d scan_position = { };
@@ -182,7 +185,7 @@ bool aimbot::get_best_aim_position( aim_player &target, float &dmg, vector_3d &p
         if ( !get_hitbox_position( target.entity, record->bones.data( ), hitbox, out ) )
             continue;
 
-        auto results = g_penetration.run( globals::shoot_position, out, target.entity, false );
+        auto results = g_penetration.run( globals::shoot_position, out, target.entity, record->bones, false );
 
         if ( results.out_damage > g_vars.aimbot_min_damage.value ) {
             scan_damage = results.out_damage;
@@ -201,7 +204,7 @@ bool aimbot::get_best_aim_position( aim_player &target, float &dmg, vector_3d &p
                 }
             }
 
-            break;       
+            break;
         }
     }
 
@@ -229,8 +232,13 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
     if ( !globals::local_player->alive( ) )
         return;
 
-    //if ( globals::local_weapon->is_melee( ) )
-    //    return;
+    if ( !globals::local_player->can_attack( ) )
+        return;
+
+    auto data = globals::local_weapon->get_weapon_data( );
+
+    if ( data->weapon_type == weapon_type::type_knife || data->weapon_type >= weapon_type::type_c4 )
+        return;
 
     search_targets( );
 
@@ -279,34 +287,11 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
 
         vector_3d out_position = { };
 
-        const auto backup_flags = target.entity->flags( );
         const auto backup_origin = target.entity->origin( );
-        const auto backup_mins = target.entity->mins( );
-        const auto backup_maxs = target.entity->maxs( );
-        const auto backup_bone_cache = target.entity->bone_cache( );
-        const auto backup_abs_origin = target.entity->get_abs_origin( );
-
-        auto apply_record = [ & ]( lag_record *record ) -> void {
-            if ( !target.entity->is_player( ) || !target.entity->alive( ) ) return;
-
-            target.entity->flags( ) = record->flags;
-            target.entity->origin( ) = record->origin;
-            target.entity->bone_cache( ) = record->bones.data( );
-            target.entity->mins( ) = record->mins;
-            target.entity->maxs( ) = record->maxs;
-        };
-
-        auto restore_record = [ & ]( ) -> void {
-            if ( !target.entity->is_player( ) || !target.entity->alive( ) ) return;
-
-            target.entity->flags( ) = backup_flags;
-            target.entity->origin( ) = backup_origin;
-            target.entity->bone_cache( ) = backup_bone_cache;
-            target.entity->mins( ) = backup_mins;
-            target.entity->maxs( ) = backup_maxs;
-        };
-
-        apply_record( ideal );
+        const auto backup_mins = target.entity->collideable( )->mins( );
+        const auto backup_maxs = target.entity->collideable( )->maxs( );
+        const auto backup_angles = target.entity->get_abs_angles( );
+        const auto backup_bones = target.entity->bone_cache( );
 
         if ( get_best_aim_position( target, out_damage, out_position, ideal ) ) {
             best.target = target.entity;
@@ -315,14 +300,15 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
             best.record = ideal;
         }
 
-        restore_record( );
+        target.entity->origin( ) = backup_origin;
+        target.entity->set_collision_bounds( backup_mins, backup_maxs );
+        target.entity->set_abs_angles( backup_angles );
+        target.entity->bone_cache( ) = backup_bones;
 
         auto last = g_resolver.find_last_record( &target );
 
         if ( !last || last == ideal )
             continue;
-
-        apply_record( last );
 
         if ( get_best_aim_position( target, out_damage, out_position, last ) ) {
             best.target = target.entity;
@@ -331,8 +317,14 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
             best.record = last;
         }
 
-        restore_record( );
+        target.entity->origin( ) = backup_origin;
+        target.entity->set_collision_bounds( backup_mins, backup_maxs );
+        target.entity->set_abs_angles( backup_angles );
+        target.entity->bone_cache( ) = backup_bones;
     };
+    
+    if ( !best.record || !best.target || best.damage <= 0.f )
+        return;
 
     /* re-calculate eye position */
     auto backup_pose = globals::local_player->pose_parameters( )[ 12 ];
@@ -350,10 +342,19 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
     if ( ret && state )
         globals::local_player->modify_eye_position( state, &best.best_point, bones.data( ) );
 
-    const bool targetting_record = ( best.target && best.target->alive( ) && best.record );
+    const auto targetting_record = ( best.target && best.target->alive( ) && best.record );
     const auto calc_pos = math::vector_angle( best.best_point - globals::shoot_position );
 
     bool should_target = g_vars.aimbot_automatic_shoot.value || cmd->buttons & buttons::attack;
+    
+    /* restore player data */
+    const auto backup_origin = best.target->origin( );
+    const auto backup_mins = best.target->collideable( )->mins( );
+    const auto backup_maxs = best.target->collideable( )->maxs( );
+    const auto backup_angles = best.target->get_abs_angles( );
+    const auto backup_bones = best.target->bone_cache( );
+
+    best.record->cache( );
 
     if ( globals::is_targetting = targetting_record && ( should_target && hitchance( best.target, calc_pos, best.record ) ) ) {
         globals::target_index = best.target->index( );
@@ -372,4 +373,9 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
 
         *globals::packet = true;
     }
+
+    best.target->origin( ) = backup_origin;
+    best.target->set_collision_bounds( backup_mins, backup_maxs );
+    best.target->set_abs_angles( backup_angles );
+    best.target->bone_cache( ) = backup_bones;
 }

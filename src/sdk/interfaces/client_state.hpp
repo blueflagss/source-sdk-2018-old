@@ -165,7 +165,7 @@ public:
     float tick_remainder;
     float frametime;
     int last_outgoing_command;
-    int choked_commands;
+    PAD( 4 );
     int last_command_ack;
     int last_server_tick;
     int command_ack;
@@ -176,4 +176,6 @@ public:
     vector_3d ang;
     PAD( 204 );
     client_event_t *events;
+
+    OFFSET( choked_commands, int, 0x4CB0 );
 };

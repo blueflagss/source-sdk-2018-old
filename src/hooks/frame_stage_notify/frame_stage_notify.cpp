@@ -1,5 +1,5 @@
 #include "frame_stage_notify.hpp"
-#include <features/animations/anims.hpp>
+#include <features/animations/animation_sync.hpp>
 #include <features/engine_prediction/engine_prediction.hpp>
 #include <features/visuals/visuals.hpp>
 
@@ -40,6 +40,8 @@ void __fastcall hooks::frame_stage_notify::hook( REGISTERS, client_frame_stage s
         //    //view_model->sequence( ) = g_prediction.sequence;
         //    //view_model->animation_parity( ) = g_prediction.animation_parity;
         //}
+       
+        g_animations.maintain_local_animations( );
     }
 
     original.fastcall< void >( REGISTERS_OUT, stage );
@@ -82,10 +84,9 @@ void __fastcall hooks::frame_stage_notify::hook( REGISTERS, client_frame_stage s
             globals::local_player->view_punch( ) = backup_view_punch;
     }
 
-    if ( stage == frame_net_update_end ) {
-        /* run lag-compensation and animations for players. */
+    /* run lag-compensation when we get last received data. */
+    if ( stage == frame_net_update_end ) 
         g_animations.on_net_update_end( );
-    }
 }
 
 void hooks::frame_stage_notify::init( ) {

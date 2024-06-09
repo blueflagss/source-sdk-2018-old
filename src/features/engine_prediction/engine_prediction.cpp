@@ -32,7 +32,7 @@ void engine_prediction::start( c_user_cmd *ucmd ) {
                 g_interfaces.client_state->delta_tick,
                 g_interfaces.client_state->delta_tick > 0,
                 g_interfaces.client_state->last_command_ack,
-                g_interfaces.client_state->last_outgoing_command + g_interfaces.client_state->choked_commands
+                g_interfaces.client_state->last_outgoing_command + g_interfaces.client_state->choked_commands( )
         );
     }
 

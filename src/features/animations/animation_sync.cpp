@@ -1,4 +1,5 @@
 #include "animation_sync.hpp"
+#include <features/movement/movement.hpp>
 
 void lag_record::reset( c_cs_player *player ) {
     this->player = player;
@@ -164,6 +165,7 @@ bool animation_sync::build_bones( c_cs_player *player, matrix_3x4 *out, float cu
     g_interfaces.global_vars->tick_count = tick_count;
 
     g_interfaces.model_cache->end_lock( );
+
     return setup;
 }
 
@@ -171,7 +173,7 @@ void animation_sync::update_land( c_cs_player *player, lag_record *record, lag_r
     if ( !last_record )
         return;
 
-    bool on_ground = player->flags( ) & FL_ONGROUND;
+    bool on_ground = player->flags( ) & player_flags::on_ground;
 
     record->on_ground = false;
     record->real_on_ground = on_ground;
@@ -211,10 +213,10 @@ void animation_sync::update_velocity( c_cs_player *player, lag_record *record, l
 
         record->anim_velocity = record->velocity;
 
-        if ( record->flags & FL_ONGROUND && record->velocity.length( ) > 0.1f && record->layer_records[ ANIMATION_LAYER_LEAN ].weight == 0.f && record->layer_records[ ANIMATION_LAYER_MOVEMENT_MOVE ].weight < 0.1f )
+        if ( record->flags & player_flags::on_ground && record->velocity.length( ) > 0.1f && record->layer_records[ ANIMATION_LAYER_LEAN ].weight == 0.f && record->layer_records[ ANIMATION_LAYER_MOVEMENT_MOVE ].weight < 0.1f )
             record->fake_walk = true;
 
-        if ( player->flags( ) & FL_ONGROUND && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight > 0.f && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight < 1.f && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].cycle > previous->layer_records[ ANIMATION_LAYER_ALIVELOOP ].cycle ) {
+        if ( player->flags( ) & player_flags::on_ground && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight > 0.f && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight < 1.f && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].cycle > previous->layer_records[ ANIMATION_LAYER_ALIVELOOP ].cycle ) {
             if ( weapon ) {
                 float max_speed = 260.f;
                 auto weapon_info = weapon->get_weapon_data( );
@@ -238,6 +240,95 @@ void animation_sync::update_velocity( c_cs_player *player, lag_record *record, l
         if ( record->fake_walk )
             record->anim_velocity = { 0.f, 0.f, 0.f };
     }
+}
+
+void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
+    if ( !globals::local_player )
+        return;
+
+    if ( g_interfaces.client_state->choked_commands( ) != 0 )
+        return;
+
+    auto state = globals::local_player->anim_state( );
+
+    if ( !state ) {
+        return;
+    }
+
+    const auto backup_angle = globals::local_player->pl( ).v_angle;
+
+    last_angle = user_cmd->view_angles.y;
+
+    glm::vec3 angles = user_cmd->view_angles;
+
+    if ( state->m_bLanding ) {
+        angles.x = -10.f;
+    }
+
+    globals::local_player->pl( ).v_angle = angles;
+    globals::local_player->flags( ) &= ~player_flags::on_ground;
+
+    if ( g_movement.ground_ticks >= 2 ) {
+        globals::local_player->flags( ) |= player_flags::on_ground;
+    }
+
+    memcpy( animation_layers.data( ), globals::local_player->anim_overlays( ), sizeof( c_animation_layer ) * 13 );
+    pose_parameters = globals::local_player->pose_parameters( );
+
+    const auto client_side_backup = globals::local_player->client_side_animation( );
+
+    globals::allow_animations[ globals::local_player->index( ) ] = globals::local_player->client_side_animation( ) = true;
+    g_rebuilt.update_animation_state( state, globals::local_angles, globals::local_player->simtime( ) );
+    globals::allow_animations[ globals::local_player->index( ) ] = false;
+    globals::local_player->client_side_animation( ) = client_side_backup;
+
+    animated_origin[ globals::local_player->index( ) ] = globals::local_player->origin( ); 
+    build_bones( globals::local_player, animated_bones[ globals::local_player->index( ) ].data( ), globals::local_player->simtime( ) );
+
+    if ( g_movement.ground_ticks ) {
+        globals::local_player->flags( ) |= player_flags::on_ground;
+    }
+
+    if ( state->m_bOnGround ) {
+        if ( state->m_flVelocityLengthXY > 0.1f ) {
+            lower_body_realign_timer = g_interfaces.global_vars->curtime + 0.22f;
+        }
+
+        else if ( g_interfaces.global_vars->curtime > lower_body_realign_timer && std::abs( valve_math::angle_diff( state->m_flFootYaw, state->m_flEyeYaw ) ) > 35.f ) {
+            lower_body_realign_timer = g_interfaces.global_vars->curtime + 1.1f;
+        }
+    }
+
+    for ( int i = 0; i < globals::local_player->bone_count( ); i++ )
+        animated_bones[ globals::local_player->index( ) ][ i ].set_origin( animated_bones[ globals::local_player->index( ) ][ i ].get_origin( ) + globals::local_player->origin( ) - globals::local_player->get_render_origin( ) );
+    
+    globals::local_player->attachment_helper( );
+    memcpy( globals::local_player->anim_overlays( ), animation_layers.data( ), sizeof( c_animation_layer ) * 13 );
+    globals::local_player->pose_parameters( ) = pose_parameters;
+
+    foot_yaw = state->m_flFootYaw;
+    globals::local_player->pl( ).v_angle = backup_angle;
+}
+
+void animation_sync::maintain_local_animations( ) {
+    if ( !globals::local_player )
+        return;
+
+    float simulation_time = globals::local_player->simtime( );
+
+    if ( !g_interfaces.client_state->choked_commands( ) )
+        memcpy( animation_layers.data( ), globals::local_player->anim_overlays( ), sizeof( c_animation_layer ) * 13 );
+
+    auto bone_cache = globals::local_player->bone_cache( );
+
+    memcpy( bone_cache, animated_bones[ globals::local_player->index( ) ].data( ), sizeof( matrix_3x4 ) * globals::local_player->bone_count( ) );
+
+    for ( int i = 0; i < globals::local_player->bone_count( ); i++ )
+        animated_bones[ globals::local_player->index( ) ][ i ].set_origin( bone_cache[ i ].get_origin( ) + globals::local_player->origin( ) - globals::local_player->get_render_origin( ) );
+
+    globals::local_player->set_abs_angles( glm::vec3{ 0.f, foot_yaw, 0.f } );
+    memcpy( globals::local_player->anim_overlays( ), animation_layers.data( ), sizeof( c_animation_layer ) * 13 );
+    globals::local_player->pose_parameters( ) = pose_parameters;
 }
 
 void animation_sync::update_player_animation( c_cs_player *player, lag_record &record, lag_record *previous ) {
@@ -279,7 +370,7 @@ void animation_sync::update_player_animation( c_cs_player *player, lag_record &r
         auto last_client_side_anim = player->client_side_animation( );
 
         globals::allow_animations[ player->index( ) ] = player->client_side_animation( ) = true;
-        state->update( player->eye_angles( ) );
+        g_rebuilt.update_animation_state( state, player->eye_angles( ), record.anim_time );
         globals::allow_animations[ player->index( ) ] = false;
         player->client_side_animation( ) = last_client_side_anim;
     };
@@ -304,29 +395,25 @@ void animation_sync::update_player_animation( c_cs_player *player, lag_record &r
     // these issues can only occur when a player is choking data.
     if ( record.choked > 1 && previous && !previous->dormant ) {
         if ( record.on_ground )
-            player->flags( ) |= FL_ONGROUND;
+            player->flags( ) |= player_flags::on_ground;
         else
-            player->flags( ) &= ~FL_ONGROUND;
+            player->flags( ) &= ~player_flags::on_ground;
     }
 
     player->origin( ) = record.origin;
     player->velocity( ) = player->abs_velocity( ) = record.anim_velocity;
-
     player->eflags( ) &= ~( 0x1000 | 0x800 );
 
-    // call resolver here.
-    {
-        const auto speed = math::length_2d( record.velocity );
+    const auto speed = math::length_2d( record.velocity );
 
-        if ( ( record.flags & player_flags::on_ground ) && speed > 0.1f )
-            record.mode = resolve_mode::walk;
+    if ( ( record.flags & player_flags::on_ground ) && speed > 0.1f )
+        record.mode = resolve_mode::walk;
 
-        if ( ( record.flags & player_flags::on_ground ) && ( speed <= 0.1f ) )
-            record.mode = resolve_mode::stand;
+    if ( ( record.flags & player_flags::on_ground ) && ( speed <= 0.1f ) )
+        record.mode = resolve_mode::stand;
 
-        else if ( !( record.flags & player_flags::on_ground ) )
-            record.mode = resolve_mode::air;
-    }
+    else if ( !( record.flags & player_flags::on_ground ) )
+        record.mode = resolve_mode::air;
 
     player->eye_angles( ) = record.eye_angles;
 
@@ -348,7 +435,7 @@ void animation_sync::update_player_animation( c_cs_player *player, lag_record &r
     player->set_abs_angles( vector_3d( 0.f, state->m_flFootYaw, 0.f ) );
 
     std::memcpy( player->anim_overlays( ), record.layer_records.data( ), record.layer_records.size( ) );
-    player->anim_state( ) = record.anim_state;
+    std::memcpy( state, record.anim_state, sizeof( record.anim_state ) );
 
     g_interfaces.global_vars->restore( backup_vars );
     build_bones( player, record.bones.data( ), record.sim_time );
@@ -430,10 +517,12 @@ void animation_sync::on_post_frame_render_start( ) {
 
     static auto update_all_viewmodel_addons = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 5E 8B E5 5D C3 53 57" ) ).add( 0x1 ).rel32( ).get< void( __thiscall * )( void * ) >( );
 
-    auto view_model = globals::local_player->get_view_model( );
+    if ( globals::local_player->viewmodel_handle( ) != 0xFFFFFFFF ) {
+        auto view_model = globals::local_player->get_view_model( );
 
-    if ( view_model )
-        update_all_viewmodel_addons( view_model );
+        if ( view_model )
+            update_all_viewmodel_addons( view_model );
+    }
 }
 
 void animation_sync::on_net_update_end( ) {

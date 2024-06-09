@@ -7,6 +7,10 @@ void globals::cvars::init( ) {
     cl_extrapolate->remove_callbacks( );
     cl_extrapolate->set_int( 0 );
 
+    cam_ideallag = g_interfaces.cvar->find_var( HASH_CT( "cam_ideallag" ) );
+    cam_ideallag->remove_callbacks( );
+    cam_ideallag->set_int( 0 );
+
     cl_interp_ratio = g_interfaces.cvar->find_var( HASH_CT( "cl_interp_ratio" ) );
     cl_updaterate = g_interfaces.cvar->find_var( HASH_CT( "cl_updaterate" ) );
     weapon_accuracy_shotgun_spread_patterns = g_interfaces.cvar->find_var( HASH_CT( "weapon_accuracy_shotgun_spread_patterns" ) );

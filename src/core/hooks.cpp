@@ -36,10 +36,14 @@
 #include <hooks/calc_viewmodel_bob/calc_viewmodel_bob.hpp>
 #include <hooks/render_smoke_overlay/render_smoke_overlay.hpp>
 #include <hooks/hud_scope_paint/hud_scope_paint.hpp>
+#include <hooks/notify_on_layer_change_cycle/notify_on_layer_change_cycle.hpp>
+#include <hooks/notify_on_layer_change_weight/notify_on_layer_change_weight.hpp>
 
 std::unique_ptr< event_handler > game_event_handler = nullptr;
 
 void hooks::impl::init( ) {
+    notify_on_layer_change_cycle::init( );
+    notify_on_layer_change_weight::init( );
     hud_scope_paint::init( );
     render_smoke_overlay::init( );
     calc_viewmodel_bob::init( );
@@ -80,6 +84,8 @@ void hooks::impl::init( ) {
 
 void hooks::impl::remove( ) {
     hud_scope_paint::original = { };
+    notify_on_layer_change_cycle::original = { };
+    notify_on_layer_change_weight::original = { };
     render_smoke_overlay::original = { };
     calc_viewmodel_bob::original = { };
     pre_entity_packet_received::original = { };

@@ -1,6 +1,7 @@
 #pragma once
 #include <globals.hpp>
 #include <utils/circular_buffer.hpp>
+#include "animation_state.hpp"
 
 enum class resolve_mode : int {
     none = -1,
@@ -8,6 +9,53 @@ enum class resolve_mode : int {
     stand,
     flick,
     air
+};
+
+struct backup_record {
+public:
+    matrix_3x4 m_bones[ 128 ];
+    int m_bone_count;
+    float m_sim_time;
+    int m_flags;
+    vector_3d m_origin, m_abs_origin;
+    vector_3d m_mins;
+    vector_3d m_maxs;
+    vector_3d m_abs_ang;
+
+public:
+    __forceinline void store( c_cs_player *player ) {
+        // get bone cache ptr.
+        auto cache = player->bone_cache( );
+        if ( !cache )
+            return;
+
+        // store bone data.
+        std::memcpy( m_bones, cache, sizeof( matrix_3x4 ) * 128 );
+
+        m_bone_count = player->bone_count( );
+        m_origin = player->origin( );
+        m_mins = player->mins( );
+        m_sim_time = player->simtime( );
+        m_flags = player->flags( );
+        m_maxs = player->maxs( );
+        m_abs_origin = player->get_abs_origin( );
+        m_abs_ang = player->get_abs_angles( );
+    }
+
+    __forceinline void restore( c_cs_player *player ) {
+        // get bone cache ptr.
+        auto cache = player->bone_cache( );
+        if ( !cache )
+            return;
+
+        std::memcpy( cache, m_bones, sizeof( matrix_3x4 ) * m_bone_count );
+        player->bone_count( ) = m_bone_count;
+
+        player->origin( ) = m_origin;
+        player->set_collision_bounds( m_mins, m_maxs );
+        player->set_abs_angles( m_abs_ang );
+        player->set_abs_origin( m_origin );
+    }
 };
 
 struct lag_record {
@@ -70,6 +118,8 @@ public:
     bool build_bones( c_cs_player *player, matrix_3x4 *out, float curtime );
     void update_land( c_cs_player *player, lag_record *record, lag_record *last_record );
     void update_velocity( c_cs_player *player, lag_record *record, lag_record *previous );
+    void update_local_animations( c_user_cmd *user_cmd );
+    void maintain_local_animations( );
     void update_player_animation( c_cs_player *player, lag_record &record, lag_record *previous );
 
     struct animation_info {
@@ -90,21 +140,12 @@ public:
     std::array< animation_info, 64 > lag_info;
     std::array< std::array< matrix_3x4, 128 >, 64 > animated_bones;
     std::array< vector_3d, 64 > animated_origin;
-
-    inline std::deque< lag_record * > get_lagcomp_records( c_cs_player *player ) {
-        if ( !player || !player->index( ) || !player->is_player( ) )
-            return { };
-
-        auto &info = lag_info[ player->index( ) ];
-
-        if ( player->index( ) > g_interfaces.global_vars->max_clients || info.anim_records.empty( ) )
-            return { };
-
-        std::deque< lag_record * > records{ };
-
-
-        return records;
-    }
+    float lower_body_realign_timer;
+    float foot_yaw;
+    float last_angle;
+    float simtime;
+    std::array< float, 24 > pose_parameters;
+    std::array< c_animation_layer, 13 > animation_layers;
 
 private:
 };
