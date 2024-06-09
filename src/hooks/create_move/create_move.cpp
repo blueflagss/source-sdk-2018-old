@@ -74,6 +74,7 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
     cmd->random_seed = MD5_PseudoRandom( cmd->command_number ) & 0x7FFFFFFF;
 
     globals::lerp_amount = calculate_lerp( );
+    const auto old_cmd_angles = cmd->view_angles;
 
     backup_players( false );
 
@@ -94,7 +95,7 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         }
         g_prediction.finish( cmd );
 
-        vector_3d old_angles = math::clamp_angle( cmd->view_angles );
+        vector_3d old_angles = math::clamp_angle( globals::view_angles );
 
         vector_3d engine_angles;
         g_interfaces.engine_client->get_view_angles( engine_angles );

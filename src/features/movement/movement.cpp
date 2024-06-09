@@ -160,43 +160,35 @@ void movement::directional_strafe( c_user_cmd *cmd, const vector_3d &old_angles 
 }
 
 void movement::correct_movement( c_user_cmd *cmd, const vector_3d &wish_direction ) {
-    vector_3d view_fwd, view_right, view_up, cmd_fwd, cmd_right, cmd_up;
-    auto view_angles = cmd->view_angles;
+    if ( !( globals::local_player->flags( ) & FL_ONGROUND ) && cmd->view_angles.z != 0.f )
+        cmd->side_move = 0.f;
 
-    math::angle_vectors( wish_direction, &view_fwd, &view_right, &view_up );
-    math::angle_vectors( view_angles, &cmd_fwd, &cmd_right, &cmd_up );
+    vector_3d move = { cmd->forward_move, cmd->side_move, 0.f };
+    float len = math::normalize_place( move );
+    if ( !len )
+        return;
 
-    const auto v12 = sqrt( view_up.z * view_up.z );
-    const auto v10 = math::length_2d( view_right );
-    const auto v8 = math::length_2d( view_fwd );
+    vector_3d move_angle = math::vector_angle( move );
 
-    const auto norm_view_fwd = vector_3d( 1.0f / v8 * view_fwd.x, 1.0f / v8 * view_fwd.y, 0.0f );
-    const auto norm_view_right = vector_3d( 1.0f / v10 * view_right.x, 1.0f / v10 * view_right.y, 0.0f );
-    const auto norm_view_up = vector_3d( 0.0f, 0.0f, 1.0f / v12 * view_up.z );
+    float delta = cmd->view_angles.y - wish_direction.y;
 
-    const auto v14 = math::length_2d( view_fwd );
-    const auto v16 = math::length_2d( view_right );
-    const auto v18 = std::sqrt( cmd_up.z * cmd_up.z );
+    move_angle.y += delta;
 
-    const auto norm_cmd_fwd = vector_3d( 1.0f / v14 * cmd_fwd.x, 1.0f / v14 * cmd_fwd.y, 0.0f );
-    const auto norm_cmd_right = vector_3d( 1.0f / v16 * cmd_right.x, 1.0f / v16 * cmd_right.y, 0.0f );
-    const auto norm_cmd_up = vector_3d( 0.0f, 0.0f, 1.0f / v18 * cmd_up.z );
+    vector_3d dir = math::angle_vectors( move_angle );
 
-    const float v22 = norm_view_fwd.x * cmd->forward_move;
-    const float v26 = norm_view_fwd.y * cmd->forward_move;
-    const float v28 = norm_view_fwd.z * cmd->forward_move;
-    const float v24 = norm_view_right.x * cmd->side_move;
-    const float v23 = norm_view_right.y * cmd->side_move;
-    const float v25 = norm_view_right.z * cmd->side_move;
-    const float v30 = norm_view_up.x * cmd->up_move;
-    const float v27 = norm_view_up.z * cmd->up_move;
-    const float v29 = norm_view_up.y * cmd->up_move;
+    dir *= len;
 
-    cmd->forward_move = norm_cmd_fwd.x * v24 + norm_cmd_fwd.y * v23 + norm_cmd_fwd.z * v25 + ( norm_cmd_fwd.x * v22 + norm_cmd_fwd.y * v26 + norm_cmd_fwd.z * v28 ) + ( norm_cmd_fwd.y * v30 + norm_cmd_fwd.x * v29 + norm_cmd_fwd.z * v27 );
-    cmd->side_move = norm_cmd_right.x * v24 + norm_cmd_right.y * v23 + norm_cmd_right.z * v25 + ( norm_cmd_right.x * v22 + norm_cmd_right.y * v26 + norm_cmd_right.z * v28 ) + ( norm_cmd_right.x * v29 + norm_cmd_right.y * v30 + norm_cmd_right.z * v27 );
-    cmd->up_move = norm_cmd_up.x * v23 + norm_cmd_up.y * v24 + norm_cmd_up.z * v25 + ( norm_cmd_up.x * v26 + norm_cmd_up.y * v22 + norm_cmd_up.z * v28 ) + ( norm_cmd_up.x * v30 + norm_cmd_up.y * v29 + norm_cmd_up.z * v27 );
+    if (globals::local_player->move_type() == move_types::ladder) {
+        if ( cmd->view_angles.x >= 45.f && wish_direction.x < 45.f && std::abs( delta ) <= 65.f )
+            dir.x = -dir.x;
 
-    cmd->forward_move = std::clamp( cmd->forward_move, -globals::cvars::cl_forwardspeed->get_float( ), globals::cvars::cl_forwardspeed->get_float( ) );
-    cmd->side_move = std::clamp( cmd->side_move, -globals::cvars::cl_sidespeed->get_float( ), globals::cvars::cl_sidespeed->get_float( ) );
-    cmd->up_move = std::clamp( cmd->up_move, -globals::cvars::cl_upspeed->get_float( ), globals::cvars::cl_upspeed->get_float( ) );
+        cmd->forward_move = dir.x;
+        cmd->side_move = dir.y;
+    } else {
+        if ( cmd->view_angles.x < -90.f || cmd->view_angles.x > 90.f )
+            dir.x = -dir.x;
+
+        cmd->forward_move = dir.x;
+        cmd->side_move = dir.y;
+    }
 }
