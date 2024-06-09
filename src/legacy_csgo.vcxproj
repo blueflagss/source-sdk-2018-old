@@ -384,7 +384,7 @@
     <ClInclude Include="utils\netvars\netvars.hpp" />
     <ClInclude Include="utils\padding.hpp" />
     <ClInclude Include="utils\signature\signature.hpp" />
-    <ClInclude Include="utils\threading\threading.hpp" />
+    <ClInclude Include="utils\threading\dispatch.hpp" />
     <ClInclude Include="utils\utils.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -508,6 +508,7 @@
     <ClCompile Include="utils\math\math.cpp" />
     <ClCompile Include="utils\netvars\netvars.cpp" />
     <ClCompile Include="utils\signature\signature.cpp" />
+    <ClCompile Include="utils\threading\dispatch.cpp" />
     <ClCompile Include="utils\utils.cpp" />
   </ItemGroup>
   <ItemGroup>

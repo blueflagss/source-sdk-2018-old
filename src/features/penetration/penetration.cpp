@@ -1,4 +1,5 @@
 #include "penetration.hpp"
+#include <features/animations/anims.hpp>
 
 enum {
     char_tex_antlion = 'A',
