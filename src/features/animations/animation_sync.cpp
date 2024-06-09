@@ -310,8 +310,6 @@ void animation_sync::maintain_local_animations( ) {
     if ( !globals::local_player )
         return;
 
-    float simulation_time = globals::local_player->simtime( );
-
     if ( !g_interfaces.client_state->choked_commands( ) )
         memcpy( animation_layers.data( ), globals::local_player->anim_overlays( ), sizeof( c_animation_layer ) * 13 );
 
