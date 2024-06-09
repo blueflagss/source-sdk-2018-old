@@ -82,6 +82,13 @@ void c_base_entity::set_abs_origin( const vector_3d &origin ) {
     return set_abs_origin( this, origin );
 }
 
+void c_base_entity::invalidate_bone_cache( ) {
+    auto *casted = reinterpret_cast< DWORD * >( this );
+    casted[ 2629 ] = -8388609;
+    casted[ 2464 ] = 0;
+}
+
+
 void c_base_entity::invalidate_physics_recursive( int change_flags ) {
     static auto invalidate_physics_recursive = signature::find( "client.dll", "55 8B EC 83 E4 F8 83 EC 0C 53 8B 5D 08 8B C3 56" ).get< void( __thiscall * )( void *, int ) >( );
 
@@ -93,6 +100,12 @@ void c_base_entity::set_abs_angles( const vector_3d &angles ) {
 
     return set_abs_angles( this, angles );
 }
+
+void c_base_entity::set_collision_bounds( const vector_3d &mins, const vector_3d &maxs ) {
+    static auto set_collision_bound = signature::find( "client.dll", "53 8B DC 83 EC 08 83 E4 F8 83 C4 04 55 8B 6B 04 89 6C 24 04 8B EC 83 EC 10 56 57 8B 7B" ).get< void( __thiscall * )( void *, const vector_3d &, const vector_3d & ) >( );
+    set_collision_bound( this->collideable( ), mins, maxs );
+}
+
 
 bool c_base_entity::physics_run_think( int think_method ) {
     static auto physics_run_think = signature::find( "client.dll", "55 8B EC 83 EC 10 53 56 57 8B F9 8B 87 ? ? ? ? C1" ).get< bool( __thiscall * )( void *, int ) >( );

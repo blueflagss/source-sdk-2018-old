@@ -17,6 +17,19 @@ struct c_animation_layer {
     PAD( 4 );
 };
 
+enum PlayerFlags_t : int {
+    FL_ONGROUND = ( 1 << 0 ),
+    FL_DUCKING = ( 1 << 1 ),
+    FL_WATERJUMP = ( 1 << 3 ),
+    FL_ONTRAIN = ( 1 << 4 ),
+    FL_INRAIN = ( 1 << 5 ),
+    FL_FROZEN = ( 1 << 6 ),
+    FL_ATCONTROLS = ( 1 << 7 ),
+    FL_CLIENT = ( 1 << 8 ),
+    FL_FAKECLIENT = ( 1 << 9 ),
+    FL_INWATER = ( 1 << 10 ),
+};
+
 enum effects : int {
     bonemerge = 0x001,
     brightlight = 0x002,
@@ -60,7 +73,7 @@ public:
     OFFSET( last_cmd, c_user_cmd, 0x3298 );
     OFFSET( anim_overlays, c_animation_layer *, 0x2970 );
     OFFSET( buttons, int, 0x31E8 );
-    OFFSET( cstudiohdr, c_studio_hdr *, 0x293C );
+    OFFSET( cstudio_hdr, c_studio_hdr *, 0x293C );
 
     void *get_view_model( ) {
         return g_interfaces.entity_list->get_client_entity_from_handle< void * >( this->viewmodel_handle( ) );
@@ -79,6 +92,8 @@ public:
     void get_bone_position( int bone, vector_3d &out, vector_3d &q );
     int lookup_bone( const char *name );
     void modify_eye_position( c_csgo_player_animstate *state, vector_3d *input_eye_pos, matrix_3x4 *bones );
+    void invalidate_bone_cache( );
+    bool can_attack( );
     bool get_aim_matrix( vector_3d angle, matrix_3x4 *bones );
     vector_3d get_shoot_position( );
 

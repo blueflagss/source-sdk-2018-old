@@ -100,7 +100,7 @@ namespace game
         return static_cast< int >( 0.5f + static_cast< float >( time ) / g_interfaces.global_vars->interval_per_tick );
     }
 
-    inline int ticks_to_time( int ticks ) {
-        return static_cast< int >( ticks * g_interfaces.global_vars->interval_per_tick );
+    inline float ticks_to_time( int ticks ) {
+        return static_cast< float >( ticks ) * g_interfaces.global_vars->interval_per_tick;
     }
 }// namespace game

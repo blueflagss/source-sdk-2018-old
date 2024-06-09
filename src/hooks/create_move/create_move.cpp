@@ -35,13 +35,28 @@ void setup_shoot_position( ) {
     }
 }
 
+void backup_players( bool restore ) {
+    // restore stuff.
+    for ( int i{ 1 }; i <= g_interfaces.global_vars->max_clients; ++i ) {
+        c_cs_player *player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
+
+        if ( !player || !player->alive( ) || player == globals::local_player || player->team( ) == globals::local_player->team( ) )
+            continue;
+
+        if ( restore )
+            g_aimbot.m_backup[ i - 1 ].restore( player );
+        else
+            g_aimbot.m_backup[ i - 1 ].store( player );
+    }
+}
+
 bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_user_cmd *cmd ) {
     static auto MD5_PseudoRandom = signature::find( "client.dll", "E8 ? ? ? ? 25 ? ? ? ? B9" ).add( 0x1 ).rel32( ).get< unsigned int( __cdecl * )( unsigned int ) >( );
 
     const auto ret = original.fastcall< bool >( REGISTERS_OUT, input_sample_time, cmd );
 
-    if ( cmd && ret )
-        g_interfaces.engine_client->set_view_angles( cmd->view_angles );
+    //if ( cmd && ret )
+    //    g_interfaces.engine_client->set_view_angles( cmd->view_angles );
 
     if ( !cmd || !cmd->command_number )
         return ret;
@@ -60,6 +75,8 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
     cmd->random_seed = MD5_PseudoRandom( cmd->command_number ) & 0x7FFFFFFF;
 
     globals::lerp_amount = calculate_lerp( );
+
+    backup_players( false );
 
     if ( globals::local_player->alive( ) ) {
         if ( globals::local_player )
@@ -84,6 +101,8 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         g_interfaces.engine_client->set_view_angles( angle );
         g_movement.correct_movement( cmd, old_angles );
     }
+
+    backup_players( true );
 
     return false;
 }
