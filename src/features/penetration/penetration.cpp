@@ -288,7 +288,7 @@ bool penetration_system::handle_bullet_penetration( const c_cs_weapon_info *weap
     return true;
 }
 
-float penetration_system::scale_damage( c_cs_player *player, float damage, float armor_ratio, int hitgroup, bool is_zeus ) {
+float penetration_system::scale_damage( c_cs_player *player, float damage, float weapon_armor_ratio, int hitgroup, bool is_zeus ) {
     auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( player->weapon_handle( ) );
 
     if ( !weapon )
@@ -302,7 +302,7 @@ float penetration_system::scale_damage( c_cs_player *player, float damage, float
     float scale_body_damage = ( player->team( ) == 3 ) ? globals::cvars::mp_damage_scale_ct_body->get_float( ) : globals::cvars::mp_damage_scale_t_body->get_float( );
     float head_damage_scale = ( player->team( ) == 3 ) ? globals::cvars::mp_damage_scale_ct_head->get_float( ) : globals::cvars::mp_damage_scale_t_head->get_float( );
 
-    static auto is_armored = []( c_cs_player *player, int hitgroup ) -> bool {
+    static auto is_armored = [&]( ) -> bool {
         if ( player->armor( ) <= 0 )
             return false;
 
@@ -315,13 +315,10 @@ float penetration_system::scale_damage( c_cs_player *player, float damage, float
                 return true;
                 break;
             case hitgroups::hitgroup_head:
-                if ( player->helmet( ) )
-                    return true;
-                case hitgroup_head:
-                    return player->helmet( );
-                default:
-                    break;
-            }
+                return player->helmet( );
+                break;
+            default:
+                break;
         }
 
         return false;
