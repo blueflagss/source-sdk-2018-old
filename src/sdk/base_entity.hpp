@@ -132,10 +132,10 @@ struct var_mapping_t {
     float last_interpolation_time;
 };
 
-enum hitboxes : int {
+enum csgo_hitbox : int {
     hitbox_head = 0,
     hitbox_neck,
-    hitbox_lower_neck,
+    //hitbox_lower_neck,
     hitbox_pelvis,
     hitbox_body,
     hitbox_thorax,
@@ -155,6 +155,13 @@ enum hitboxes : int {
     hitbox_l_forearm,
     hitbox_max
 };
+
+inline static const csgo_hitbox player_hitboxes[] = {
+        hitbox_head, hitbox_neck, hitbox_pelvis, hitbox_body,
+        hitbox_thorax, hitbox_chest, hitbox_upper_chest, hitbox_r_thigh,
+        hitbox_l_thigh, hitbox_r_calf, hitbox_l_calf, hitbox_r_foot,
+        hitbox_l_foot, hitbox_r_hand, hitbox_l_hand, hitbox_r_upper_arm,
+        hitbox_r_forearm, hitbox_l_upper_arm, hitbox_l_forearm };
 
 class c_base_entity : public c_base_player {
 public:

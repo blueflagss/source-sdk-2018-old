@@ -255,7 +255,7 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
         return;
     }
 
-    const auto backup_angle = globals::local_player->pl( ).v_angle;
+    const auto backup_angle = globals::local_player->player_state( ).v_angle;
 
     last_angle = user_cmd->view_angles.y;
 
@@ -265,7 +265,7 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
         angles.x = -10.f;
     }
 
-    globals::local_player->pl( ).v_angle = angles;
+    globals::local_player->player_state( ).v_angle = angles;
     globals::local_player->flags( ) &= ~player_flags::on_ground;
 
     if ( g_movement.ground_ticks >= 2 ) {
@@ -303,7 +303,7 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
     globals::local_player->pose_parameters( ) = pose_parameters;
 
     foot_yaw = state->m_flFootYaw;
-    globals::local_player->pl( ).v_angle = backup_angle;
+    globals::local_player->player_state( ).v_angle = backup_angle;
 }
 
 void animation_sync::maintain_local_animations( ) {

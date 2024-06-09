@@ -9,6 +9,8 @@ public:
     float out_damage{ };
     int out_hitgroup{ };
     std::array< vector_3d, 6 > impacts{ };
+    bool did_hit{ };
+    vector_3d bullet_end;
 };
 
 class penetration_system {

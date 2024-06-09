@@ -55,6 +55,24 @@ public:
     }
 };
 
+class c_player_state {
+public:
+    virtual ~c_player_state( ) {}
+
+    bool deadflag;
+    vector_3d v_angle;
+
+    const char *netname;
+
+    int fix_angle;
+    vector_3d angle_change;
+
+    bool hltv;
+    bool replay;
+    int frags;
+    int deaths;
+};
+
 class c_base_player : public i_client_entity {
 public:
     template< typename T >
@@ -88,6 +106,7 @@ public:
     NETVAR( aim_punch, vector_3d, "DT_BasePlayer", "m_aimPunchAngle" );
     NETVAR( weapon_handle, uint32_t, "DT_BaseCombatCharacter", "m_hActiveWeapon" );
     NETVAR( next_attack, float, "DT_BaseCombatCharacter", "m_flNextAttack" );
+    NETVAR( player_state, c_player_state, "DT_BasePlayer", "pl" );
 
     bool compute_bounding_box( box &box_dimensions );
     bool is_player_on_steam_friends( ) const;

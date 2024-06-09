@@ -1,5 +1,6 @@
 #pragma once
 #include <globals.hpp>
+#include <glm/gtx/norm.hpp>
 
 struct box {
     box( ) = default;
@@ -39,12 +40,22 @@ namespace math
         };
     }
 
+    inline vector_3d interpolate(const vector_3d& from, const vector_3d& to, const float percent) {
+        return to * percent + from * ( 1.f - percent );
+    }
+
+    inline float dist_sqr(const vector_3d& first, const vector_3d& other) {
+        vector_3d delta( first.x - other.x, first.y - other.y, first.z - other.z );
+        return glm::length2( delta );
+    }
+
     void rotate_point( int &x, int &y, float rotation );
     void rotate_point( glm::vec2 &point, float rotation );
     void random_seed( int seed );
     float random_float( float min_val, float max_value );
     vector_3d normalize_angle( vector_3d angle );
     void vector_transform( const vector_3d in1, const matrix_3x4 &in2, vector_3d &out );
+    vector_3d vector_transform( const vector_3d in1, const matrix_3x4 &in2 );
     void angle_vectors( vector_3d angles, vector_3d *forward );
     vector_3d angle_vectors( vector_3d angles );
     void sin_cos( float radians, float *sine, float *cosine );
