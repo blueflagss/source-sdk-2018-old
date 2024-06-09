@@ -3,6 +3,99 @@
 #include "interfaces/collideable.hpp"
 #include <globals.hpp>
 
+struct mstudioactivitymodifier_t {
+    int sznameindex;
+
+    inline char *name( ) { return ( sznameindex ) ? ( char * ) ( ( ( char * ) this ) + sznameindex ) : NULL; }
+};
+
+struct mstudioanimtag_t {
+    int tag;
+    float cycle;
+    int sztagindex;
+};
+
+struct mstudioseqdesc_t {
+    int baseptr;
+    inline studiohdr_t *studio_hdr( void ) const { return ( studiohdr_t * ) ( ( ( char * ) this ) + baseptr ); }
+    int szlabelindex;
+    inline char *const label( void ) const { return ( ( char * ) this ) + szlabelindex; }
+    int szactivitynameindex;
+    inline char *const activity_name( void ) const { return ( ( char * ) this ) + szactivitynameindex; }
+    int flags;
+    int activity;
+    int actweight;
+    int numevents;
+    int eventindex;
+    vector_3d bbmin;    
+    vector_3d bbmax;
+    int numblends;
+    int animindexindex;
+
+    inline int anim( int x, int y ) const {
+        if ( x >= groupsize[ 0 ] ) {
+            x = groupsize[ 0 ] - 1;
+        }
+
+        if ( y >= groupsize[ 1 ] ) {
+            y = groupsize[ 1 ] - 1;
+        }
+
+        int offset = y * groupsize[ 0 ] + x;
+        short *blends = ( short * ) ( ( ( char * ) this ) + animindexindex );
+        int value = ( int ) blends[ offset ];
+        return value;
+    }
+
+    int movementindex;      
+    int groupsize[ 2 ];
+    int paramindex[ 2 ];        
+    float paramstart[ 2 ];    
+    float paramend[ 2 ];      
+    int paramparent;
+    float fadeintime;        
+    float fadeouttime;      
+    int localentrynode;    
+    int localexitnode;     
+    int nodeflags;       
+    float entryphase;     
+    float exitphase;      
+    float lastframe;     
+    int nextseq;   
+    int pose;           
+    int numikrules;
+    int numautolayers;
+    int autolayerindex;
+    int weightlistindex;
+    int posekeyindex;
+    int numiklocks;
+    int iklockindex;
+    int keyvalueindex;
+    int keyvaluesize;
+    int cycleposeindex;
+    int activitymodifierindex;
+    int numactivitymodifiers;
+
+    inline mstudioactivitymodifier_t *activity_modifier( int i ) const {
+        return activitymodifierindex != 0 ? ( mstudioactivitymodifier_t * ) ( ( ( char * ) this ) + activitymodifierindex ) + i : NULL;
+    };
+
+    int animtagindex;
+    int numanimtags;
+
+    inline mstudioanimtag_t *anim_tag( int i ) const {
+        return ( mstudioanimtag_t * ) ( ( ( char * ) this ) + animtagindex ) + i;
+    };
+
+    int rootDriverIndex;
+    int unused[ 2 ];           
+
+    mstudioseqdesc_t( ) {}
+
+private:
+    mstudioseqdesc_t( const mstudioseqdesc_t &vOther );
+};
+
 enum class move_types : uint8_t {
     none = 0,
     isometric,
@@ -63,18 +156,6 @@ enum hitboxes : int {
     hitbox_max
 };
 
-//enum hitgroups : int {
-//    hitgroup_generic = 0,
-//    hitgroup_head,
-//    hitgroup_chest,
-//    hitgroup_stomach,
-//    hitgroup_leftarm,
-//    hitgroup_rightarm,
-//    hitgroup_leftleg,
-//    hitgroup_rightleg,
-//    hitgroup_gear
-//};
-
 class c_base_entity : public c_base_player {
 public:
     DATAMAP( move_type, move_types, this->get_pred_desc_map( ), "m_MoveType" );
@@ -126,6 +207,7 @@ public:
     void invalidate_bone_cache( );
     bool physics_run_think( int think_method = 0 );
     void set_next_think( int context_index, float think_time = 0 );
+    void attachment_helper( );
     vector_3d get_bone_position( const int bone, matrix_3x4 *bone_matrix );
     c_base_entity *get_root_move_parent( );
     c_base_entity *get_move_parent( );

@@ -1,6 +1,8 @@
 #include "base_player.hpp"
 
 bool c_base_player::compute_bounding_box( box &box_dimensions ) {
+    if ( !this || !this->alive( ) ) return false;
+
     const auto collision_property = this->collideable( );
 
     if ( !collision_property )

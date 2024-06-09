@@ -1,6 +1,7 @@
 #pragma once
 #include <globals.hpp>
 #include <utils/circular_buffer.hpp>
+#include "animation_state.hpp"
 
 enum class resolve_mode : int {
     none = -1,
@@ -57,7 +58,6 @@ public:
     }
 };
 
-
 struct lag_record {
 public:
     lag_record( ) = default;
@@ -95,6 +95,7 @@ public:
     std::array< matrix_3x4, 128 > bones = { };
     bool record_filled;
     bool has_velocity;
+    const model_t *model;
 
     void reset( c_cs_player *player );
     bool is_valid( );
@@ -106,7 +107,6 @@ public:
 
 class animation_sync {
 public:
-    void update_player( c_cs_player *player );
     void should_interpolate( c_cs_player *player, bool state );
     void on_net_update_postdataupdate_start( );
     void on_pre_frame_render_start( );
@@ -114,9 +114,12 @@ public:
     void on_net_update_end( );
     bool fix_velocity( c_cs_player *ent, vector_3d &vel, const std::array< c_animation_layer, 15 > &animlayers, const vector_3d &origin );
     void clear_data( int index );
-    bool valid_simtime( const float &simtime, const float time );
     bool get_lagcomp_bones( c_cs_player *player, std::array< matrix_3x4, 128 > &out );
     bool build_bones( c_cs_player *player, matrix_3x4 *out, float curtime );
+    void update_land( c_cs_player *player, lag_record *record, lag_record *last_record );
+    void update_velocity( c_cs_player *player, lag_record *record, lag_record *previous );
+    void update_local_animations( c_user_cmd *user_cmd );
+    void maintain_local_animations( );
     void update_player_animation( c_cs_player *player, lag_record &record, lag_record *previous );
 
     struct animation_info {
@@ -137,21 +140,12 @@ public:
     std::array< animation_info, 64 > lag_info;
     std::array< std::array< matrix_3x4, 128 >, 64 > animated_bones;
     std::array< vector_3d, 64 > animated_origin;
-
-    inline std::deque< lag_record * > get_lagcomp_records( c_cs_player *player ) {
-        if ( !player || !player->index( ) || !player->is_player( ) )
-            return { };
-
-        auto &info = lag_info[ player->index( ) ];
-
-        if ( player->index( ) > g_interfaces.global_vars->max_clients || info.anim_records.empty( ) )
-            return { };
-
-        std::deque< lag_record * > records{ };
-
-
-        return records;
-    }
+    float lower_body_realign_timer;
+    float foot_yaw;
+    float last_angle;
+    float simtime;
+    std::array< float, 24 > pose_parameters;
+    std::array< c_animation_layer, 13 > animation_layers;
 
 private:
 };

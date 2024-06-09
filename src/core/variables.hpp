@@ -74,7 +74,16 @@ namespace config
 #pragma endregion
 
 #pragma region exploits
-
+        CONFIG_VARIABLE( exploits_antiaim, bool, false );
+        CONFIG_VARIABLE( exploits_antiaim_pitch_type, int, 0 );
+        CONFIG_VARIABLE( exploits_antiaim_dir_type, int, 0 );
+        CONFIG_VARIABLE( exploits_antiaim_yaw_type, int, 0 );
+        CONFIG_VARIABLE( exploits_antiaim_fake, bool, false );
+        CONFIG_VARIABLE( exploits_antiaim_fake_yaw_type, int, 0 );
+        CONFIG_VARIABLE( exploits_antiaim_range, float, 0.f );
+        CONFIG_VARIABLE( exploits_antiaim_spin_speed, float, 0.f );
+        CONFIG_VARIABLE( exploits_fakelag, bool, false );
+        CONFIG_VARIABLE( exploits_fakelag_limit, int, 15 );
 #pragma endregion
 
 #pragma region visuals

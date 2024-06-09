@@ -1,6 +1,6 @@
 #pragma once
 #include <globals.hpp>
-#include <features/animations/anims.hpp>
+#include <features/animations/animation_sync.hpp>
 
 class visuals {
 public:

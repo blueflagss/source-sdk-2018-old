@@ -120,6 +120,7 @@ public:
 
 class c_cs_weapon_base : public c_cs_player {
 public:
+    NETVAR( weapon_world_model, uint32_t, "DT_WeaponCSBase", "m_hWeaponWorldModel" );
     NETVAR( recoil_index, float, "DT_WeaponCSBase", "m_flRecoilIndex" );
     NETVAR( item_definition_index, short, "DT_BaseAttributableItem", "iItemDefinitionIndex" );
     NETVAR( accuracy_penalty, float, "DT_WeaponCSBase", "fAccuracyPenalty" );

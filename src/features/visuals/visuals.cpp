@@ -52,8 +52,7 @@ void visuals::render_hitmarker( ) {
 
     auto screen_center = vector_2d(
             globals::ui::screen_size.x / 2.0f,
-            globals::ui::screen_size.y / 2.0f 
-    );
+            globals::ui::screen_size.y / 2.0f );
 
     render::line( screen_center.x - line_size, screen_center.y - line_size, screen_center.x - ( line_size / 2 ), screen_center.y - ( line_size / 2 ), color{ 200, 200, 200, 255 * hitmarker_fraction }, 2.5f );
     render::line( screen_center.x - line_size, screen_center.y + line_size, screen_center.x - ( line_size / 2 ), screen_center.y + ( line_size / 2 ), color{ 200, 200, 200, 255 * hitmarker_fraction }, 2.5f );
@@ -63,18 +62,17 @@ void visuals::render_hitmarker( ) {
     hitmarker_fraction -= std::clamp< float >( ( 1.0f / 0.6f ) * ImGui::GetIO( ).DeltaTime, 0.0f, 1.0f );
 }
 
-void visuals::animate( c_cs_player *player ) {
-    if ( !player->alive( ) && opacity_array[ player->index( ) ] != 0.0f )
-        opacity_array[ player->index( ) ] -= std::clamp< float >( 1.0f * ( ( 1.0f / 0.4f ) * ImGui::GetIO( ).DeltaTime ), 0.0f, 1.0f );
-
-    else
-        opacity_array[ player->index( ) ] = 1.0f;
-}
-
 void visuals::render_player( c_cs_player *player ) {
-    animate( player );
+    box player_box;
 
-    if ( opacity_array[ player->index( ) ] <= 0.02f )
+    const auto alive = player->alive( );
+
+    ( !alive && opacity_array[ player->index( ) ] != 0.0f ) ? opacity_array[ player->index( ) ] -= std::clamp< float >( 1.0f * ( ( 1.0f / 0.4f ) * ImGui::GetIO( ).DeltaTime ), 0.0f, 1.0f ) : opacity_array[ player->index( ) ] = 1.0f;
+
+    if ( !alive && opacity_array[ player->index( ) ] <= 0.02f )
+        return;
+
+    if ( !player->compute_bounding_box( player_box ) )
         return;
 
     player_info_t player_info;
@@ -85,120 +83,115 @@ void visuals::render_player( c_cs_player *player ) {
     if ( player->dormant( ) )
         return;
 
-    box player_box;
+    if ( g_vars.visuals_player_name.value ) {
+        auto name = std::string( player_info.name );
+        auto name_dimensions = render::get_text_size( fonts::visuals_segoe_ui, name );
 
-    if ( player->compute_bounding_box( player_box ) ) {
-        if ( g_vars.visuals_player_name.value ) {
-            auto name = std::string( player_info.name );
-            auto name_dimensions = render::get_text_size( fonts::visuals_segoe_ui, name );
+        render::string( fonts::visuals_segoe_ui, player_box.x + ( player_box.w / 2 ) - name_dimensions.x / 2, player_box.y - name_dimensions.y - 2.0f, color{ color::white( ), 240 * opacity_array[ player->index( ) ] }, name, true );
+    }
 
-            render::string( fonts::visuals_segoe_ui, player_box.x + ( player_box.w / 2 ) - name_dimensions.x / 2, player_box.y - name_dimensions.y - 2.0f, color{ color::white( ), 240 * opacity_array[ player->index( ) ] }, name, true );
+    if ( g_vars.visuals_player_box.value ) {
+        render::rect( player_box.x + 1, player_box.y + 1, player_box.w - 2, player_box.h - 2, color{ 46, 46, 46, 160 * opacity_array[ player->index( ) ] } );
+        render::rect( player_box.x - 1, player_box.y - 1, player_box.w + 2, player_box.h + 2, color{ 46, 46, 46, 160 * opacity_array[ player->index( ) ] } );
+        render::rect( player_box.x, player_box.y, player_box.w, player_box.h, color{ g_vars.visuals_box_color.value, 200 * opacity_array[ player->index( ) ] } );
+    }
+
+    auto &log = g_animations.lag_info[ player->index( ) ];
+
+    if ( g_vars.visuals_player_skeleton_history.value && !log.lag_records.empty( ) ) {
+        for ( auto &record : log.lag_records ) {
+            if ( !record ) continue;
+
+            render_skeleton( player, record, g_vars.visuals_skeleton_history_color.value );
         }
+    }
 
-        if ( g_vars.visuals_player_box.value ) {
-            render::rect( player_box.x + 1, player_box.y + 1, player_box.w - 2, player_box.h - 2, color{ 46, 46, 46, 160 * opacity_array[ player->index( ) ] } );
-            render::rect( player_box.x - 1, player_box.y - 1, player_box.w + 2, player_box.h + 2, color{ 46, 46, 46, 160 * opacity_array[ player->index( ) ] } );
-            render::rect( player_box.x, player_box.y, player_box.w, player_box.h, color{ g_vars.visuals_box_color.value, 200 * opacity_array[ player->index( ) ] } );
-        }
+    if ( g_vars.visuals_player_skeleton.value && !log.anim_records.empty( ) ) {
+        auto current_record = &log.anim_records.front( );
 
-        auto &log = g_animations.lag_info[ player->index( ) ];
+        render_skeleton( player, current_record, g_vars.visuals_skeleton_history_color.value );
+    }
 
-        if ( g_vars.visuals_player_skeleton_history.value && !log.lag_records.empty( ) ) {
-            
-            for ( auto &record : log.lag_records ) {
-                if ( !record ) continue;
+    if ( g_vars.visuals_player_health.value ) {
+        auto health = player->health( );
 
-                render_skeleton( player, record, g_vars.visuals_skeleton_history_color.value );
+        if ( health > 100 )
+            health = 100;
+
+        auto health_bar_delta = static_cast< int >( health * player_box.h / 100 );
+        auto health_text = fmt::format( "{}", health );
+        auto health_text_dim = render::get_text_size( fonts::visuals_04b03, health_text );
+        auto health_bar_color = g_vars.visuals_player_health_override.value ? color{ g_vars.visuals_health_override_color.value, 255 * opacity_array[ player->index( ) ] } : color{ 166, 0, 0, 255 * opacity_array[ player->index( ) ] }.lerp( color{ 157, 255, 0, 255 * opacity_array[ player->index( ) ] }, std::clamp< float >( static_cast< float >( player->health( ) ) / 100.f, 0.0f, 1.0f ) );
+
+        render::filled_rect( player_box.x - 6.5f, player_box.y, 2.5f, player_box.h, color{ 46, 46, 46, 110 * opacity_array[ player->index( ) ] } );
+        render::filled_rect( player_box.x - 6.5f, std::clamp< float >( player_box.y - 1 + player_box.h - health_bar_delta, player_box.y, player_box.y + player_box.h ), 2.5f, health_bar_delta, color{ health_bar_color, 200 * opacity_array[ player->index( ) ] } );
+        render::rect( player_box.x - 7.5f, player_box.y - 1, 4.f, player_box.h + 2, color{ 46, 46, 46, 190 * opacity_array[ player->index( ) ] } );
+
+        if ( health > 0 && health < 100 )
+            render::string( fonts::visuals_04b03, player_box.x - 15.5f + ( health_text_dim.x / 2 ), player_box.y - 4 + player_box.h - health_bar_delta, color{ color::white( ), 240 * opacity_array[ player->index( ) ] }, health_text, true );
+    }
+
+    if ( g_vars.visuals_player_weapon.value ) {
+        auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( player->weapon_handle( ) );
+
+        if ( weapon ) {
+            auto weapon_data = weapon->get_weapon_data( );
+
+            if ( weapon_data ) {
+                auto weapon_text = utils::convert_utf8( weapon->get_name( ) );
+                auto text_dimensions = render::get_text_size( fonts::visuals_04b03, weapon_text );
+
+                std::transform( weapon_text.begin( ), weapon_text.end( ), weapon_text.begin( ), ::toupper );
+
+                render::string( fonts::visuals_04b03, player_box.x + ( player_box.w / 2 ) - text_dimensions.x / 2, player_box.y + player_box.h + 1.5f, color{ color::white( ), 240 * opacity_array[ player->index( ) ] }, weapon_text, true );
             }
         }
+    }
 
-        if ( g_vars.visuals_player_skeleton.value && !log.anim_records.empty( ) ) {
-            auto current_record = &log.anim_records.front( );
+    std::deque< std::pair< std::string, color > > flags;
 
-            render_skeleton( player, current_record, g_vars.visuals_skeleton_history_color.value );
+    {
+        auto distance_to_player = glm::length( player->origin( ) - globals::local_player->origin( ) ) * 0.01905f;
+        auto distance_to_player_text = fmt::format( "{}M", static_cast< int >( std::roundf( distance_to_player ) ) );
+        auto text_dimensions = render::get_text_size( fonts::visuals_04b03, distance_to_player_text );
+
+        if ( g_vars.visuals_player_distance.value )
+            flags.push_back( { distance_to_player_text, { 255, 255, 255 } } );
+
+        if ( g_vars.visuals_player_flags_bot.value && player_info.fake_player )
+            flags.push_back( { "BOT", { 255, 255, 255 } } );
+
+        if ( g_vars.visuals_player_flags_scoped.value && player->scoped( ) )
+            flags.push_back( { "SCOPED", { 255, 255, 255 } } );
+
+        auto get_armor_type = []( c_cs_player *player ) -> std::string {
+            if ( player->armor( ) > 0 && player->helmet( ) )
+                return "HK";
+
+            else if ( player->armor( ) )
+                return "K";
+
+            else if ( player->helmet( ) )
+                return "H";
+
+            return "";
+        };
+
+        if ( g_vars.visuals_player_flags_money.value && player->account( ) > 0 ) {
+            auto balence = fmt::format( "${}", player->account( ) );
+
+            flags.push_back( { balence, { 255, 255, 255 } } );
         }
 
-        if ( g_vars.visuals_player_health.value ) {
-            auto health = player->health( );
+        if ( g_vars.visuals_player_flags_armor.value )
+            flags.push_back( { get_armor_type( player ), { 255, 255, 255 } } );
+    }
 
-            if ( health > 100 )
-                health = 100;
+    for ( size_t i = { 0ul }; i < flags.size( ); ++i ) {
+        auto &flag_object = flags.at( i );
+        auto offset = ( i * ( render::get_text_size( fonts::visuals_04b03, flags[ i ].first ).y + 1.0f ) );
 
-            auto health_bar_delta = static_cast< int >( health * player_box.h / 100 );
-            auto health_text = fmt::format( "{}", health );
-            auto health_text_dim = render::get_text_size( fonts::visuals_04b03, health_text );
-            auto health_bar_color = g_vars.visuals_player_health_override.value ? color{ g_vars.visuals_health_override_color.value, 255 * opacity_array[ player->index( ) ] } : color{ 166, 0, 0, 255 * opacity_array[ player->index( ) ] }.lerp( color{ 157, 255, 0, 255 * opacity_array[ player->index( ) ] }, std::clamp< float >( static_cast< float >( player->health( ) ) / 100.f, 0.0f, 1.0f ) );
-
-            render::filled_rect( player_box.x - 6.5f, player_box.y, 2.5f, player_box.h, color{ 46, 46, 46, 110 * opacity_array[ player->index( ) ] } );
-            render::filled_rect( player_box.x - 6.5f, std::clamp< float >( player_box.y - 1 + player_box.h - health_bar_delta, player_box.y, player_box.y + player_box.h ), 2.5f, health_bar_delta, color{ health_bar_color, 200 * opacity_array[ player->index( ) ] } );
-            render::rect( player_box.x - 7.5f, player_box.y - 1, 4.f, player_box.h + 2, color{ 46, 46, 46, 190 * opacity_array[ player->index( ) ] } );
-
-            if ( health > 0 && health < 100 )
-                render::string( fonts::visuals_04b03, player_box.x - 15.5f + ( health_text_dim.x / 2 ), player_box.y - 4 + player_box.h - health_bar_delta, color{ color::white( ), 240 * opacity_array[ player->index( ) ] }, health_text, true );
-        }
-
-        if ( g_vars.visuals_player_weapon.value ) {
-            auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( player->weapon_handle( ) );
-
-            if ( weapon ) {
-                auto weapon_data = weapon->get_weapon_data( );
-
-                if ( weapon_data ) {
-                    auto weapon_text = utils::convert_utf8( weapon->get_name( ) );
-                    auto text_dimensions = render::get_text_size( fonts::visuals_04b03, weapon_text );
-
-                    std::transform( weapon_text.begin( ), weapon_text.end( ), weapon_text.begin( ), ::toupper );
-
-                    render::string( fonts::visuals_04b03, player_box.x + ( player_box.w / 2 ) - text_dimensions.x / 2, player_box.y + player_box.h + 1.5f, color{ color::white( ), 240 * opacity_array[ player->index( ) ] }, weapon_text, true );
-                }
-            }
-        }
-
-        std::deque< std::pair< std::string, color > > flags;
-
-        {
-            auto distance_to_player = glm::length( player->origin( ) - globals::local_player->origin( ) ) * 0.01905f;
-            auto distance_to_player_text = fmt::format( "{}M", static_cast< int >( std::roundf( distance_to_player ) ) );
-            auto text_dimensions = render::get_text_size( fonts::visuals_04b03, distance_to_player_text );
-
-            if ( g_vars.visuals_player_distance.value )
-                flags.push_back( { distance_to_player_text, { 255, 255, 255 } } );
-
-            if ( g_vars.visuals_player_flags_bot.value && player_info.fake_player )
-                flags.push_back( { "BOT", { 255, 255, 255 } } );
-
-            if ( g_vars.visuals_player_flags_scoped.value && player->scoped( ) )
-                flags.push_back( { "SCOPED", { 255, 255, 255 } } );
-
-            auto get_armor_type = [ ]( c_cs_player *player ) -> std::string {
-                if ( player->armor( ) > 0 && player->helmet( ) )
-                    return "HK";
-
-                else if ( player->armor( ) )
-                    return "K";
-
-                else if ( player->helmet( ) )
-                    return "H";
-
-                return "";
-            };
-
-            if ( g_vars.visuals_player_flags_money.value && player->account( ) > 0 ) {
-                auto balence = fmt::format( "${}", player->account( ) );
-
-                flags.push_back( { balence, { 255, 255, 255 } } );
-            }
-
-            if ( g_vars.visuals_player_flags_armor.value )
-                flags.push_back( { get_armor_type( player ), { 255, 255, 255 } } );
-        }
-
-        for ( size_t i = { 0ul }; i < flags.size( ); ++i ) {
-            auto &flag_object = flags.at( i );
-            auto offset = ( i * ( render::get_text_size( fonts::visuals_04b03, flags[ i ].first ).y + 1.0f ) );
-
-            render::string( fonts::visuals_04b03, player_box.x + player_box.w + 2, player_box.y + offset - 1, color{ color::white( ), 240 * opacity_array[ player->index( ) ] }, flag_object.first, true );
-        }
+        render::string( fonts::visuals_04b03, player_box.x + player_box.w + 2, player_box.y + offset - 1, color{ color::white( ), 240 * opacity_array[ player->index( ) ] }, flag_object.first, true );
     }
 }
 
@@ -260,7 +253,7 @@ void visuals::render_offscreen( c_cs_player *player, const player_info_t &player
         auto rotation = ( globals::view_angles - math::vector_angle( origin_lerped - origin ) ).y - 90.0f;
         auto angle_radians = math::deg_to_rad( rotation );
 
-        auto rotate_point = []( vector_2d center, vector_2d &point, float rotation ) {
+        auto rotate_point = [ ]( vector_2d center, vector_2d &point, float rotation ) {
             point -= center;
             math::rotate_point( point, rotation );
             point += center;
@@ -277,7 +270,7 @@ void visuals::render_offscreen( c_cs_player *player, const player_info_t &player
         std::array< vector_2d, 3 > points = {
                 vector_2d( position.x + 7.0f + size, position.y + 7.0f + size ),
                 vector_2d( position.x - 7.0f - size, position.y ),
-                vector_2d( position.x + 7.0f + size, position.y - 7.0f - size )
+                vector_2d( position.x + 7.0f + size, position.y - 7.0f - size ) 
         };
 
         rotate_point( { position.x, position.y }, points[ 0 ], rotation );
@@ -297,7 +290,10 @@ void visuals::render_skeleton( c_cs_player *player, lag_record *record, color sk
     if ( !player->alive( ) )
         return;
 
-    auto model = player->get_model( );
+    if ( g_animations.lag_info[ player->index( ) ].lag_records.empty( ) )
+        return;
+
+    auto model = g_animations.lag_info[ player->index( ) ].lag_records.front( )->model;
 
     if ( !model )
         return;

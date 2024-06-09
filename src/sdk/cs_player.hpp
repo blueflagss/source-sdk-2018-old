@@ -43,6 +43,11 @@ enum effects : int {
     parent_animates = 0x200
 };
 
+class player_state {
+public:
+    vector_3d v_angle;
+};
+
 class c_cs_player : public c_base_entity {
 public:
     OFFSET( button_forced, int, 0x3310 );
@@ -65,6 +70,7 @@ public:
     NETVAR( velocity_modifier, float, "DT_CSPlayer", "m_flVelocityModifier" );
     NETVAR( heavy_armor, bool, "DT_CSPlayer", "m_bHasHeavyArmor" );
     NETVAR( client_side_animation, bool, "DT_BaseAnimating", "m_bClientSideAnimation" );
+    NETVAR( pl, player_state, "DT_CSPlayer", "pl" );
     NETVAR( flash_duration, float, "DT_CSPlayer", "m_flFlashDuration" );
     NETVAR( eye_angles, vector_3d, "DT_CSPlayer", "m_angEyeAngles[0]" );
     NETVAR( viewmodel_handle, uint32_t, "DT_CSPlayer", "m_hViewModel[0]" );
@@ -88,13 +94,16 @@ public:
     studiohdr_t *get_model_ptr( );
     int lookup_pose_parameter( const char *name );
     float set_pose_parameter( int index, float value );
+    float sequence_duration( int sequence );
+    float get_sequence_cycle_rate( int sequence );
     float get_pose_parameter( int index );
     void get_bone_position( int bone, vector_3d &out, vector_3d &q );
     int lookup_bone( const char *name );
     void modify_eye_position( c_csgo_player_animstate *state, vector_3d *input_eye_pos, matrix_3x4 *bones );
+    int lookup_sequence( const char *label );
+    int get_sequence_activity( int sequence );
     void invalidate_bone_cache( );
     bool can_attack( );
     bool get_aim_matrix( vector_3d angle, matrix_3x4 *bones );
     vector_3d get_shoot_position( );
-
 };

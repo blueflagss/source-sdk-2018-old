@@ -1,5 +1,5 @@
 #include "chams.hpp"
-#include <features/animations/anims.hpp>
+#include <features/animations/animation_sync.hpp>
 #include <hooks/draw_model_execute/draw_model_execute.hpp>
 #include <iterator>
 

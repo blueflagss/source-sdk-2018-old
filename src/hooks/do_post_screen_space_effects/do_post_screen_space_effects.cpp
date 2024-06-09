@@ -10,7 +10,7 @@ void __fastcall hooks::do_post_screen_space_effects::hook( REGISTERS, const c_vi
     if ( !g_interfaces.engine_client->is_in_game( ) || !g_interfaces.engine_client->is_connected( ) )
         return original.fastcall< void >( REGISTERS_OUT, setup );
 
-    for ( int i = 0; i < g_interfaces.glow_object_manager->glow_object_definitions.Size( ); i++ ) {
+    for ( int i = 0; i < g_interfaces.glow_object_manager->glow_object_definitions.m_Size; i++ ) {
         auto &glow_object = g_interfaces.glow_object_manager->glow_object_definitions.Element( i );
 
         if ( glow_object.is_unused( ) || !glow_object.entity )

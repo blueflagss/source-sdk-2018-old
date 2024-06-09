@@ -28,6 +28,25 @@ float c_cs_player::set_pose_parameter( int index, float value ) {
     }
 }
 
+float c_cs_player::sequence_duration( int sequence ) {
+    static auto sequence_duration = signature::find( XOR( "client.dll" ), XOR( "55 8B EC 56 8B F1 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 83 C4 04 5E 5D C2 04 00 52 68 ? ? ? ? 6A 02" ) ).get< float( __thiscall * )( void *, int ) >( );
+
+    float retval;
+    sequence_duration( this, sequence );
+    __asm movss retval, xmm0;
+
+    return retval;
+}
+
+float c_cs_player::get_sequence_cycle_rate( int sequence ) {
+    float t = sequence_duration( sequence );
+
+    if ( t > 0.0f )
+        return 1.0f / t;
+    else
+        return 1.0f / 0.1f;
+}
+
 float c_cs_player::get_pose_parameter( int index ) {
     static auto get_pose_parameter = signature::find( "client.dll", "E8 ? ? ? ? 8B 44 24 2C 83 EC 08 F3 0F 5A" ).add( 0x1 ).rel32( ).get< float( __thiscall * )( void *, int ) >( );
 
@@ -76,6 +95,18 @@ void c_cs_player::modify_eye_position( c_csgo_player_animstate *state, vector_3d
             }
         }
     }
+}
+
+int c_cs_player::lookup_sequence( const char *label ) {
+    static auto lookup_sequence = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 8B D0 89 54 24 18 83 FA FF 75 11" ) ).add( 0x1 ).rel32( ).get< int( __thiscall * )( void *, const char * ) >( );
+
+    return lookup_sequence( this, label );
+}
+
+int c_cs_player::get_sequence_activity( int sequence ) {
+    static auto get_sequence_activity = signature::find( XOR( "client.dll" ), XOR( "53 56 8B F1 8B DA 85 F6 74 55" ) ).get< int( __fastcall * )( studiohdr_t *, int ) >( );
+
+    return get_sequence_activity( get_model_ptr( ), sequence );
 }
 
 void c_cs_player::invalidate_bone_cache( ) {

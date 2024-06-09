@@ -29,18 +29,16 @@ enum {
     char_tex_warpshield = 'Z'
 };
 
-c_fire_bullet_data penetration_system::run( const vector_3d src, const vector_3d end, c_cs_player *ent, bool is_zeus, c_cs_weapon_info *info_override ) {
+c_fire_bullet_data penetration_system::run( const vector_3d src, const vector_3d end, c_cs_player *ent, const std::array< matrix_3x4, 128 > &bones, bool is_zeus, c_cs_weapon_info *info_override ) {
     c_fire_bullet_data info{ };
 
     if ( !ent )
         return { };
 
-    const auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( globals::local_player->weapon_handle() );
-
-    if ( !weapon )
+    if ( !globals::local_weapon )
         return { };
 
-    const auto data = info_override == nullptr ? weapon->get_weapon_data( ) : info_override;
+    const auto data = info_override == nullptr ? globals::local_weapon->get_weapon_data( ) : info_override;
 
     if ( !data )
         return { };
@@ -49,7 +47,7 @@ c_fire_bullet_data penetration_system::run( const vector_3d src, const vector_3d
 
     c_trace_filter_hitscan filter{ };
 
-    bool result = simulate_fire_bullet( data, src, end, info, is_zeus, ent );
+    bool result = simulate_fire_bullet( data, src, end, info, bones, is_zeus, ent );
 
     if ( !result || info.damage < 1.0f )
         return { };
@@ -57,7 +55,7 @@ c_fire_bullet_data penetration_system::run( const vector_3d src, const vector_3d
     return info;
 }
 
-bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vector_3d src, vector_3d pos, c_fire_bullet_data &fire_info, bool is_zeus, c_cs_player *ent ) {
+bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vector_3d src, vector_3d pos, c_fire_bullet_data &fire_info, const std::array< matrix_3x4, 128 > &bones, bool is_zeus, c_cs_player *ent ) {
     vector_3d direction = math::normalize_angle( pos - src );
 
     fire_info.penetrate_count = 4;
@@ -77,8 +75,8 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
     tr.start_pos = r.start + r.start_offset;
     tr.end_pos = tr.start_pos + r.delta;
 
-    for ( int i = 0; i < 128; i++ )
-        temp_mat[ i ] = const_cast< matrix_3x4 * >( &g_animations.animated_bones[ ent->index( ) ].data( )[i] );
+    for ( int i = 0; i < bones.size( ); i++ )
+        temp_mat[ i ] = const_cast< matrix_3x4 * >( &bones[ i ] );
 
     const auto ret = proxy_trace_to_studio_csgo_hitgroups_priority( ent, mask_shot_hull | contents_hitbox, &ent->origin( ), &tr, &r, temp_mat );
 
@@ -145,18 +143,15 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
             fire_info.penetrate_count = 0;
 
         if ( !handle_bullet_penetration( data, enter_trace, src, direction, fire_info.penetrate_count, fire_info.damage, data->penetration ) ) {
-            fire_info.out_damage = 0.f;
+            fire_info.damage = 0.f;
             return false;
         }
     }
 
-    if (!did_hit) {
+    if ( !did_hit )
         fire_info.out_damage = fire_info.damage;
-    } else
-        return true;
-        
 
-    return false;
+    return true;
 }
 
 bool penetration_system::is_breakable_entity( c_cs_player *ent ) {
@@ -172,7 +167,7 @@ bool penetration_system::is_breakable_entity( c_cs_player *ent ) {
 
     auto cc = ent->get_client_class( );
 
-    if (cc) {
+    if ( cc ) {
         auto name = cc->network_name;
 
         if ( name[ 1 ] != 'F' || name[ 4 ] != 'c' || name[ 5 ] != 'B' || name[ 9 ] != 'h' )
@@ -306,7 +301,7 @@ float penetration_system::scale_damage( c_cs_player *player, float damage, float
     float scale_body_damage = ( player->team( ) == 3 ) ? globals::cvars::mp_damage_scale_ct_body->get_float( ) : globals::cvars::mp_damage_scale_t_body->get_float( );
     float head_damage_scale = ( player->team( ) == 3 ) ? globals::cvars::mp_damage_scale_ct_head->get_float( ) : globals::cvars::mp_damage_scale_t_head->get_float( );
 
-    static auto is_armored = [&]( ) -> bool {
+    static auto is_armored = [ & ]( ) -> bool {
         if ( player->armor( ) <= 0 )
             return false;
 
@@ -435,5 +430,6 @@ bool penetration_system::proxy_trace_to_studio_csgo_hitgroups_priority( c_cs_pla
 			add esp, 0x1C
 			mov rval, al
     }
+
     return rval;
 }

@@ -78,6 +78,20 @@ void menu::init( ) {
                 general->add_object< penumbra::slider< int > >( "Hit chance", &g_vars.aimbot_hit_chance.value, 0, 100, "%" );
                 general->add_object< penumbra::slider< int > >( "Minimum damage", &g_vars.aimbot_min_damage.value, 0, 100, "%" );
             }
+
+            auto antiaim = ragebot->add_child( "Anti-aim", 2, false );
+            {
+                antiaim->add_object< penumbra::checkbox >( "Enabled#Anti-aim", &g_vars.exploits_antiaim.value );
+                antiaim->add_object< penumbra::combobox >( "Pitch type", &g_vars.exploits_antiaim_pitch_type.value, std::deque< std::string >{ "Down", "Up", "Zero" } );
+                antiaim->add_object< penumbra::combobox >( "Direction type", &g_vars.exploits_antiaim_dir_type.value, std::deque< std::string >{ "None", "Backwards", "Left ", "Right " } );
+                antiaim->add_object< penumbra::combobox >( "Yaw type", &g_vars.exploits_antiaim_yaw_type.value, std::deque< std::string >{ "Direction", "Jitter", "Spin" } );
+                antiaim->add_object< penumbra::slider< float > >( "Jitter/Spin Range", &g_vars.exploits_antiaim_range.value, 0.f, 360.f, "" );
+                antiaim->add_object< penumbra::slider< float > >( "Spin Speed", &g_vars.exploits_antiaim_spin_speed.value, 0.f, 10.f, "" );
+                antiaim->add_object< penumbra::checkbox >( "Fake angles", &g_vars.exploits_antiaim_fake.value );
+                antiaim->add_object< penumbra::combobox >( "Fake Yaw type", &g_vars.exploits_antiaim_fake_yaw_type.value, std::deque< std::string >{ "Default", "Opposite" } );
+                antiaim->add_object< penumbra::checkbox >( "Fakelag", &g_vars.exploits_fakelag.value );
+                antiaim->add_object< penumbra::slider< int > >( "Limit#fakelag", &g_vars.exploits_fakelag_limit.value, 0, 16, " ticks" );
+            }
         }
 
         auto visuals = main_window->add_tab( "Visuals", ICON_FA_USER_EDIT, 3 );

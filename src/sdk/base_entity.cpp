@@ -1,5 +1,14 @@
 #include "base_entity.hpp"
 
+void c_base_entity::attachment_helper( ) {
+    static auto attachment_helper = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 8B 55 08 85 D2 74 23" ) ).add( 0x1 ).rel32( ).get< void( __thiscall * )( void *, c_studio_hdr * ) >( );
+
+    if ( !this || !*reinterpret_cast< c_studio_hdr ** >( reinterpret_cast< uintptr_t >( this ) + 0x2938 ) )
+        return;
+
+    return attachment_helper( this, *reinterpret_cast< c_studio_hdr ** >( reinterpret_cast< uintptr_t >( this ) + 0x2938 ) );
+}
+
 vector_3d c_base_entity::get_bone_position( const int bone, matrix_3x4 *bone_matrix ) {
     auto hitbox = bone_matrix[ bone ];
 

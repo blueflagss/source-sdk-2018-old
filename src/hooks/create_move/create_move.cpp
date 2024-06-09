@@ -1,7 +1,6 @@
 #include "create_move.hpp"
 #include <core/config.hpp>
 #include <core/variables.hpp>
-#include <features/animations/anims.hpp>
 #include <features/features.hpp>
 #include <features/penetration/penetration.hpp>
 
@@ -84,9 +83,13 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
 
         g_interfaces.engine_client->get_view_angles( globals::view_angles );
         g_movement.on_create_move( cmd, globals::view_angles );
-
+       
         g_prediction.start( cmd );
         {
+            if ( math::length_2d( g_prediction.predicted_velocity ) > 5.0f )
+                *globals::packet = g_interfaces.client_state->choked_commands( ) >= g_vars.exploits_fakelag_limit.value;
+
+            g_antiaim.on_create_move( cmd, cmd->view_angles );
             g_aimbot.on_create_move( cmd );
         }
         g_prediction.finish( cmd );
@@ -104,6 +107,8 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
 
     backup_players( true );
 
+    globals::old_packet = *globals::packet;
+  
     return false;
 }
 
