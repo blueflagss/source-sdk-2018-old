@@ -129,7 +129,7 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
         }
 
         length += enter_trace.fraction * length_remaining;
-        fire_info.damage *= std::powf( data->range_modifier, length / 500.f );
+        fire_info.damage *= std::powf( data->range_modifier, length * 0.002f );
 
         if ( length > glm::length( src - pos ) )
             return false;
