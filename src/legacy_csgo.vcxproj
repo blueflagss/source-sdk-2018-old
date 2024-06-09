@@ -39,6 +39,7 @@
     <ClInclude Include="hooks\check_for_sequence_change\check_for_sequence_change.hpp" />
     <ClInclude Include="hooks\do_extra_bone_processing\do_extra_bone_processing.hpp" />
     <ClInclude Include="hooks\do_post_screen_space_effects\do_post_screen_space_effects.hpp" />
+    <ClInclude Include="hooks\do_procedural_footplant\do_procedural_footplant.hpp" />
     <ClInclude Include="hooks\estimate_abs_velocity\estimate_abs_velocity.hpp" />
     <ClInclude Include="hooks\get_bool\get_bool.hpp" />
     <ClInclude Include="hooks\get_viewmodel_fov\get_viewmodel_fov.hpp" />
@@ -406,6 +407,7 @@
     <ClCompile Include="hooks\check_for_sequence_change\check_for_sequence_change.cpp" />
     <ClCompile Include="hooks\do_extra_bone_processing\do_extra_bone_processing.cpp" />
     <ClCompile Include="hooks\do_post_screen_space_effects\do_post_screen_space_effects.cpp" />
+    <ClCompile Include="hooks\do_procedural_footplant\do_procedural_footplant.cpp" />
     <ClCompile Include="hooks\estimate_abs_velocity\estimate_abs_velocity.cpp" />
     <ClCompile Include="hooks\get_bool\get_bool.cpp" />
     <ClCompile Include="hooks\get_viewmodel_fov\get_viewmodel_fov.cpp" />

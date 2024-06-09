@@ -1,5 +1,5 @@
 #include "penetration.hpp"
-#include <features/animations/anims.hpp>
+#include <features/animations/animation_sync.hpp>
 
 enum {
     char_tex_antlion = 'A',

@@ -8,14 +8,10 @@ void __fastcall hooks::build_transformations::hook( REGISTERS, c_studio_hdr *hdr
 
     auto studio_hdr = hdr->studio_hdr;
 
-     if ( !studio_hdr )
+    if ( !studio_hdr )
         return reinterpret_cast< decltype( &hooks::build_transformations::hook ) >( hooks::build_transformations::original.trampoline( ).address( ) )( REGISTERS_OUT, hdr, pos, quaternion, matrix, mask, computed );
 
-    const auto backup_is_jiggle_bones_enabled = entity->is_jiggle_bones_enabled( );
-
-    entity->is_jiggle_bones_enabled( ) = false;
-    
-	const auto backup_bone_flags = studio_hdr->flags;
+    const auto backup_bone_flags = studio_hdr->flags;
 
     for ( auto i = 0; i < studio_hdr->numbones; i++ ) {
         auto bone = studio_hdr->bone( i );
@@ -24,8 +20,10 @@ void __fastcall hooks::build_transformations::hook( REGISTERS, c_studio_hdr *hdr
             bone->flags &= ~0x04;
     }
 
-    reinterpret_cast< decltype( &hooks::build_transformations::hook ) >( hooks::build_transformations::original.trampoline( ).address( ) )( REGISTERS_OUT, hdr, pos, quaternion, matrix, mask, computed );
+    const auto backup_is_jiggle_bones_enabled = entity->is_jiggle_bones_enabled( );
 
+    entity->is_jiggle_bones_enabled( ) = false;
+    reinterpret_cast< decltype( &hooks::build_transformations::hook ) >( hooks::build_transformations::original.trampoline( ).address( ) )( REGISTERS_OUT, hdr, pos, quaternion, matrix, mask, computed );
     entity->is_jiggle_bones_enabled( ) = backup_is_jiggle_bones_enabled;
     studio_hdr->flags = backup_bone_flags;
 }

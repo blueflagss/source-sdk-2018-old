@@ -284,7 +284,6 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
 
     animated_origin[ globals::local_player->index( ) ] = globals::local_player->origin( ); 
     build_bones( globals::local_player, animated_bones[ globals::local_player->index( ) ].data( ), globals::local_player->simtime( ) );
-    globals::local_player->attachment_helper( );
 
     if ( g_movement.ground_ticks ) {
         globals::local_player->flags( ) |= player_flags::on_ground;

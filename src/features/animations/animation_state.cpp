@@ -347,7 +347,7 @@ int c_animation_state_rebuilt::select_weighted_sequence( c_csgo_player_animstate
             break;
         case ACT_CSGO_ALIVE_LOOP:
             seq = 8;
-            if ( state->m_pWeapon && state->m_pWeapon->get_weapon_data( ) && state->m_pWeapon->get_weapon_data( )->weapon_type == weapon_type::type_knife )
+            if ( state->m_pWeapon && state->m_pWeapon->get_weapon_data( ) && state->m_pWeapon->get_weapon_data( )->weapon_type == weapon_type::WEAPONTYPE_KNIFE )
                 seq = 9;
             break;
         default:
