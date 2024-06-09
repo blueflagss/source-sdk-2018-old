@@ -149,8 +149,9 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
 
     if ( !did_hit )
         fire_info.out_damage = fire_info.damage;
-
-    return true;
+    else {
+        return true;
+    }
 }
 
 bool penetration_system::is_breakable_entity( c_cs_player *ent ) {

@@ -284,6 +284,7 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
 
     animated_origin[ globals::local_player->index( ) ] = globals::local_player->origin( ); 
     build_bones( globals::local_player, animated_bones[ globals::local_player->index( ) ].data( ), globals::local_player->simtime( ) );
+    globals::local_player->attachment_helper( );
 
     if ( g_movement.ground_ticks ) {
         globals::local_player->flags( ) |= player_flags::on_ground;
@@ -299,10 +300,6 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
         }
     }
 
-    for ( int i = 0; i < globals::local_player->bone_count( ); i++ )
-        animated_bones[ globals::local_player->index( ) ][ i ].set_origin( animated_bones[ globals::local_player->index( ) ][ i ].get_origin( ) + globals::local_player->origin( ) - globals::local_player->get_render_origin( ) );
-    
-    globals::local_player->attachment_helper( );
     memcpy( globals::local_player->anim_overlays( ), animation_layers.data( ), sizeof( c_animation_layer ) * 13 );
     globals::local_player->pose_parameters( ) = pose_parameters;
 
@@ -318,13 +315,6 @@ void animation_sync::maintain_local_animations( ) {
 
     if ( !g_interfaces.client_state->choked_commands( ) )
         memcpy( animation_layers.data( ), globals::local_player->anim_overlays( ), sizeof( c_animation_layer ) * 13 );
-
-    auto bone_cache = globals::local_player->bone_cache( );
-
-    memcpy( bone_cache, animated_bones[ globals::local_player->index( ) ].data( ), sizeof( matrix_3x4 ) * globals::local_player->bone_count( ) );
-
-    for ( int i = 0; i < globals::local_player->bone_count( ); i++ )
-        animated_bones[ globals::local_player->index( ) ][ i ].set_origin( bone_cache[ i ].get_origin( ) + globals::local_player->origin( ) - globals::local_player->get_render_origin( ) );
 
     globals::local_player->set_abs_angles( glm::vec3{ 0.f, foot_yaw, 0.f } );
     memcpy( globals::local_player->anim_overlays( ), animation_layers.data( ), sizeof( c_animation_layer ) * 13 );
