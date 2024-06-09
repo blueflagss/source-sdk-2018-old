@@ -88,6 +88,25 @@ float c_cs_weapon_base::get_spread( ) {
     return utils::get_method< float( __thiscall * )( void * ) >( this, 439 )( this );
 }
 
+bool c_cs_weapon_base::scoped_weapon() {
+    return item_definition_index( ) == weapons::g3sg1 ||
+           item_definition_index( ) == weapons::scar20 ||
+           item_definition_index( ) == weapons::ssg08 ||
+           item_definition_index( ) == weapons::awp ||
+           item_definition_index( ) == weapons::ssg556 ||
+           item_definition_index( ) == weapons::aug;
+}
+
+float c_cs_weapon_base::get_lowest_accuracy( ) {
+    const auto info = get_weapon_data( );
+
+    // todo: add option for auto scope
+    if ( globals::local_player->flags( ) & ducking )
+        return ( scoped_weapon( ) && zoom_level( ) != 0 ) ? info->inaccuracy_crouch_alt : info->inaccuracy_crouch;
+
+    return ( scoped_weapon( ) && zoom_level( ) != 0 ) ? info->inaccuracy_stand_alt : info->inaccuracy_stand;
+}
+
 c_econ_item_definition *c_cs_weapon_base::econ_item_view( c_cs_weapon_base *weapon ) {
     static auto econ_item_view = signature::find( "client.dll", "8B 81 ? ? ? ? 81 C1 ? ? ? ? FF 50 04 83 C0 40 C3" ).get< c_econ_item_definition *( __thiscall * ) ( void * ) >( );
 

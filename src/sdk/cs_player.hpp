@@ -43,10 +43,7 @@ enum effects : int {
     parent_animates = 0x200
 };
 
-class player_state {
-public:
-    vector_3d v_angle;
-};
+
 
 class c_cs_player : public c_base_entity {
 public:
@@ -70,7 +67,6 @@ public:
     NETVAR( velocity_modifier, float, "DT_CSPlayer", "m_flVelocityModifier" );
     NETVAR( heavy_armor, bool, "DT_CSPlayer", "m_bHasHeavyArmor" );
     NETVAR( client_side_animation, bool, "DT_BaseAnimating", "m_bClientSideAnimation" );
-    NETVAR( pl, player_state, "DT_CSPlayer", "pl" );
     NETVAR( flash_duration, float, "DT_CSPlayer", "m_flFlashDuration" );
     NETVAR( eye_angles, vector_3d, "DT_CSPlayer", "m_angEyeAngles[0]" );
     NETVAR( lower_body_yaw_target, float, "DT_CSPlayer", "m_flLowerBodyYawTarget" );

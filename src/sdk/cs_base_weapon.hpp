@@ -32,7 +32,7 @@ enum weapons : int {
     nova = 35,
     p250 = 36,
     scar20 = 38,
-    sg553 = 39,
+    ssg556 = 39,
     ssg08 = 40,
     knife_t = 42,
     flashbang = 43,
@@ -127,6 +127,7 @@ public:
     NETVAR( next_primary_attack, float, "DT_WeaponCSBase", "m_flNextPrimaryAttack" );
     NETVAR( clip_1, int, "DT_WeaponCSBase", "m_iClip1" );
     NETVAR( clip_2, int, "DT_WeaponCSBase", "m_iClip2" );
+    NETVAR( zoom_level, float, "DT_WeaponCSBaseGun", "m_zoomLevel" );
 
     float get_spread( );
     float get_inaccuracy( );
@@ -138,4 +139,6 @@ public:
     c_econ_item_definition *static_data( c_econ_item_definition *item );
     bool is_grenade( );
     void update_accuracy_penalty( );
+    float get_lowest_accuracy( );
+    bool scoped_weapon( );
 };

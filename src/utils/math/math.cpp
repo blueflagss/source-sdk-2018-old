@@ -304,6 +304,16 @@ void math::vector_transform( const vector_3d in1, const matrix_3x4 &in2, vector_
     out[ 2 ] = math::dot_product( in1, { in2[ 2 ][ 0 ], in2[ 2 ][ 1 ], in2[ 2 ][ 2 ] } ) + in2[ 2 ][ 3 ];
 }
 
+vector_3d math::vector_transform( const vector_3d in1, const matrix_3x4 &in2 ) {
+    vector_3d out;
+
+    out[ 0 ] = math::dot_product( in1, { in2[ 0 ][ 0 ], in2[ 0 ][ 1 ], in2[ 0 ][ 2 ] } ) + in2[ 0 ][ 3 ];
+    out[ 1 ] = math::dot_product( in1, { in2[ 1 ][ 0 ], in2[ 1 ][ 1 ], in2[ 1 ][ 2 ] } ) + in2[ 1 ][ 3 ];
+    out[ 2 ] = math::dot_product( in1, { in2[ 2 ][ 0 ], in2[ 2 ][ 1 ], in2[ 2 ][ 2 ] } ) + in2[ 2 ][ 3 ];
+
+    return out;
+}
+
 void math::sin_cos( float radians, float *sine, float *cosine ) {
     *sine = sin( radians );
     *cosine = cos( radians );

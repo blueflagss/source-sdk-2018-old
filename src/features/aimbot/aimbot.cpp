@@ -2,20 +2,16 @@
 
 #include <core/config.hpp>
 #include <features/engine_prediction/engine_prediction.hpp>
-#include <features/penetration/penetration.hpp>
 #include <features/resolver/resolver.hpp>
 #include <features/ui/notifications/notifications.hpp>
-#include <threadutils/threading.h>
-
-bool aimbot::setup_point_for_scan( c_cs_player *player, lag_record &record, int hit_group ) {
-    return true;
-}
+#include <utils/threading/dispatch.hpp>
 
 void aimbot::reset( ) {
     best = { };
     globals::target_index = -1;
     globals::is_targetting = false;
     targets.clear( );
+    aim_points.clear( );
 }
 
 bool aimbot::hitchance( c_cs_player *player, const vector_3d &angle, lag_record *record ) {
@@ -142,7 +138,7 @@ void aimbot::search_targets( ) {
                 if ( !player || !player->alive( ) )
                     break;
 
-                targets.emplace_back( aim_player{ player, player->index( ), player->health( ), glm::length( player->origin( ) - globals::local_player->origin( ) ), math::calculate_fov( globals::view_angles, math::clamp_angle( player->get_shoot_position( ) ) ), 0, &g_animations.lag_info[ player->index( ) ].anim_records.front( ) } );
+                targets.emplace_back( aim_player{ player, math::calculate_fov( globals::view_angles, math::clamp_angle( player->get_shoot_position( ) ) ), glm::length( player->origin( ) - globals::local_player->origin( ) ), 0, &g_animations.lag_info[ player->index( ) ].anim_records.front( ), vector_3d( 0, 0, 0 ), vector_3d( 0, 0, 0) } );
             } break;
         }
     }
@@ -152,7 +148,7 @@ void aimbot::search_targets( ) {
 
     std::sort( targets.begin( ), targets.end( ), [ & ]( aim_player &lhs, aim_player &rhs ) {
         if ( fabsf( lhs.fov - rhs.fov ) < 20.0f )
-            return lhs.health < rhs.health;
+            return lhs.entity->health( ) < rhs.entity->health( );
 
         switch ( g_vars.aimbot_sort_by.value ) {
             case 0: {
@@ -165,56 +161,134 @@ void aimbot::search_targets( ) {
     } );
 }
 
-bool aimbot::get_best_aim_position( aim_player &target, float &dmg, vector_3d &position, lag_record *record ) {
-    bool done = false;
+void aimbot::plot_points( c_cs_player *player, lag_record *record, int side, std::vector< std::pair< vector_3d, bool > > &points, mstudiobbox_t *hitbox, mstudiohitboxset_t *set, int idx, float scale ) {
+    vector_3d center = ( hitbox->max + hitbox->min ) * 0.5f;
 
-    if ( !record || !target.entity || target.entity->dormant( ) )
-        return false;
+    vector_3d center_transformed;
+    math::vector_transform( center, record->bones[ hitbox->bone ], center_transformed );
 
-    record->cache( );
+    points.push_back( std::make_pair( center_transformed, false ) );
+     
+    if ( scale <= 0.0f )
+        return;
 
-    float scan_damage = 0.0f;
-    vector_3d scan_position = { };
-    int scan_hitbox = 0;
+    if (hitbox->radius <= 0.0f) {
+        if (idx == csgo_hitbox::hitbox_r_foot || idx == csgo_hitbox::hitbox_l_foot) {
+            float d1 = ( hitbox->min.z - center.z ) * 0.425f;
 
-    for ( auto &hitbox : hitboxes ) {
-        done = false;
+            if ( idx == csgo_hitbox::hitbox_l_foot )
+                d1 *= -1.f;
+            
+            vector_3d toe = vector_3d{ ( ( hitbox->max.x - center.x ) * scale ) + center.x, center.y, center.z };
+            vector_3d heel = vector_3d{ ( ( hitbox->min.x - center.x ) * scale ) + center.x, center.y, center.z };
 
-        vector_3d out;
+            points.push_back( std::make_pair( math::vector_transform( toe, record->bones[ hitbox->bone ] ), true ) );
+            points.push_back( std::make_pair( math::vector_transform( heel, record->bones[ hitbox->bone ]), true ) );
+        }
+    } else {
+        float r = hitbox->radius * scale;
 
-        if ( !get_hitbox_position( target.entity, record->bones.data( ), hitbox, out ) )
+        if (idx == csgo_hitbox::hitbox_head) {
+            vector_3d left{ hitbox->max.x, hitbox->max.y, hitbox->max.z - ( hitbox->radius * 0.5f ) };
+            points.push_back( std::make_pair( math::vector_transform( left, record->bones[ hitbox->bone ] ), true ) );
+
+            vector_3d right{ hitbox->max.x, hitbox->max.y, hitbox->max.z + ( hitbox->radius * 0.5f ) };
+            points.push_back( std::make_pair( math::vector_transform( right, record->bones[ hitbox->bone ] ), true ) );
+
+            constexpr float rotation = 0.70710678f;
+
+            scale = std::clamp< float >( scale, 0.1f, 0.95f );
+            r = hitbox->radius * scale;
+
+            vector_3d topback{ hitbox->max.x + ( rotation * r ), hitbox->max.y + ( -rotation * r ), hitbox->max.z };
+            points.push_back( std::make_pair( math::vector_transform( topback, record->bones[ hitbox->bone ] ), true ) );
+            points.push_back( std::make_pair( math::vector_transform( vector_3d( center.x, hitbox->max.y - r, center.z ), record->bones[ hitbox->bone ] ), true ) );
+        } else if ( idx == csgo_hitbox::hitbox_body || idx == csgo_hitbox::hitbox_pelvis ) {
+            vector_3d back{ center.x, hitbox->max.y - r, center.z };
+            vector_3d right{ hitbox->max.x, hitbox->max.y, hitbox->max.z + ( hitbox->radius * 0.5f ) };
+            vector_3d left{ hitbox->max.x, hitbox->max.y, hitbox->max.z - ( hitbox->radius * 0.5f) };
+
+            points.push_back( std::make_pair( math::vector_transform( back, record->bones[ hitbox->bone ] ), true ) );
+            points.push_back( std::make_pair( math::vector_transform( right, record->bones[ hitbox->bone ] ), true ) );
+            points.push_back( std::make_pair( math::vector_transform( left, record->bones[ hitbox->bone ] ), true ) );
+        } else if ( idx == csgo_hitbox::hitbox_thorax || idx == csgo_hitbox::hitbox_chest || idx == csgo_hitbox::hitbox_upper_chest ) {
+            vector_3d back{ center.x, hitbox->max.y - r, center.z };
+            points.push_back( std::make_pair( math::vector_transform( back, record->bones[ hitbox->bone ] ), true ) );
+        } else if ( idx == csgo_hitbox::hitbox_r_thigh || idx == csgo_hitbox::hitbox_l_thigh ) {
+            vector_3d half_bottom{ hitbox->max.x - ( hitbox->radius * 0.5f), hitbox->max.y, hitbox->max.z };
+            points.push_back( std::make_pair( math::vector_transform( half_bottom, record->bones[ hitbox->bone ] ), true ) );
+        }
+    }
+}
+
+void aimbot::generate_points( c_cs_player *player, lag_record* record ) {
+    if ( !player->cstudio_hdr( ) || !player->cstudio_hdr( )->studio_hdr )
+        return;
+
+    for (auto& hitbox : hitboxes) {
+        const auto bbox = player->cstudio_hdr( )->studio_hdr->hitbox( hitbox, player->hitbox_set( ) );
+
+        const auto limb = hitbox >= csgo_hitbox::hitbox_r_thigh;
+        if ( limb && math::length_2d( record->velocity ) > 1.0f )
             continue;
 
-        auto results = g_penetration.run( globals::shoot_position, out, target.entity, record->bones, false );
+        float ps = static_cast<float>( g_vars.aimbot_multipoint_scale.value ) * 0.01f;
 
-        if ( results.out_damage > g_vars.aimbot_min_damage.value ) {
-            scan_damage = results.out_damage;
-            scan_position = out;
-            scan_hitbox = hitbox;
+        std::vector< std::pair< vector_3d, bool > > points;
+        plot_points( player, record, 0, points, bbox, player->cstudio_hdr( )->studio_hdr->hitbox_set( player->hitbox_set( ) ), hitbox, ps );
 
-            for ( int i = 0; i < results.impact_count; i++ ) {
-                auto pos = results.impacts[ i ];
+        if ( points.empty( ) )
+            continue;
 
-                if ( results.impacts[ i + 1 ] != vector_3d( 0, 0, 0 ) ) {
-                    g_interfaces.debug_overlay->add_line_overlay( pos, results.impacts[ i + 1 ], 255, 255, 255, true, 1 );
-                    g_interfaces.debug_overlay->add_text_overlay( pos, 1, "%i | %.1f", i + 1, results.out_damage );
-                } else {
-                    g_interfaces.debug_overlay->add_box_overlay( pos, vector_3d( -5, -5, -5 ), vector_3d( 5, 5, 5 ), vector_3d( 0, 0, 0 ), 255, 0, 0, 255, 1 );
-                    g_interfaces.debug_overlay->add_text_overlay( pos + vector_3d( 0, 20, 0 ), 1, "STOPPED %i | %.1f", i + 1, results.out_damage );
-                }
-            }
+        for (const auto& point : points) {
+            aim_point &p = aim_points.emplace_back( );
 
+            p.pos = point.first;
+            p.center = !point.second;
+            p.record = record;
+            p.bullet_data = { };
+            p.hb = hitbox;
+        }
+    }
+}
+
+bool aimbot::scan_target( c_cs_player *player, lag_record *record, aim_player &target ) {
+    generate_points( player, record );
+
+    std::vector< threading::dispatch_queue::fn > calls;
+    calls.reserve( aim_points.size() );
+
+    for (auto& point : aim_points) {
+        calls.push_back( [ &record, &point ]( ) {
+            point.bullet_data = g_penetration.run(globals::shoot_position, point.pos, record->player, record->bones );
+        } );
+    }
+
+    g_dispatch.evaluate( calls );
+
+    aim_point best_point;
+    bool found_point = false;
+
+    for (auto& point : aim_points) {
+        if ( point.bullet_data.did_hit && point.bullet_data.out_damage >= g_vars.aimbot_min_damage.value) {
+            best_point = point;
+            found_point = true;
             break;
         }
     }
 
-    if ( scan_damage > 0.0f ) {
-        position = scan_position;
-        dmg = scan_damage;
-        return true;
-    }
+    if ( !found_point )
+        return false;
 
-    return false;
+    g_interfaces.debug_overlay->add_box_overlay( best_point.pos, vector_3d( 0, 0, 0 ), vector_3d( 5, 5, 5 ), vector_3d( 0, 0, 0 ), 255, 255, 255, 255, 0.1 );
+
+    best.best_point = best_point.pos;
+    best.damage = best_point.bullet_data.out_damage;
+    best.hitbox = best_point.hb;
+    best.record = record;
+    best.target = player;
+
+    return true;
 }
 
 void aimbot::on_create_move( c_user_cmd *cmd ) {
@@ -250,7 +324,7 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
     for ( auto &target : targets ) {
         hitboxes.clear( );
 
-        if ( g_animations.lag_info[ target.index ].anim_records.empty( ) )
+        if ( g_animations.lag_info[ target.entity->index() ].anim_records.empty( ) )
             continue;
 
         auto ideal = g_resolver.find_ideal_record( &target );
@@ -258,9 +332,11 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
         if ( !ideal )
             continue;
 
-        if ( g_vars.aimbot_hitboxes_head.value )
+        if (g_vars.aimbot_hitboxes_head.value) {
             hitboxes.emplace_back( hitbox_head );
-
+            hitboxes.emplace_back( hitbox_neck );
+        }
+            
         if ( g_vars.aimbot_hitboxes_chest.value ) {
             hitboxes.emplace_back( hitbox_chest );
             hitboxes.emplace_back( hitbox_upper_chest );
@@ -273,6 +349,15 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
             hitboxes.emplace_back( hitbox_pelvis );
             hitboxes.emplace_back( hitbox_r_thigh );
             hitboxes.emplace_back( hitbox_l_thigh );
+        }
+
+        if (g_vars.aimbot_hitboxes_arms.value) {
+            hitboxes.emplace_back( hitbox_l_upper_arm );
+            hitboxes.emplace_back( hitbox_r_upper_arm );
+            hitboxes.emplace_back( hitbox_l_forearm );
+            hitboxes.emplace_back( hitbox_r_forearm );
+            hitboxes.emplace_back( hitbox_l_hand );
+            hitboxes.emplace_back( hitbox_r_hand );
         }
 
         if ( g_vars.aimbot_hitboxes_legs.value ) {
@@ -289,40 +374,8 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
 
         vector_3d out_position = { };
 
-        const auto backup_origin = target.entity->origin( );
-        const auto backup_mins = target.entity->collideable( )->mins( );
-        const auto backup_maxs = target.entity->collideable( )->maxs( );
-        const auto backup_angles = target.entity->get_abs_angles( );
-        const auto backup_bones = target.entity->bone_cache( );
-
-        if ( get_best_aim_position( target, out_damage, out_position, ideal ) ) {
-            best.target = target.entity;
-            best.best_point = out_position;
-            best.damage = out_damage;
-            best.record = ideal;
-        }
-
-        target.entity->origin( ) = backup_origin;
-        target.entity->set_collision_bounds( backup_mins, backup_maxs );
-        target.entity->set_abs_angles( backup_angles );
-        target.entity->bone_cache( ) = backup_bones;
-
-        auto last = g_resolver.find_last_record( &target );
-
-        if ( !last || last == ideal )
+        if ( !scan_target( target.entity, ideal, target ) )
             continue;
-
-        if ( get_best_aim_position( target, out_damage, out_position, last ) ) {
-            best.target = target.entity;
-            best.best_point = out_position;
-            best.damage = out_damage;
-            best.record = last;
-        }
-
-        target.entity->origin( ) = backup_origin;
-        target.entity->set_collision_bounds( backup_mins, backup_maxs );
-        target.entity->set_abs_angles( backup_angles );
-        target.entity->bone_cache( ) = backup_bones;
     };
     
     if ( !best.record || !best.target || best.damage <= 0.f )

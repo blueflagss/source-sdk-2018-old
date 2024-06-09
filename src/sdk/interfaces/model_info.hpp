@@ -82,6 +82,13 @@ struct studiohdr_t {
 
     inline mstudiobone_t *bone( int i ) const { return ( mstudiobone_t * ) ( ( ( char * ) this ) + boneindex ) + i; };
     inline mstudiohitboxset_t *hitbox_set( const int n ) const { return ( mstudiohitboxset_t * ) ( ( ( unsigned char * ) this ) + hitboxsetindex ) + n; };
+    inline mstudiobbox_t* hitbox(int i, int set) const {
+        mstudiohitboxset_t const *s = hitbox_set( set );
+        if ( !s )
+            return nullptr;
+
+        return s->hitbox( i );
+    }
 };
 
 class c_studio_hdr {
