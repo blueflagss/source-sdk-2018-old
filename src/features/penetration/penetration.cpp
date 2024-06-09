@@ -144,15 +144,18 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
             fire_info.penetrate_count = 0;
 
         if ( !handle_bullet_penetration( data, enter_trace, src, direction, fire_info.penetrate_count, fire_info.damage, data->penetration ) ) {
-            fire_info.damage = 0.f;
+            fire_info.out_damage = 0.f;
             return false;
         }
     }
 
-    if ( !did_hit )
+    if (!did_hit) {
         fire_info.out_damage = fire_info.damage;
+    } else
+        return true;
+        
 
-    return true;
+    return false;
 }
 
 bool penetration_system::is_breakable_entity( c_cs_player *ent ) {

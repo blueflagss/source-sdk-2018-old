@@ -194,10 +194,10 @@ bool aimbot::get_best_aim_position( aim_player &target, float &dmg, vector_3d &p
 
                 if ( results.impacts[ i + 1 ] != vector_3d( 0, 0, 0 ) ) {
                     g_interfaces.debug_overlay->add_line_overlay( pos, results.impacts[ i + 1 ], 255, 255, 255, true, 1 );
-                    g_interfaces.debug_overlay->add_text_overlay( pos, 1, "%i | %.1f", i + 1, results.damage );
+                    g_interfaces.debug_overlay->add_text_overlay( pos, 1, "%i | %.1f", i + 1, results.out_damage );
                 } else {
                     g_interfaces.debug_overlay->add_box_overlay( pos, vector_3d( 1, 1, 1 ), vector_3d( 10, 10, 10 ), vector_3d( 0, 0, 0 ), 255, 0, 0, 255, 1 );
-                    g_interfaces.debug_overlay->add_text_overlay( pos + vector_3d( 0, 20, 0 ), 1, "STOPPED %i | %.1f", i + 1, results.damage );
+                    g_interfaces.debug_overlay->add_text_overlay( pos + vector_3d( 0, 20, 0 ), 1, "STOPPED %i | %.1f", i + 1, results.out_damage );
                 }
             }
 
