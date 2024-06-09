@@ -1,4 +1,5 @@
 #include "penetration.hpp"
+#include <features/animations/anims.hpp>
 
 enum {
     char_tex_antlion = 'A',
@@ -77,7 +78,7 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
     tr.end_pos = tr.start_pos + r.delta;
 
     for ( int i = 0; i < 128; i++ )
-        temp_mat[ i ] = const_cast< matrix_3x4 * >( &ent->bone_cache( )[ i ] );
+        temp_mat[ i ] = const_cast< matrix_3x4 * >( &g_animations.animated_bones[ ent->index( ) ].data( )[i] );
 
     const auto ret = proxy_trace_to_studio_csgo_hitgroups_priority( ent, mask_shot_hull | contents_hitbox, &ent->origin( ), &tr, &r, temp_mat );
 

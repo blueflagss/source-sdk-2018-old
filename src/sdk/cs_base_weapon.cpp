@@ -64,7 +64,7 @@ bool c_cs_weapon_base::is_grenade( ) {
     if ( !weapon_data )
         return false;
 
-    return weapon_data->weapon_type == weapon_type::type_grenade;
+    return weapon_data->weapon_type == weapon_type::WEAPONTYPE_GRENADE;
 }
 
 wchar_t *c_cs_weapon_base::get_name( ) {

@@ -4,6 +4,7 @@
 #include <features/visuals/chams.hpp>
 #include <utils/logging/logging.hpp>
 #include <globals.hpp>
+#include <utils/threading/dispatch.hpp>
 
 HMODULE handle = nullptr;
 
@@ -19,6 +20,7 @@ int __stdcall cheat_main( void *loader_data ) {
     const auto duration = std::chrono::duration_cast< std::chrono::milliseconds >( end - start ).count( );
 
     g_interfaces.init( );
+    g_dispatch.spawn( );
     g_config.init( );
     g_netvars.init( );
 

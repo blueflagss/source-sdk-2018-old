@@ -196,7 +196,7 @@ bool aimbot::get_best_aim_position( aim_player &target, float &dmg, vector_3d &p
                     g_interfaces.debug_overlay->add_line_overlay( pos, results.impacts[ i + 1 ], 255, 255, 255, true, 1 );
                     g_interfaces.debug_overlay->add_text_overlay( pos, 1, "%i | %.1f", i + 1, results.out_damage );
                 } else {
-                    g_interfaces.debug_overlay->add_box_overlay( pos, vector_3d( 1, 1, 1 ), vector_3d( 10, 10, 10 ), vector_3d( 0, 0, 0 ), 255, 0, 0, 255, 1 );
+                    g_interfaces.debug_overlay->add_box_overlay( pos, vector_3d( -5, -5, -5 ), vector_3d( 5, 5, 5 ), vector_3d( 0, 0, 0 ), 255, 0, 0, 255, 1 );
                     g_interfaces.debug_overlay->add_text_overlay( pos + vector_3d( 0, 20, 0 ), 1, "STOPPED %i | %.1f", i + 1, results.out_damage );
                 }
             }
@@ -229,8 +229,15 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
     if ( !globals::local_player->alive( ) )
         return;
 
-    //if ( globals::local_weapon->is_melee( ) )
-    //    return;
+    const auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( globals::local_player->weapon_handle( ) );
+    if ( !weapon ) return;
+
+    const auto weapon_data = weapon->get_weapon_data( );
+    if ( !weapon_data ) return;
+
+    if ( weapon_data->weapon_type == weapon_type::WEAPONTYPE_GRENADE || weapon_data->weapon_type == weapon_type::WEAPONTYPE_KNIFE || weapon->clip_1() < 1 ) return;
+
+    if ( !( ( globals::local_player->tick_base( ) * g_interfaces.global_vars->interval_per_tick ) >= weapon->next_primary_attack( ) ) ) return;
 
     search_targets( );
 

@@ -62,18 +62,18 @@ enum weapons : int {
 };
 
 enum weapon_type : int {
-    type_knife = 0,
-    type_pistol,
-    type_submachinegun,
-    type_rifle,
-    type_shotgun,
-    type_sniper_rifle,
-    type_machinegun,
-    type_c4,
-    type_grenade,
-    type_equipment,
-    type_stackableitem,
-    type_unknown
+    WEAPONTYPE_UNKNOWN = -1,
+    WEAPONTYPE_KNIFE,
+    WEAPONTYPE_PISTOL,
+    WEAPONTYPE_SUBMACHINEGUN,
+    WEAPONTYPE_RIFLE,
+    WEAPONTYPE_SHOTGUN,
+    WEAPONTYPE_SNIPER_RIFLE,
+    WEAPONTYPE_MACHINEGUN,
+    WEAPONTYPE_C4,
+    WEAPONTYPE_TASER,
+    WEAPONTYPE_GRENADE,
+    WEAPONTYPE_HEALTHSHOT = 11
 };
 
 class c_cs_weapon_info {
