@@ -39,13 +39,6 @@ namespace math
         };
     }
 
-    __forceinline float sqrt_ps( const float squared ) {
-        m128 tmp;
-        tmp.f[ 0 ] = squared;
-        tmp.v = _mm_sqrt_ps( tmp.v );
-        return tmp.f[ 0 ];
-    }
-
     void rotate_point( int &x, int &y, float rotation );
     void rotate_point( glm::vec2 &point, float rotation );
     void random_seed( int seed );
