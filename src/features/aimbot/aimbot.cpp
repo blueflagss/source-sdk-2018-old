@@ -184,10 +184,23 @@ bool aimbot::get_best_aim_position( aim_player &target, float &dmg, vector_3d &p
 
         auto results = g_penetration.run( globals::shoot_position, out, target.entity, false );
 
-        if ( results.out_damage > 1.0f ) {
+        if ( results.out_damage > g_vars.aimbot_min_damage.value ) {
             scan_damage = results.out_damage;
             scan_position = out;
             scan_hitbox = hitbox;
+
+            for ( int i = 0; i < results.impact_count; i++ ) {
+                auto pos = results.impacts[ i ];
+
+                if ( results.impacts[ i + 1 ] != vector_3d( 0, 0, 0 ) ) {
+                    g_interfaces.debug_overlay->add_line_overlay( pos, results.impacts[ i + 1 ], 255, 255, 255, true, 1 );
+                    g_interfaces.debug_overlay->add_text_overlay( pos, 1, "%i | %.1f", i + 1, results.damage );
+                } else {
+                    g_interfaces.debug_overlay->add_box_overlay( pos, vector_3d( 1, 1, 1 ), vector_3d( 10, 10, 10 ), vector_3d( 0, 0, 0 ), 255, 0, 0, 255, 1 );
+                    g_interfaces.debug_overlay->add_text_overlay( pos + vector_3d( 0, 20, 0 ), 1, "STOPPED %i | %.1f", i + 1, results.damage );
+                }
+            }
+
             break;       
         }
     }

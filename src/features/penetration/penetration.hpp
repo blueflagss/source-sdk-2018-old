@@ -3,13 +3,12 @@
 
 class c_fire_bullet_data {
 public:
-    int penetrate_count;
-    float trace_length;
-    float remaining_length;
-    float damage;
-    float in_damage;
-    float out_damage;
-    int out_hitgroup;
+    int penetrate_count{ };
+    int impact_count{ };
+    float damage{ };
+    float out_damage{ };
+    int out_hitgroup{ };
+    std::array< vector_3d, 6 > impacts{ };
 };
 
 class penetration_system {
