@@ -11,6 +11,52 @@ float calculate_lerp( ) {
     return std::clamp< float >( lerp_ratio / updaterate, globals::cvars::cl_interp->get_float( ), 1.0f );
 }
 
+void apply_leg_movement( c_user_cmd *cmd ) { /* premium */
+    float sidemove;                          // xmm2_4
+    int new_buttons;                         // eax
+    float forwardmove;                       // xmm1_4
+
+    sidemove = cmd->side_move;
+    new_buttons = cmd->buttons & ~0x618u;
+    forwardmove = cmd->forward_move;
+
+    if ( !g_vars.exploits_antiaim_leg_movement.value ) {
+        if ( forwardmove <= 0.0 ) {
+            if ( forwardmove < 0.0 )
+                new_buttons |= buttons::back;
+        } else {
+            new_buttons |= buttons::forward;
+        }
+
+        if ( sidemove > 0.0 )
+            goto LABEL_15;
+
+        if ( sidemove >= 0.0 )
+            goto LABEL_18;
+        goto LABEL_17;
+    }
+
+    if ( g_vars.exploits_antiaim_leg_movement.value != 1 )
+        goto LABEL_18;
+
+    if ( forwardmove <= 0.0 ) {
+        if ( forwardmove < 0.0 )
+            new_buttons |= buttons::forward;
+    } else {
+        new_buttons |= buttons::back;
+    }
+    if ( sidemove > 0.0 ) {
+    LABEL_17:
+        new_buttons |= buttons::move_left;
+        goto LABEL_18;
+    }
+    if ( sidemove < 0.0 )
+    LABEL_15:
+        new_buttons |= buttons::move_right;
+LABEL_18:
+    cmd->buttons = new_buttons;
+}
+
 void setup_shoot_position( ) {
     if ( !globals::local_player )
         return;
@@ -105,6 +151,8 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
 
         if ( *globals::packet )
             globals::sent_angles = cmd->view_angles;
+
+        apply_leg_movement( cmd );
     }
 
     backup_players( true );

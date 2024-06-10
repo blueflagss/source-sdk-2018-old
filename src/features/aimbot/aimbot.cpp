@@ -4,6 +4,7 @@
 #include <features/engine_prediction/engine_prediction.hpp>
 #include <features/resolver/resolver.hpp>
 #include <features/ui/notifications/notifications.hpp>
+#include <threadutils/threading.h>
 #include <utils/threading/dispatch.hpp>
 
 void aimbot::reset( ) {
@@ -138,7 +139,7 @@ void aimbot::search_targets( ) {
                 if ( !player || !player->alive( ) )
                     break;
 
-                targets.emplace_back( aim_player{ player, math::calculate_fov( globals::view_angles, math::clamp_angle( player->get_shoot_position( ) ) ), glm::length( player->origin( ) - globals::local_player->origin( ) ), 0, &g_animations.lag_info[ player->index( ) ].anim_records.front( ), vector_3d( 0, 0, 0 ), vector_3d( 0, 0, 0) } );
+                targets.emplace_back( aim_player{ player, math::calculate_fov( globals::view_angles, math::clamp_angle( player->get_shoot_position( ) ) ), glm::length( player->origin( ) - globals::local_player->origin( ) ), 0, &g_animations.lag_info[ player->index( ) ].anim_records.front( ), vector_3d( 0, 0, 0 ), vector_3d( 0, 0, 0 ) } );
             } break;
         }
     }
@@ -161,34 +162,34 @@ void aimbot::search_targets( ) {
     } );
 }
 
-void aimbot::plot_points( c_cs_player *player, lag_record *record, int side, std::vector< std::pair< vector_3d, bool > > &points, mstudiobbox_t *hitbox, mstudiohitboxset_t *set, int idx, float scale ) {
+void aimbot::generate_points_for_hitbox( c_cs_player *player, lag_record *record, int side, std::vector< std::pair< vector_3d, bool > > &points, mstudiobbox_t *hitbox, mstudiohitboxset_t *set, int idx, float scale ) {
     vector_3d center = ( hitbox->max + hitbox->min ) * 0.5f;
 
     vector_3d center_transformed;
     math::vector_transform( center, record->bones[ hitbox->bone ], center_transformed );
 
     points.push_back( std::make_pair( center_transformed, false ) );
-     
+
     if ( scale <= 0.0f )
         return;
 
-    if (hitbox->radius <= 0.0f) {
-        if (idx == csgo_hitbox::hitbox_r_foot || idx == csgo_hitbox::hitbox_l_foot) {
+    if ( hitbox->radius <= 0.0f ) {
+        if ( idx == csgo_hitbox::hitbox_r_foot || idx == csgo_hitbox::hitbox_l_foot ) {
             float d1 = ( hitbox->min.z - center.z ) * 0.425f;
 
             if ( idx == csgo_hitbox::hitbox_l_foot )
                 d1 *= -1.f;
-            
+
             vector_3d toe = vector_3d{ ( ( hitbox->max.x - center.x ) * scale ) + center.x, center.y, center.z };
             vector_3d heel = vector_3d{ ( ( hitbox->min.x - center.x ) * scale ) + center.x, center.y, center.z };
 
             points.push_back( std::make_pair( math::vector_transform( toe, record->bones[ hitbox->bone ] ), true ) );
-            points.push_back( std::make_pair( math::vector_transform( heel, record->bones[ hitbox->bone ]), true ) );
+            points.push_back( std::make_pair( math::vector_transform( heel, record->bones[ hitbox->bone ] ), true ) );
         }
     } else {
         float r = hitbox->radius * scale;
 
-        if (idx == csgo_hitbox::hitbox_head) {
+        if ( idx == csgo_hitbox::hitbox_head ) {
             vector_3d left{ hitbox->max.x, hitbox->max.y, hitbox->max.z - ( hitbox->radius * 0.5f ) };
             points.push_back( std::make_pair( math::vector_transform( left, record->bones[ hitbox->bone ] ), true ) );
 
@@ -206,7 +207,7 @@ void aimbot::plot_points( c_cs_player *player, lag_record *record, int side, std
         } else if ( idx == csgo_hitbox::hitbox_body || idx == csgo_hitbox::hitbox_pelvis ) {
             vector_3d back{ center.x, hitbox->max.y - r, center.z };
             vector_3d right{ hitbox->max.x, hitbox->max.y, hitbox->max.z + ( hitbox->radius * 0.5f ) };
-            vector_3d left{ hitbox->max.x, hitbox->max.y, hitbox->max.z - ( hitbox->radius * 0.5f) };
+            vector_3d left{ hitbox->max.x, hitbox->max.y, hitbox->max.z - ( hitbox->radius * 0.5f ) };
 
             points.push_back( std::make_pair( math::vector_transform( back, record->bones[ hitbox->bone ] ), true ) );
             points.push_back( std::make_pair( math::vector_transform( right, record->bones[ hitbox->bone ] ), true ) );
@@ -215,32 +216,40 @@ void aimbot::plot_points( c_cs_player *player, lag_record *record, int side, std
             vector_3d back{ center.x, hitbox->max.y - r, center.z };
             points.push_back( std::make_pair( math::vector_transform( back, record->bones[ hitbox->bone ] ), true ) );
         } else if ( idx == csgo_hitbox::hitbox_r_thigh || idx == csgo_hitbox::hitbox_l_thigh ) {
-            vector_3d half_bottom{ hitbox->max.x - ( hitbox->radius * 0.5f), hitbox->max.y, hitbox->max.z };
+            vector_3d half_bottom{ hitbox->max.x - ( hitbox->radius * 0.5f ), hitbox->max.y, hitbox->max.z };
             points.push_back( std::make_pair( math::vector_transform( half_bottom, record->bones[ hitbox->bone ] ), true ) );
         }
     }
 }
 
-void aimbot::generate_points( c_cs_player *player, lag_record* record ) {
+static void run_hitscan( void *arg ) {
+    if ( g_aimbot.aim_points.empty( ) ) return;
+
+    for ( auto &point : g_aimbot.aim_points )
+        point.bullet_data = g_penetration.run( globals::shoot_position, point.pos, point.record->player, point.record->bones );
+}
+
+void aimbot::generate_points( c_cs_player *player, lag_record *record ) {
     if ( !player->cstudio_hdr( ) || !player->cstudio_hdr( )->studio_hdr )
         return;
 
-    for (auto& hitbox : hitboxes) {
+    for ( auto &hitbox : hitboxes ) {
         const auto bbox = player->cstudio_hdr( )->studio_hdr->hitbox( hitbox, player->hitbox_set( ) );
-
         const auto limb = hitbox >= csgo_hitbox::hitbox_r_thigh;
+
         if ( limb && math::length_2d( record->velocity ) > 1.0f )
             continue;
 
-        float ps = static_cast<float>( g_vars.aimbot_multipoint_scale.value ) * 0.01f;
+        float ps = static_cast< float >( g_vars.aimbot_multipoint_scale.value ) * 0.01f;
 
         std::vector< std::pair< vector_3d, bool > > points;
-        plot_points( player, record, 0, points, bbox, player->cstudio_hdr( )->studio_hdr->hitbox_set( player->hitbox_set( ) ), hitbox, ps );
+
+        generate_points_for_hitbox( player, record, 0, points, bbox, player->cstudio_hdr( )->studio_hdr->hitbox_set( player->hitbox_set( ) ), hitbox, ps );
 
         if ( points.empty( ) )
             continue;
 
-        for (const auto& point : points) {
+        for ( const auto &point : points ) {
             aim_point &p = aim_points.emplace_back( );
 
             p.pos = point.first;
@@ -250,27 +259,22 @@ void aimbot::generate_points( c_cs_player *player, lag_record* record ) {
             p.hb = hitbox;
         }
     }
+
+    if ( !aim_points.empty( ) )
+        Threading::QueueJobRef( run_hitscan, ( void * )nullptr );
+
+    Threading::FinishQueue( true );
 }
 
 bool aimbot::scan_target( c_cs_player *player, lag_record *record, aim_player &target ) {
     generate_points( player, record );
 
-    std::vector< threading::dispatch_queue::fn > calls;
-    calls.reserve( aim_points.size() );
-
-    for (auto& point : aim_points) {
-        calls.push_back( [ &record, &point ]( ) {
-            point.bullet_data = g_penetration.run(globals::shoot_position, point.pos, record->player, record->bones );
-        } );
-    }
-
-    g_dispatch.evaluate( calls );
-
     aim_point best_point;
+
     bool found_point = false;
 
-    for (auto& point : aim_points) {
-        if ( point.bullet_data.did_hit && point.bullet_data.out_damage >= g_vars.aimbot_min_damage.value) {
+    for ( auto &point : aim_points ) {
+        if ( point.bullet_data.did_hit && point.bullet_data.out_damage >= g_vars.aimbot_min_damage.value ) {
             best_point = point;
             found_point = true;
             break;
@@ -312,7 +316,7 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
     const auto weapon_data = weapon->get_weapon_data( );
     if ( !weapon_data ) return;
 
-    if ( weapon_data->weapon_type == weapon_type::WEAPONTYPE_GRENADE || weapon_data->weapon_type == weapon_type::WEAPONTYPE_KNIFE || weapon->clip_1() < 1 ) return;
+    if ( weapon_data->weapon_type == weapon_type::WEAPONTYPE_GRENADE || weapon_data->weapon_type == weapon_type::WEAPONTYPE_KNIFE || weapon->clip_1( ) < 1 ) return;
 
     if ( !( ( globals::local_player->tick_base( ) * g_interfaces.global_vars->interval_per_tick ) >= weapon->next_primary_attack( ) ) ) return;
 
@@ -324,7 +328,7 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
     for ( auto &target : targets ) {
         hitboxes.clear( );
 
-        if ( g_animations.lag_info[ target.entity->index() ].anim_records.empty( ) )
+        if ( g_animations.lag_info[ target.entity->index( ) ].anim_records.empty( ) )
             continue;
 
         auto ideal = g_resolver.find_ideal_record( &target );
@@ -332,11 +336,11 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
         if ( !ideal )
             continue;
 
-        if (g_vars.aimbot_hitboxes_head.value) {
+        if ( g_vars.aimbot_hitboxes_head.value ) {
             hitboxes.emplace_back( hitbox_head );
             hitboxes.emplace_back( hitbox_neck );
         }
-            
+
         if ( g_vars.aimbot_hitboxes_chest.value ) {
             hitboxes.emplace_back( hitbox_chest );
             hitboxes.emplace_back( hitbox_upper_chest );
@@ -351,7 +355,7 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
             hitboxes.emplace_back( hitbox_l_thigh );
         }
 
-        if (g_vars.aimbot_hitboxes_arms.value) {
+        if ( g_vars.aimbot_hitboxes_arms.value ) {
             hitboxes.emplace_back( hitbox_l_upper_arm );
             hitboxes.emplace_back( hitbox_r_upper_arm );
             hitboxes.emplace_back( hitbox_l_forearm );
@@ -377,7 +381,7 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
         if ( !scan_target( target.entity, ideal, target ) )
             continue;
     };
-    
+
     if ( !best.record || !best.target || best.damage <= 0.f )
         return;
 
@@ -401,7 +405,7 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
     const auto calc_pos = math::vector_angle( best.best_point - globals::shoot_position );
 
     bool should_target = g_vars.aimbot_automatic_shoot.value || cmd->buttons & buttons::attack;
-    
+
     /* restore player data */
     const auto backup_origin = best.target->origin( );
     const auto backup_mins = best.target->collideable( )->mins( );

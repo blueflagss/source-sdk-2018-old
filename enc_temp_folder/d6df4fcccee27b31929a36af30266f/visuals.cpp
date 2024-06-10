@@ -183,14 +183,6 @@ void visuals::render_player( c_cs_player *player ) {
             flags.push_back( { balence, { 255, 255, 255 } } );
         }
 
-        if ( g_vars.visuals_player_flags_lag_amount.value && g_animations.lag_info[ player->index( ) ].anim_records.size( ) > 1 ) {
-            auto &log = g_animations.lag_info[ player->index( ) ].anim_records.front( );
-
-            auto lag_amount = fmt::format( "LAG: {}", log.choked );
-
-            flags.push_back( { lag_amount, { 255, 255, 255 } } );
-        }
-
         if ( g_vars.visuals_player_flags_armor.value )
             flags.push_back( { get_armor_type( player ), { 255, 255, 255 } } );
     }

@@ -2,11 +2,44 @@
 #include <core/hooks.hpp>
 #include <features/features.hpp>
 #include <features/visuals/chams.hpp>
-#include <utils/logging/logging.hpp>
 #include <globals.hpp>
-#include <utils/threading/dispatch.hpp>
+#include <threadutils/semaphores.h>
+#include <threadutils/shared_mutex.h>
+#include <threadutils/threading.h>
+#include <utils/logging/logging.hpp>
 
 HMODULE handle = nullptr;
+typedef int ( *ThreadIDFn )( void );
+ThreadIDFn AllocateThreadID = nullptr;
+ThreadIDFn FreeThreadID = nullptr;
+
+static Semaphore dispatchSem;
+static Semaphore waitSem;
+static SharedMutex smtx;
+
+template< typename T, T &Fn >
+static void AllThreadsStub( void * ) {
+    dispatchSem.Post( );
+    smtx.rlock( );
+    smtx.runlock( );
+    Fn( );
+}
+
+//TODO: Build this into the threading library
+template< typename T, T &Fn >
+static void DispatchToAllThreads( void *data ) {
+    smtx.wlock( );
+
+    for ( size_t i = 0; i < Threading::numThreads; i++ )
+        Threading::QueueJobRef( AllThreadsStub< T, Fn >, data );
+
+    for ( size_t i = 0; i < Threading::numThreads; i++ )
+        dispatchSem.Wait( );
+
+    smtx.wunlock( );
+
+    Threading::FinishQueue( false );
+}
 
 int __stdcall cheat_main( void *loader_data ) {
     const auto start = std::chrono::high_resolution_clock::now( );
@@ -14,13 +47,15 @@ int __stdcall cheat_main( void *loader_data ) {
     while ( !GetModuleHandleA( "serverbrowser.dll" ) )
         std::this_thread::sleep_for( std::chrono::milliseconds( 400 ) );
 
+    AllocateThreadID = ( ThreadIDFn ) ( GetProcAddress( GetModuleHandleA( XOR( "tier0.dll" ) ), XOR( "AllocateThreadID" ) ) );
+    FreeThreadID = ( ThreadIDFn ) ( GetProcAddress( GetModuleHandleA( XOR( "tier0.dll" ) ), XOR( "FreeThreadID" ) ) );
+
     g_logging.init( );
 
     const auto end = std::chrono::high_resolution_clock::now( );
     const auto duration = std::chrono::duration_cast< std::chrono::milliseconds >( end - start ).count( );
 
     g_interfaces.init( );
-    g_dispatch.spawn( );
     g_config.init( );
     g_netvars.init( );
 
@@ -31,6 +66,15 @@ int __stdcall cheat_main( void *loader_data ) {
             static_cast< float >( width ),
             static_cast< float >( height )
     };
+
+    Threading::InitThreads( );
+
+#ifdef _DEBUG
+    spdlog::info( "Spawned {} threads", Threading::numThreads );
+#endif
+
+    DispatchToAllThreads< ThreadIDFn, AllocateThreadID >( nullptr );
+    Threading::FinishQueue( );
 
     g_chams.init( );
     g_menu.init( );
