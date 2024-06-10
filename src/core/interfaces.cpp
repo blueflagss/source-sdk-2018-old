@@ -4,6 +4,7 @@ void interfaces::init( ) {
     g_addresses.update_animation_state = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 0F 57 C0 0F 11 86" ) ).add( 0x1 ).rel32( );
     g_addresses.get_shotgun_spread = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? EB 38 83 EC 08" ) ).add( 0x1 ).rel32( );
     g_addresses.trace_to_studio_csgo_hitgroups_priority = signature::find( XOR( "client.dll" ), XOR( "55 8B EC 83 E4 ? 81 EC ? ? ? ? 8B C2" ) );
+    g_addresses.md5_pseudorandom = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 25 ? ? ? ? B9" ) ).add( 0x1 ).rel32( );
     g_addresses.tier0_allocated_thread_ids = address( reinterpret_cast<uint8_t*>(reinterpret_cast< uintptr_t >( GetModuleHandleA( "tier0.dll" ) ) + 0x51AA0) );
 
     engine_client = create_interface< c_engine_client * >( "engine.dll", HASH_CT( "VEngineClient014" ) );

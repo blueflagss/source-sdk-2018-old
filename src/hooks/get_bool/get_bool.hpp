@@ -12,12 +12,12 @@ namespace hooks
             bool __fastcall hook( REGISTERS );
         }// namespace sv_cheats
 
-        namespace r_drawallrenderables
+        namespace net_earliertempents
         {
             inline SafetyHookInline original = { };
 
             bool __fastcall hook( REGISTERS );
-        }// namespace r_drawallrenderables
+        }// namespace net_earliertempents
 
         void init( );
     }// namespace cvar_get_bool

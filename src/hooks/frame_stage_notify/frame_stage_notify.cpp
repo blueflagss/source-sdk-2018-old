@@ -33,15 +33,18 @@ void __fastcall hooks::frame_stage_notify::hook( REGISTERS, client_frame_stage s
     }
 
     if ( stage == frame_net_update_end ) {
-        //const auto view_model = g_interfaces.entity_list->get_client_entity_from_handle< c_view_model * >( globals::local_player->view_model( ) );
+        if ( globals::local_player && globals::local_player->alive( ) ) {
+            const auto view_model = g_interfaces.entity_list->get_client_entity_from_handle< c_view_model * >( globals::local_player->viewmodel_handle( ) );
 
-        //if ( view_model && globals::local_player->view_model( ) != 0xFFFFFFF ) {
-        //    /* restore viewmodel when model renders a scene */
-        //    //view_model->sequence( ) = g_prediction.sequence;
-        //    //view_model->animation_parity( ) = g_prediction.animation_parity;
-        //}
-       
-        g_animations.maintain_local_animations( );
+            /* restore viewmodel when model renders a scene */
+            if ( view_model && globals::local_player->viewmodel_handle( ) != 0xFFFFFFF ) {
+                view_model->cycle( ) = g_prediction.weapon_cycle;
+                view_model->sequence( ) = g_prediction.weapon_sequence;
+                view_model->animtime( ) = g_prediction.weapon_animtime;
+            }
+
+            g_animations.maintain_local_animations( );
+        }
     }
 
     original.fastcall< void >( REGISTERS_OUT, stage );
@@ -85,7 +88,7 @@ void __fastcall hooks::frame_stage_notify::hook( REGISTERS, client_frame_stage s
     }
 
     /* run lag-compensation when we get last received data. */
-    if ( stage == frame_net_update_end ) 
+    if ( stage == frame_net_update_end )
         g_animations.on_net_update_end( );
 }
 

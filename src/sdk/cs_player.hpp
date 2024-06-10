@@ -43,8 +43,6 @@ enum effects : int {
     parent_animates = 0x200
 };
 
-
-
 class c_cs_player : public c_base_entity {
 public:
     OFFSET( button_forced, int, 0x3310 );

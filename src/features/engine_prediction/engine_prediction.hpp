@@ -31,7 +31,9 @@ public:
     int backup_tick_base = 0.f;
     float backup_curtime = 0.f;
     float backup_frametime = 0.f;
-
+    float weapon_cycle;
+    float weapon_sequence;
+    float weapon_animtime;
     int sequence = 0;
     int animation_parity = 0;
     float ideal_inaccuracy = 0.f;

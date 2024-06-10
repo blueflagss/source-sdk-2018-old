@@ -30,8 +30,6 @@ void visuals::render( ) {
 
                 if ( g_vars.visual_players_toggled.value )
                     render_player( player );
-
-                // player->draw_server_hitboxes( );
             } break;
             default:
                 break;
@@ -52,7 +50,8 @@ void visuals::render_hitmarker( ) {
 
     auto screen_center = vector_2d(
             globals::ui::screen_size.x / 2.0f,
-            globals::ui::screen_size.y / 2.0f );
+            globals::ui::screen_size.y / 2.0f 
+    );
 
     render::line( screen_center.x - line_size, screen_center.y - line_size, screen_center.x - ( line_size / 2 ), screen_center.y - ( line_size / 2 ), color{ 200, 200, 200, 255 * hitmarker_fraction }, 2.5f );
     render::line( screen_center.x - line_size, screen_center.y + line_size, screen_center.x - ( line_size / 2 ), screen_center.y + ( line_size / 2 ), color{ 200, 200, 200, 255 * hitmarker_fraction }, 2.5f );
@@ -72,13 +71,13 @@ void visuals::render_player( c_cs_player *player ) {
     if ( !alive && opacity_array[ player->index( ) ] <= 0.02f )
         return;
 
-    if ( !player->compute_bounding_box( player_box ) )
-        return;
-
     player_info_t player_info;
     g_interfaces.engine_client->get_player_info( player->index( ), &player_info );
 
     render_offscreen( player, player_info );
+
+    if ( !player->compute_bounding_box( player_box ) )
+        return;
 
     if ( player->dormant( ) )
         return;
@@ -203,6 +202,10 @@ void visuals::render_player( c_cs_player *player ) {
     }
 }
 
+void visuals::draw_hud_scope( ) {
+
+}
+
 void visuals::world_modulation( ) {
     static auto last_world_color = g_vars.visuals_other_modulate_world_color.value;
     static auto last_alive = false;
@@ -248,7 +251,7 @@ void visuals::render_offscreen( c_cs_player *player, const player_info_t &player
     vector_2d origin_screen;
     vector_3d origin, local_origin;
 
-    origin = log.origin, local_origin = globals::local_player->origin( );
+    origin = log.abs_origin, local_origin = globals::local_player->get_abs_origin( );
 
     vector_3d forward = { };
     math::angle_vectors( globals::view_angles, &forward );

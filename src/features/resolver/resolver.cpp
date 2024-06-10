@@ -1,5 +1,9 @@
 #include "resolver.hpp"
 
+void resolver::update( lag_record *previous, lag_record *record ) {
+
+}
+
 lag_record *resolver::find_ideal_record( aim_player *data ) {
     auto &log = g_animations.lag_info[ data->entity->index() ];
 

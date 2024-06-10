@@ -37,6 +37,7 @@
     <ClInclude Include="hooks\calc_viewmodel_view\calc_viewmodel_view.hpp" />
     <ClInclude Include="hooks\calc_view\calc_view.hpp" />
     <ClInclude Include="hooks\check_for_sequence_change\check_for_sequence_change.hpp" />
+    <ClInclude Include="hooks\cl_fire_events\cl_fire_events.hpp" />
     <ClInclude Include="hooks\do_extra_bone_processing\do_extra_bone_processing.hpp" />
     <ClInclude Include="hooks\do_post_screen_space_effects\do_post_screen_space_effects.hpp" />
     <ClInclude Include="hooks\do_procedural_footplant\do_procedural_footplant.hpp" />
@@ -53,6 +54,8 @@
     <ClInclude Include="hooks\notify_on_layer_change_cycle\notify_on_layer_change_cycle.hpp" />
     <ClInclude Include="hooks\notify_on_layer_change_weight\notify_on_layer_change_weight.hpp" />
     <ClInclude Include="hooks\override_view\override_view.hpp" />
+    <ClInclude Include="hooks\packet_start\packet_start.hpp" />
+    <ClInclude Include="hooks\physics_simulate\physics_simulate.hpp" />
     <ClInclude Include="hooks\post_network_data_received\post_network_data_received.hpp" />
     <ClInclude Include="hooks\pre_entity_packet_received\pre_entity_packet_received.hpp" />
     <ClInclude Include="hooks\process_interpolated_list\process_interpolated_list.hpp" />
@@ -406,6 +409,7 @@
     <ClCompile Include="hooks\calc_viewmodel_view\calc_viewmodel_view.cpp" />
     <ClCompile Include="hooks\calc_view\calc_view.cpp" />
     <ClCompile Include="hooks\check_for_sequence_change\check_for_sequence_change.cpp" />
+    <ClCompile Include="hooks\cl_fire_events\cl_fire_events.cpp" />
     <ClCompile Include="hooks\do_extra_bone_processing\do_extra_bone_processing.cpp" />
     <ClCompile Include="hooks\do_post_screen_space_effects\do_post_screen_space_effects.cpp" />
     <ClCompile Include="hooks\do_procedural_footplant\do_procedural_footplant.cpp" />
@@ -422,6 +426,8 @@
     <ClCompile Include="hooks\notify_on_layer_change_cycle\notify_on_layer_change_cycle.cpp" />
     <ClCompile Include="hooks\notify_on_layer_change_weight\notify_on_layer_change_weight.cpp" />
     <ClCompile Include="hooks\override_view\override_view.cpp" />
+    <ClCompile Include="hooks\packet_start\packet_start.cpp" />
+    <ClCompile Include="hooks\physics_simulate\physics_simulate.cpp" />
     <ClCompile Include="hooks\post_network_data_received\post_network_data_received.cpp" />
     <ClCompile Include="hooks\pre_entity_packet_received\pre_entity_packet_received.cpp" />
     <ClCompile Include="hooks\process_interpolated_list\process_interpolated_list.cpp" />

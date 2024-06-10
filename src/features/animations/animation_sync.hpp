@@ -143,6 +143,7 @@ public:
     float lower_body_realign_timer;
     float foot_yaw;
     float last_angle;
+    vector_3d abs_rotation;
     float simtime;
     vector_3d radar_angle;
     bool updating_lby;

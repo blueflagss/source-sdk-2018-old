@@ -18,6 +18,7 @@ private:
 private:
     void animate( c_cs_player *player );
     void render_player( c_cs_player *player );
+    void draw_hud_scope( );
     void render_offscreen( c_cs_player *player, const player_info_t &player_info ) const;
     void render_skeleton( c_cs_player *player, lag_record *record, color skeleton_color ) const;
     //void render_skeleton( c_cs_player *player, lag_record *record, color bones_color ) const;

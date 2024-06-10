@@ -60,6 +60,7 @@ private:
     void generate_points_for_hitbox( c_cs_player *player, lag_record *record, int side, std::vector< std::pair< vector_3d, bool > > &points, mstudiobbox_t *hitbox, mstudiohitboxset_t *set, int idx, float scale );
     void generate_points( c_cs_player *player, lag_record* record );
     bool scan_target( c_cs_player *player, lag_record *record, aim_player &target );
+    void adjust_speed( c_user_cmd *ucmd );
 
 public:
     std::deque< aim_point > aim_points = { };

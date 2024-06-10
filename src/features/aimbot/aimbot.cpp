@@ -224,9 +224,6 @@ void aimbot::generate_points_for_hitbox( c_cs_player *player, lag_record *record
 
 static void run_hitscan( void *arg ) {
     if ( g_aimbot.aim_points.empty( ) ) return;
-
-    for ( auto &point : g_aimbot.aim_points )
-        point.bullet_data = g_penetration.run( globals::shoot_position, point.pos, point.record->player, point.record->bones );
 }
 
 void aimbot::generate_points( c_cs_player *player, lag_record *record ) {
@@ -260,20 +257,28 @@ void aimbot::generate_points( c_cs_player *player, lag_record *record ) {
         }
     }
 
-    if ( !aim_points.empty( ) )
-        Threading::QueueJobRef( run_hitscan, ( void * )nullptr );
+    //
 
-    Threading::FinishQueue( true );
+    //if ( !aim_points.empty( ) )
+    //    Threading::QueueJobRef( run_hitscan, ( void * )nullptr );
+
+    //Threading::FinishQueue( true );
 }
 
 bool aimbot::scan_target( c_cs_player *player, lag_record *record, aim_player &target ) {
+    record->cache( );
+
     generate_points( player, record );
 
     aim_point best_point;
 
     bool found_point = false;
 
+    if ( aim_points.empty( ) ) return false;
+
     for ( auto &point : aim_points ) {
+        point.bullet_data = g_penetration.run( globals::shoot_position, point.pos, point.record->player, point.record->bones );
+
         if ( point.bullet_data.did_hit && point.bullet_data.out_damage >= g_vars.aimbot_min_damage.value ) {
             best_point = point;
             found_point = true;
@@ -295,6 +300,58 @@ bool aimbot::scan_target( c_cs_player *player, lag_record *record, aim_player &t
     return true;
 }
 
+void aimbot::adjust_speed( c_user_cmd *cmd ) { /* kinda shit. */
+    if ( !globals::local_player->alive( ) || !( globals::local_player->flags( ) & FL_ONGROUND ) || !globals::local_weapon || !globals::local_weapon->get_weapon_data( ) )
+        return;
+
+    auto quick_stop = [ & ]( ) {
+        const auto target_vel = -math::normalize_angle( globals::local_player->velocity( ) ) * globals::cvars::cl_forwardspeed->get_float( );
+
+        vector_3d angles;
+        g_interfaces.engine_client->get_view_angles( angles );
+
+        vector_3d fwd;
+        math::angle_vectors( angles, &fwd );
+        const auto right = glm::cross( fwd, vector_3d( 0.0f, 0.0f, 1.0f ) );
+
+        cmd->forward_move = ( target_vel.y - ( right.y / right.x ) * target_vel.x ) / ( fwd.y - ( right.y / right.x ) * fwd.x );
+        cmd->side_move = ( target_vel.x - fwd.x * cmd->forward_move ) / right.x;
+
+        cmd->forward_move = std::clamp< float >( cmd->forward_move, -globals::cvars::cl_forwardspeed->get_float( ), globals::cvars::cl_forwardspeed->get_float( ) );
+        cmd->side_move = std::clamp< float >( cmd->side_move, -globals::cvars::cl_forwardspeed->get_float( ), globals::cvars::cl_sidespeed->get_float( ) );
+
+        cmd->buttons &= ~buttons::walk;
+        cmd->buttons |= buttons::speed;
+    };
+
+    const auto speed = math::length_2d( globals::local_player->velocity( ) );
+
+    if ( speed <= 4.0f )
+        return;
+
+    auto max_speed = globals::local_player->scoped( ) ? globals::local_weapon->get_weapon_data( )->max_speed_alt : globals::local_weapon->get_weapon_data( )->max_speed;
+
+    const auto pure_accurate_speed = max_speed * 0.34f;
+    const auto accurate_speed = max_speed * 0.315f;
+
+    //    actually slowwalk
+    if ( speed <= pure_accurate_speed ) {
+        const auto cmd_speed = sqrt( cmd->forward_move * cmd->forward_move + cmd->side_move * cmd->side_move );
+        const auto local_speed = std::max( math::length_2d( globals::local_player->velocity( ) ), 0.1f );
+        const auto speed_multiplier = ( local_speed / cmd_speed ) * ( accurate_speed / local_speed );
+
+        cmd->forward_move = std::clamp< float >( cmd->forward_move * speed_multiplier, -globals::cvars::cl_forwardspeed->get_float( ), globals::cvars::cl_forwardspeed->get_float( ) );
+        cmd->side_move = std::clamp< float >( cmd->side_move * speed_multiplier, -globals::cvars::cl_forwardspeed->get_float( ), globals::cvars::cl_sidespeed->get_float( ) );
+
+        cmd->buttons &= ~buttons::walk;
+        cmd->buttons |= buttons::speed;
+    }
+    //    we are fast
+    else {
+        quick_stop( );
+    }
+}
+
 void aimbot::on_create_move( c_user_cmd *cmd ) {
     reset( );
 
@@ -311,14 +368,16 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
         return;
 
     const auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( globals::local_player->weapon_handle( ) );
+
     if ( !weapon ) return;
 
     const auto weapon_data = weapon->get_weapon_data( );
-    if ( !weapon_data ) return;
 
-    if ( weapon_data->weapon_type == weapon_type::WEAPONTYPE_GRENADE || weapon_data->weapon_type == weapon_type::WEAPONTYPE_KNIFE || weapon->clip_1( ) < 1 ) return;
+    if ( !weapon_data ) 
+        return;
 
-    if ( !( ( globals::local_player->tick_base( ) * g_interfaces.global_vars->interval_per_tick ) >= weapon->next_primary_attack( ) ) ) return;
+    if ( weapon_data->weapon_type == weapon_type::WEAPONTYPE_GRENADE || weapon_data->weapon_type == weapon_type::WEAPONTYPE_KNIFE || weapon->clip_1( ) < 1 )
+        return;
 
     search_targets( );
 
@@ -330,12 +389,7 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
 
         if ( g_animations.lag_info[ target.entity->index( ) ].anim_records.empty( ) )
             continue;
-
-        auto ideal = g_resolver.find_ideal_record( &target );
-
-        if ( !ideal )
-            continue;
-
+        
         if ( g_vars.aimbot_hitboxes_head.value ) {
             hitboxes.emplace_back( hitbox_head );
             hitboxes.emplace_back( hitbox_neck );
@@ -374,16 +428,29 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
         if ( hitboxes.empty( ) )
             continue;
 
-        float out_damage = 0.0f;
+        auto ideal = g_resolver.find_ideal_record( &target );
 
-        vector_3d out_position = { };
+        if ( !ideal )
+            continue;
 
         if ( !scan_target( target.entity, ideal, target ) )
+            continue;
+
+        auto last = g_resolver.find_last_record( &target );
+
+        if ( !last )
+            continue;
+
+        if ( !scan_target( target.entity, last, target ) )
             continue;
     };
 
     if ( !best.record || !best.target || best.damage <= 0.f )
         return;
+
+    const auto can_attack = ( ( globals::local_player->tick_base( ) * g_interfaces.global_vars->interval_per_tick ) >= weapon->next_primary_attack( ) );
+
+    adjust_speed( cmd );
 
     /* re-calculate eye position */
     auto backup_pose = globals::local_player->pose_parameters( )[ 12 ];
@@ -413,26 +480,28 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
     const auto backup_angles = best.target->get_abs_angles( );
     const auto backup_bones = best.target->bone_cache( );
 
-    best.record->cache( );
+    if ( can_attack ) {
+        best.record->cache( );
 
-    if ( globals::is_targetting = targetting_record && ( should_target && hitchance( best.target, calc_pos, best.record ) ) ) {
-        globals::target_index = best.target->index( );
+        if ( globals::is_targetting = targetting_record && ( should_target && hitchance( best.target, calc_pos, best.record ) ) ) {
+            globals::target_index = best.target->index( );
 
-        auto angle = math::clamp_angle( calc_pos - globals::local_player->aim_punch( ) * globals::cvars::weapon_recoil_scale->get_float( ) );
+            auto angle = math::clamp_angle( calc_pos - globals::local_player->aim_punch( ) * globals::cvars::weapon_recoil_scale->get_float( ) );
 
-        cmd->view_angles = angle;
+            cmd->view_angles = angle;
 
-        if ( g_vars.aimbot_automatic_shoot.value )
-            cmd->buttons |= buttons::attack;
+            if ( g_vars.aimbot_automatic_shoot.value )
+                cmd->buttons |= buttons::attack;
 
-        if ( !g_vars.aimbot_silent.value )
-            g_interfaces.engine_client->set_view_angles( cmd->view_angles );
+            if ( !g_vars.aimbot_silent.value )
+                g_interfaces.engine_client->set_view_angles( cmd->view_angles );
 
-        cmd->tick_count = game::time_to_ticks( best.record->sim_time + globals::lerp_amount );
+            cmd->tick_count = game::time_to_ticks( best.record->sim_time ) + game::ticks_to_time( globals::lerp_amount );
 
-        *globals::packet = true;
+            *globals::packet = true;
+        }
     }
-
+ 
     best.target->origin( ) = backup_origin;
     best.target->set_collision_bounds( backup_mins, backup_maxs );
     best.target->set_abs_angles( backup_angles );

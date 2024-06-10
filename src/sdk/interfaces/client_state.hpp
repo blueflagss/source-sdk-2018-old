@@ -75,7 +75,7 @@ public:
     c_event_info *next;
 };
 
-class client_class_t;
+class c_client_class;
 
 class c_net_channel_info {
 public:
@@ -91,7 +91,7 @@ public:
 
 class c_net_channel {
 public:
-    PAD( 18 );
+    PAD( 0x3F );
     int out_sequence_nr;
     int isequence_nr;
     int out_sequence_nr_ack;
@@ -104,7 +104,7 @@ public:
     }
 
     void send_datagram( ) {
-        utils::get_method< int( __thiscall * )( void *, void * ) >( this, 46 )( this, 0 );
+        utils::get_method< int( __thiscall * )( void *, void * ) >( this, 48 )( this, 0 );
     }
 };
 
@@ -119,11 +119,11 @@ public:
     short class_id;
     float fire_delay;
     const void *send_table;
-    const client_class_t *client_class;
+    const c_client_class *client_class;
     int bits;
     uint8_t *data;
     int flags;
-    PAD( 0x1C );
+    PAD( 0x18 );
     client_event_t *next;
 };
 
@@ -175,7 +175,8 @@ public:
     PAD( 75 );
     vector_3d ang;
     PAD( 204 );
-    client_event_t *events;
+    //client_event_t *events;
 
+    OFFSET( events, client_event_t *, 0x4DEC );
     OFFSET( choked_commands, int, 0x4CB0 );
 };

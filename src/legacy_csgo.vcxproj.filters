@@ -1122,6 +1122,15 @@
     <ClInclude Include="hooks\update_animation_state\update_animation_state.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hooks\cl_fire_events\cl_fire_events.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\packet_start\packet_start.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\physics_simulate\physics_simulate.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sdk\interfaces\cvar.cpp">
@@ -1479,6 +1488,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks\update_animation_state\update_animation_state.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\cl_fire_events\cl_fire_events.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\packet_start\packet_start.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\physics_simulate\physics_simulate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

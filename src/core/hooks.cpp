@@ -40,10 +40,16 @@
 #include <hooks/notify_on_layer_change_weight/notify_on_layer_change_weight.hpp>
 #include <hooks/do_procedural_footplant/do_procedural_footplant.hpp>
 #include <hooks/update_animation_state/update_animation_state.hpp>
+#include <hooks/physics_simulate/physics_simulate.hpp>
+#include <hooks/packet_start/packet_start.hpp>
+#include <hooks/cl_fire_events/cl_fire_events.hpp>
 
 std::unique_ptr< event_handler > game_event_handler = nullptr;
 
 void hooks::impl::init( ) {
+    cl_fire_events::init( );
+    packet_start::init( );
+    physics_simulate::init( );
     update_animation_state::init( );
     do_procedural_footplant::init( );
     notify_on_layer_change_cycle::init( );
@@ -87,6 +93,9 @@ void hooks::impl::init( ) {
 }
 
 void hooks::impl::remove( ) {
+    cl_fire_events::original = { };
+    packet_start::original = { };
+    physics_simulate::original = { };
     update_animation_state::original = { };
     do_procedural_footplant::original = { };
     hud_scope_paint::original = { };
@@ -114,6 +123,7 @@ void hooks::impl::remove( ) {
     calc_viewmodel_view::original = { };
     get_viewmodel_fov::original = { };
     cvar_get_bool::sv_cheats::original = { };
+    cvar_get_bool::net_earliertempents::original = { };
     run_command::original = { };
     is_using_static_props_debug_modes::original = { };
     get_alpha_modulation::original = { };

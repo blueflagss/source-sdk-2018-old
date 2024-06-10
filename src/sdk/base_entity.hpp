@@ -166,12 +166,15 @@ inline static const csgo_hitbox player_hitboxes[] = {
 class c_base_entity : public c_base_player {
 public:
     DATAMAP( move_type, move_types, this->get_pred_desc_map( ), "m_MoveType" );
+    DATAMAP( abs_rotation, vector_3d, this->get_pred_desc_map( ), "m_angAbsRotation" );
     OFFSET( think_tick, int, 0xF8 );
     NETVAR( model_index, int, "DT_BaseEntity", "m_nModelIndex" );
     NETVAR( hitbox_set, int, "DT_BaseAnimatingOverlay", "m_nHitboxSet" );
     NETVAR( simtime, float, "DT_BaseEntity", "m_flSimulationTime" );
+    NETVAR( animtime, float, "DT_BaseEntity", "m_flAnimTime" );
     NETVAR( old_simtime, float, "DT_BaseEntity", "m_flSimulationTime", +0x4 );
     NETVAR( ground_entity_handle, uint32_t, "DT_BasePlayer", "m_hGroundEntity" );
+    NETVAR( cycle, float, "DT_BaseAnimating", "m_flCycle" );
     NETVAR( model_scale, float, "DT_BaseAnimating", "m_flModelScale" );
     OFFSET( bone_count, int, 0x2908 );
     OFFSET( bone_cache, matrix_3x4 *, 0x28FC );
