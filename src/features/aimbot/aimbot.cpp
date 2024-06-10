@@ -11,7 +11,6 @@ void aimbot::reset( ) {
     globals::target_index = -1;
     globals::is_targetting = false;
     targets.clear( );
-    aim_points.clear( );
 }
 
 bool aimbot::hitchance( c_cs_player *player, const vector_3d &angle, lag_record *record ) {
@@ -161,7 +160,7 @@ void aimbot::search_targets( ) {
     } );
 }
 
-void aimbot::plot_points( c_cs_player *player, lag_record *record, int side, std::vector< std::pair< vector_3d, bool > > &points, mstudiobbox_t *hitbox, mstudiohitboxset_t *set, int idx, float scale ) {
+void aimbot::plot_points( c_cs_player *player, lag_record *record, std::vector< std::pair< vector_3d, bool > > &points, mstudiobbox_t *hitbox, mstudiohitboxset_t *set, int idx, float scale ) {
     vector_3d center = ( hitbox->max + hitbox->min ) * 0.5f;
 
     vector_3d center_transformed;
@@ -235,7 +234,7 @@ void aimbot::generate_points( c_cs_player *player, lag_record* record ) {
         float ps = static_cast<float>( g_vars.aimbot_multipoint_scale.value ) * 0.01f;
 
         std::vector< std::pair< vector_3d, bool > > points;
-        plot_points( player, record, 0, points, bbox, player->cstudio_hdr( )->studio_hdr->hitbox_set( player->hitbox_set( ) ), hitbox, ps );
+        plot_points( player, record, points, bbox, player->cstudio_hdr( )->studio_hdr->hitbox_set( player->hitbox_set( ) ), hitbox, ps );
 
         if ( points.empty( ) )
             continue;
@@ -253,6 +252,8 @@ void aimbot::generate_points( c_cs_player *player, lag_record* record ) {
 }
 
 bool aimbot::scan_target( c_cs_player *player, lag_record *record, aim_player &target ) {
+    aim_points.clear( );
+
     generate_points( player, record );
 
     std::vector< threading::dispatch_queue::fn > calls;

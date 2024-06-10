@@ -305,27 +305,26 @@ float penetration_system::scale_damage( c_cs_player *player, float damage, float
     float scale_body_damage = ( player->team( ) == 3 ) ? globals::cvars::mp_damage_scale_ct_body->get_float( ) : globals::cvars::mp_damage_scale_t_body->get_float( );
     float head_damage_scale = ( player->team( ) == 3 ) ? globals::cvars::mp_damage_scale_ct_head->get_float( ) : globals::cvars::mp_damage_scale_t_head->get_float( );
 
-    static auto is_armored = [ & ]( ) -> bool {
-        //if ( player->armor( ) <= 0 )
-        //    return false;
+    bool armored = false;
 
+    if ( player->armor( ) <= 0 )
+        armored = false;
+    else {
         switch ( hitgroup ) {
             case hitgroups::hitgroup_generic:
             case hitgroups::hitgroup_chest:
             case hitgroups::hitgroup_stomach:
             case hitgroups::hitgroup_leftarm:
             case hitgroups::hitgroup_rightarm:
-                return true;
+                armored = true;
                 break;
             case hitgroups::hitgroup_head:
-                return player->helmet( );
+                armored = player->helmet( );
                 break;
             default:
                 break;
         }
-
-        return false;
-    };
+    }
 
     switch ( hitgroup ) {
         case hitgroup_head:
@@ -345,7 +344,7 @@ float penetration_system::scale_damage( c_cs_player *player, float damage, float
             break;
     }
 
-    if ( is_armored( ) ) {
+    if ( armored ) {
         auto modifier = 1.f, armor_bonus_ratio = .5f, armor_ratio = weapon_armor_ratio * .5f;
 
         if ( player->heavy_armor( ) ) {

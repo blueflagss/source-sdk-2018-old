@@ -52,7 +52,7 @@ class aimbot {
 private:
     void search_player( c_cs_player *player );
     void search_targets( );
-    void plot_points( c_cs_player *player, lag_record *record, int side, std::vector< std::pair< vector_3d, bool > > &points, mstudiobbox_t *hitbox, mstudiohitboxset_t *set, int idx, float scale );
+    void plot_points( c_cs_player *player, lag_record *record, std::vector< std::pair< vector_3d, bool > > &points, mstudiobbox_t *hitbox, mstudiohitboxset_t *set, int idx, float scale );
     void generate_points( c_cs_player *player, lag_record* record );
     bool scan_target( c_cs_player *player, lag_record *record, aim_player &target );
 
