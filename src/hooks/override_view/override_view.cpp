@@ -24,7 +24,7 @@ void __fastcall hooks::override_view::hook( REGISTERS, c_view_setup *setup ) {
         vector_3d angles;
         g_interfaces.engine_client->get_view_angles( angles );
 
-        vector_3d fwd, origin = globals::shoot_position;
+        vector_3d fwd, origin = globals::local_player->get_shoot_position();
 
         math::angle_vectors( angles, &fwd );
         angles.z = g_vars.visuals_other_thirdperson_distance.value;

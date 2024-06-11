@@ -64,12 +64,12 @@ bool aimbot::hitchance( c_cs_player *player, const vector_3d &angle, lag_record 
 
         auto dir = math::normalize_angle( forward + ( right * weapon_spread.x ) + ( up * weapon_spread.y ) );
 
-        const auto end = globals::shoot_position + ( dir * weapon_data->range );
+        const auto end = globals::local_player->get_shoot_position() + ( dir * weapon_data->range );
 
         if ( hitbox->group <= 0.f ) {
             c_game_trace trace;
             ray_t ray;
-            ray.init( globals::shoot_position, end );
+            ray.init( globals::local_player->get_shoot_position(), end );
 
             g_interfaces.engine_trace->clip_ray_to_entity( ray, mask_shot_hull | contents_hitbox, player, &trace );
 
@@ -77,7 +77,7 @@ bool aimbot::hitchance( c_cs_player *player, const vector_3d &angle, lag_record 
                 ++total_hits;
         } else {
             float m1, m2;
-            float dist = math::dist_segment_to_segment_sqr( globals::shoot_position, end, vMin, vMax, m1, m2 );
+            float dist = math::dist_segment_to_segment_sqr( globals::local_player->get_shoot_position(), end, vMin, vMax, m1, m2 );
 
             if ( dist <= hitbox->radius * hitbox->radius ) {
                 total_hits++;
@@ -136,7 +136,7 @@ void aimbot::search_targets( ) {
             case HASH_CT( "CCSPlayer" ): {
                 auto player = entity->get< c_cs_player * >( );
 
-                if ( !player || !player->alive( ) )
+                if ( !player || !player->alive( ) || player->immunity() )
                     break;
 
                 targets.emplace_back( aim_player{ player, math::calculate_fov( globals::view_angles, math::clamp_angle( player->get_shoot_position( ) ) ), glm::length( player->origin( ) - globals::local_player->origin( ) ), 0, &g_animations.lag_info[ player->index( ) ].anim_records.front( ), vector_3d( 0, 0, 0 ), vector_3d( 0, 0, 0 ) } );
@@ -277,11 +277,12 @@ bool aimbot::scan_target( c_cs_player *player, lag_record *record, aim_player &t
     if ( aim_points.empty( ) ) return false;
 
     for ( auto &point : aim_points ) {
-        point.bullet_data = g_penetration.run( globals::shoot_position, point.pos, point.record->player, point.record->bones );
+        point.bullet_data = g_penetration.run( globals::local_player->get_shoot_position(), point.pos, point.record->player, point.record->bones );
 
         if ( point.bullet_data.did_hit && point.bullet_data.out_damage >= g_vars.aimbot_min_damage.value ) {
             best_point = point;
             found_point = true;
+            point.pos = point.bullet_data.bullet_end;
             break;
         }
     }
@@ -452,24 +453,8 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
 
     adjust_speed( cmd );
 
-    /* re-calculate eye position */
-    auto backup_pose = globals::local_player->pose_parameters( )[ 12 ];
-
-    globals::local_player->pose_parameters( )[ 12 ] = ( math::normalize_angle( globals::local_player->aim_punch( ).x * globals::cvars::weapon_recoil_scale->get_float( ), -180.0f, 180.0f ) + 90.f ) / 180.f;
-
-    std::array< matrix_3x4, 128 > bones;
-
-    const auto ret = g_animations.build_bones( globals::local_player, bones.data( ), g_interfaces.global_vars->curtime );
-
-    globals::local_player->pose_parameters( )[ 12 ] = backup_pose;
-
-    const auto state = globals::local_player->anim_state( );
-
-    if ( ret && state )
-        globals::local_player->modify_eye_position( state, &best.best_point, bones.data( ) );
-
     const auto targetting_record = ( best.target && best.target->alive( ) && best.record );
-    const auto calc_pos = math::vector_angle( best.best_point - globals::shoot_position );
+    const auto calc_pos = math::vector_angle( best.best_point - globals::local_player->get_shoot_position() );
 
     bool should_target = g_vars.aimbot_automatic_shoot.value || cmd->buttons & buttons::attack;
 

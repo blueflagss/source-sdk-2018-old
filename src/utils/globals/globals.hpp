@@ -87,7 +87,6 @@ namespace globals
     inline bool *packet{ nullptr };
     inline bool old_packet{ false };
     inline vector_2d screen_size{ };
-    inline vector_3d shoot_position{ };
     inline c_cs_player *local_player{ nullptr };
     inline vector_3d local_angles{ };
     inline c_cs_weapon_base *local_weapon{ nullptr };

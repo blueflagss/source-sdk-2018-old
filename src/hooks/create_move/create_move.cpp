@@ -57,29 +57,6 @@ LABEL_18:
     cmd->buttons = new_buttons;
 }
 
-void setup_shoot_position( ) {
-    if ( !globals::local_player )
-        return;
-
-    globals::shoot_position = globals::local_player->origin( ) + globals::local_player->view_offset( );
-
-    if ( globals::local_player->alive( ) ) {
-        auto backup_pose = globals::local_player->pose_parameters( )[ 12 ];
-
-        globals::local_player->pose_parameters( )[ 12 ] = ( math::normalize_angle( globals::local_player->aim_punch( ).x * globals::cvars::weapon_recoil_scale->get_float( ), -180.0f, 180.0f ) + 90.f ) / 180.f;
-
-        std::array< matrix_3x4, 128 > bones;
-        const auto ret = g_animations.build_bones( globals::local_player, bones.data( ), g_interfaces.global_vars->curtime );
-
-        globals::local_player->pose_parameters( )[ 12 ] = backup_pose;
-
-        const auto state = globals::local_player->anim_state( );
-
-        if ( ret && state )
-            globals::local_player->modify_eye_position( state, &globals::shoot_position, bones.data( ) );
-    }
-}
-
 void backup_players( bool restore ) {
     // restore stuff.
     for ( int i{ 1 }; i <= g_interfaces.global_vars->max_clients; ++i ) {
@@ -108,8 +85,6 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
     globals::packet = reinterpret_cast< bool * >( *reinterpret_cast< std::uintptr_t * >( reinterpret_cast< std::uintptr_t >( _AddressOfReturnAddress( ) ) - sizeof( std::uintptr_t * ) ) - 0x1C );
 
     const auto net_channel = g_interfaces.engine_client->get_net_channel_info( );
-
-    setup_shoot_position( );
 
     /* Generate random seed since CInput::CreateMove isn't called so we must do it ourselves. */
     cmd->random_seed = g_addresses.md5_pseudorandom.get< unsigned int( __cdecl * )( unsigned int ) >( )( cmd->command_number ) & 0x7FFFFFFF;

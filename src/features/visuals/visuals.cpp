@@ -256,9 +256,9 @@ void visuals::render_offscreen( c_cs_player *player, const player_info_t &player
     vector_3d forward = { };
     math::angle_vectors( globals::view_angles, &forward );
 
-    auto origin_lerped = math::lerp_vector( local_origin, globals::shoot_position, forward.y );
+    auto origin_lerped = math::lerp_vector( local_origin, globals::local_player->get_shoot_position(), forward.y );
 
-    auto angle_to = math::clamp_angle( math::vector_angle( origin - globals::shoot_position ) );
+    auto angle_to = math::clamp_angle( math::vector_angle( origin - globals::local_player->get_shoot_position() ) );
 
     if ( !render::world_to_screen( origin, origin_screen ) ) {
         auto rotation = ( globals::view_angles - math::vector_angle( origin_lerped - origin ) ).y - 90.0f;

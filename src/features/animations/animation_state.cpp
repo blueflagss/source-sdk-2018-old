@@ -179,12 +179,14 @@ void c_animation_state_rebuilt::handle_animation_events( const c_csgo_player_ani
     else if ( swapped_ground && !in_jump )
         try_initiate_animation( globals::local_player, 4, 986, modifiers );
 
-    if (!p->m_bOnGround) {
-        globals::local_player->anim_overlays( )[ 6 ].weight = 0.f;
-        globals::local_player->anim_overlays( )[ 6 ].cycle = 0.f;
-    }
+    //if (!p->m_bOnGround) {
+    //    globals::local_player->anim_overlays( )[ 6 ].weight = 0.f;
+    //    globals::local_player->anim_overlays( )[ 6 ].cycle = 0.f;
+    //}
 
     auto &alive = globals::local_player->anim_overlays( )[ 11 ];
+
+    //globals::local_player->anim_overlays( )[ 12 ].weight = 0.f;
 
     if ( globals::local_player->get_sequence_activity( alive.sequence ) == 981 ) {
         if ( p->m_pWeapon && p->m_pWeapon != p->m_pWeaponLast ) {
