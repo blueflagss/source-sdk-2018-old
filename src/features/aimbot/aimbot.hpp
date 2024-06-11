@@ -49,8 +49,9 @@ struct aim_point {
 };
 
 struct thread_args {
-    aim_point *point;
-    int hb;
+    vector_3d eye_pos{ };
+    int hb{ };
+    bool valid{ };
 };
 
 class aimbot {
@@ -63,7 +64,7 @@ private:
     void adjust_speed( c_user_cmd *ucmd );
 
 public:
-    std::deque< aim_point > aim_points = { };
+    std::array< std::vector<aim_point>, 19> aim_points = { };
     std::deque< int > hitboxes = { };
     std::deque< aim_player > targets = { };
     target_info best = { };

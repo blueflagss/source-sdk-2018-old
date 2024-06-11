@@ -75,6 +75,8 @@ public:
     OFFSET( anim_overlays, c_animation_layer *, 0x2970 );
     OFFSET( buttons, int, 0x31E8 );
     OFFSET( cstudio_hdr, c_studio_hdr *, 0x293C );
+    NETVAR( immunity, bool, "DT_CSPlayer", "m_bGunGameImmunity" );
+    NETVAR( duck_amount, float, "DT_CSPlayer", "m_flDuckAmount" );
 
     void *get_view_model( ) {
         return g_interfaces.entity_list->get_client_entity_from_handle< void * >( this->viewmodel_handle( ) );
@@ -101,4 +103,5 @@ public:
     bool can_attack( );
     bool get_aim_matrix( vector_3d angle, matrix_3x4 *bones );
     vector_3d get_shoot_position( );
+    vector_3d get_eye_position( );
 };

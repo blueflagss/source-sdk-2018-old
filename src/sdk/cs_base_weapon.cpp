@@ -55,6 +55,10 @@ vector_3d c_cs_weapon_base::calculate_spread( int seed, bool revolver2 ) {
 }
 
 c_cs_weapon_info *c_cs_weapon_base::get_weapon_data( ) {
+    if (*reinterpret_cast<unsigned short*>(reinterpret_cast<uintptr_t>(this) + 0x31FC) == -1) {
+        return nullptr;
+    }
+
     return utils::get_method< c_cs_weapon_info *( __thiscall * ) ( void * ) >( this, 446 )( this );
 }
 

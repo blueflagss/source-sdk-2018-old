@@ -74,7 +74,7 @@ void c_cs_player::modify_eye_position( c_csgo_player_animstate *state, vector_3d
     if ( !bones )
         return;
 
-    state->m_bSmoothHeightValid = false;
+    //state->m_bSmoothHeightValid = false;
 
     if ( state->m_pPlayer && ( state->m_bLanding || state->m_flAnimDuckAmount != 0.f || !state->m_pPlayer->ground_entity_handle( ) ) ) {
         const auto head_bone = e->lookup_bone( XOR( "head_0" ) );
@@ -82,16 +82,11 @@ void c_cs_player::modify_eye_position( c_csgo_player_animstate *state, vector_3d
         if ( head_bone != -1 ) {
             const vector_3d head_pos( bones[ 8 ][ 0 ][ 3 ], bones[ 8 ][ 1 ][ 3 ], bones[ 8 ][ 2 ][ 3 ] );
 
-            float v6 = head_pos.z + 1.7f;
-
-            if ( input_eye_pos->z > v6 ) {
-                float v8 = 0.0f;
-                float v9 = ( float ) ( fabs( input_eye_pos->z - v6 ) - 4.0f ) * 0.16666667f;
-
-                if ( v9 >= 0.0 )
-                    v8 = fminf( v9, 1.0f );
-
-                input_eye_pos->z = ( ( v6 - input_eye_pos->z ) * ( ( ( v8 * v8 ) * 3.0f ) - ( ( ( v8 * v8 ) * 2.0f ) * v8 ) ) ) + input_eye_pos->z;
+            const auto bone_z = head_pos.z + 1.7f;
+            if ( input_eye_pos->z > bone_z ) {
+                const auto view_modifier = std::clamp( ( fabsf( input_eye_pos->z - bone_z ) - 4.f ) * .16666667f, 0.f, 1.f );
+                const auto view_modifier_sqr = view_modifier * view_modifier;
+                input_eye_pos->z += ( bone_z - input_eye_pos->z ) * ( 3.f * view_modifier_sqr - 2.f * view_modifier_sqr * view_modifier );
             }
         }
     }
@@ -136,14 +131,19 @@ bool c_cs_player::get_aim_matrix( vector_3d angle, matrix_3x4 *bones ) { /* inur
 }
 
 vector_3d c_cs_player::get_shoot_position( ) {
-    auto pos = this->origin( ) + this->view_offset( );
-    utils::get_method< void( __thiscall * )( void *, vector_3d * ) >( this, 163 )( this, &pos );
+    auto pos = get_abs_origin( );
 
-    if ( use_new_animstate( ) ) {
+    if ( this == globals::local_player ) {
+        pos += view_offset( );
         auto state = anim_state( );
 
         if ( state )
             modify_eye_position( state, &pos, this->bone_cache( ) );
+    } else {
+        pos += g_interfaces.game_movement->get_player_view_offset( false );
+
+        if ( flags( ) & on_ground )
+            pos -= ( g_interfaces.game_movement->get_player_view_offset( false ) - g_interfaces.game_movement->get_player_view_offset( true ) ) * duck_amount( );
     }
 
     return pos;
