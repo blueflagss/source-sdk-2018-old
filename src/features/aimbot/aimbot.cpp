@@ -12,7 +12,6 @@ void aimbot::reset( ) {
     globals::target_index = -1;
     globals::is_targetting = false;
     targets.clear( );
-    aim_points.clear( );
 }
 
 bool aimbot::hitchance( c_cs_player *player, const vector_3d &angle, lag_record *record ) {
@@ -222,8 +221,22 @@ void aimbot::generate_points_for_hitbox( c_cs_player *player, lag_record *record
     }
 }
 
-static void run_hitscan( void *arg ) {
-    if ( g_aimbot.aim_points.empty( ) ) return;
+static void run_hitscan( thread_args* args ) {
+    if ( !args->valid || args->valid != 1 )
+        return;
+
+    auto &points = g_aimbot.aim_points[ args->hb ];
+
+    if ( points.empty( ) )
+        return;
+
+    for (auto& point : points) {
+        if ( point.record == nullptr )
+            continue;
+
+        point.bullet_data = g_penetration.run( args->eye_pos, point.pos, point.record->player, point.record->bones );
+    }
+        
 }
 
 void aimbot::generate_points( c_cs_player *player, lag_record *record ) {
@@ -247,7 +260,7 @@ void aimbot::generate_points( c_cs_player *player, lag_record *record ) {
             continue;
 
         for ( const auto &point : points ) {
-            aim_point &p = aim_points.emplace_back( );
+            aim_point &p = aim_points[hitbox].emplace_back( );
 
             p.pos = point.first;
             p.center = !point.second;
@@ -257,16 +270,13 @@ void aimbot::generate_points( c_cs_player *player, lag_record *record ) {
         }
     }
 
-    //
-
-    //if ( !aim_points.empty( ) )
-    //    Threading::QueueJobRef( run_hitscan, ( void * )nullptr );
-
-    //Threading::FinishQueue( true );
 }
 
 bool aimbot::scan_target( c_cs_player *player, lag_record *record, aim_player &target ) {
     record->cache( );
+
+    for ( auto &array : aim_points )
+        array.clear( );
 
     generate_points( player, record );
 
@@ -276,15 +286,31 @@ bool aimbot::scan_target( c_cs_player *player, lag_record *record, aim_player &t
 
     if ( aim_points.empty( ) ) return false;
 
-    for ( auto &point : aim_points ) {
-        point.bullet_data = g_penetration.run( globals::local_player->get_shoot_position(), point.pos, point.record->player, point.record->bones );
+    for ( int i = 0; i < aim_points.size( ); i++ ) {
+        if ( aim_points[i].empty( ) ) continue;
 
-        if ( point.bullet_data.did_hit && point.bullet_data.out_damage >= g_vars.aimbot_min_damage.value ) {
-            best_point = point;
-            found_point = true;
-            point.pos = point.bullet_data.bullet_end;
-            break;
+        thread_args args = { };
+        args.eye_pos = globals::local_player->get_shoot_position( );
+        args.hb = i;
+        args.valid = true;
+
+        Threading::QueueJobRef<decltype(run_hitscan), thread_args>( run_hitscan, &args );
+    }
+
+    for ( auto &aim_array : aim_points ) {
+        if ( aim_array.empty( ) ) continue;
+
+        for (auto& point : aim_array) {
+            if (point.bullet_data.did_hit && point.bullet_data.out_damage >= g_vars.aimbot_min_damage.value) {
+                best_point = point;
+                found_point = true;
+                point.pos = point.bullet_data.bullet_end;
+                break;
+            }
         }
+
+        if ( found_point )
+            break;
     }
 
     if ( !found_point )
@@ -437,13 +463,8 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
         if ( !scan_target( target.entity, ideal, target ) )
             continue;
 
-        auto last = g_resolver.find_last_record( &target );
-
-        if ( !last )
-            continue;
-
-        if ( !scan_target( target.entity, last, target ) )
-            continue;
+        // leave on first valid target
+        break;
     };
 
     if ( !best.record || !best.target || best.damage <= 0.f )

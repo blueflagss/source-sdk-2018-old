@@ -37,7 +37,7 @@ lag_record *resolver::find_ideal_record( aim_player *data ) {
     }
 
     // none found above, return the first valid record if possible.
-    return ( first_valid ) ? first_valid : nullptr;
+    return ( first_valid ) ? first_valid : find_last_record(data);
 }
 
 lag_record *resolver::find_last_record( aim_player *data ) {
