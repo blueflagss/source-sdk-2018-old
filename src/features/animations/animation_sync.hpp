@@ -45,6 +45,7 @@ public:
     __forceinline void restore( c_cs_player *player ) {
         // get bone cache ptr.
         auto cache = player->bone_cache( );
+
         if ( !cache )
             return;
 
@@ -96,6 +97,7 @@ public:
     bool record_filled;
     bool has_velocity;
     const model_t *model;
+    int tick;
 
     void reset( c_cs_player *player );
     bool is_valid( );
@@ -114,13 +116,14 @@ public:
     void on_net_update_end( );
     bool fix_velocity( c_cs_player *ent, vector_3d &vel, const std::array< c_animation_layer, 15 > &animlayers, const vector_3d &origin );
     void clear_data( int index );
+    void extrapolate( c_cs_player *player, vector_3d &origin, vector_3d &velocity, int &flags, bool on_ground );
     bool get_lagcomp_bones( c_cs_player *player, std::array< matrix_3x4, 128 > &out );
     bool build_bones( c_cs_player *player, matrix_3x4 *out, float curtime );
     void update_land( c_cs_player *player, lag_record *record, lag_record *last_record );
     void update_velocity( c_cs_player *player, lag_record *record, lag_record *previous );
     void update_local_animations( c_user_cmd *user_cmd );
     void maintain_local_animations( );
-    void update_player_animation( c_cs_player *player, lag_record &record, lag_record *previous );
+    void update_player_animation( c_cs_player *player, lag_record &record, lag_record *previous, bool update = true );
 
     struct animation_info {
         util::circular_buffer< lag_record > anim_records;

@@ -114,7 +114,12 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
     /* Generate random seed since CInput::CreateMove isn't called so we must do it ourselves. */
     cmd->random_seed = g_addresses.md5_pseudorandom.get< unsigned int( __cdecl * )( unsigned int ) >( )( cmd->command_number ) & 0x7FFFFFFF;
 
-    globals::lerp_amount = calculate_lerp( );
+    if ( net_channel != nullptr ) {
+        globals::latency_ticks = game::time_to_ticks( net_channel->get_latency( 0 ) );
+        globals::lerp_amount = calculate_lerp( );
+        globals::server_tick = g_interfaces.client_state->server_tick( );
+        globals::arrival_tick = globals::server_tick + globals::latency_ticks;
+    }
 
     const auto old_cmd_angles = cmd->view_angles;
 
@@ -165,7 +170,7 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
  //           net_channel->send_datagram( );
  //           //net_channel->out_sequence_nr--;
  //           --*reinterpret_cast< int * >( reinterpret_cast< uintptr_t >( net_channel ) + 0x18 );
- //           //--*reinterpret_cast< int * >( reinterpret_cast< uintptr_t >( net_channel ) + 0x2C );
+ //           --*reinterpret_cast< int * >( reinterpret_cast< uintptr_t >( net_channel ) + 0x2C );
  //           net_channel->choked_packets = backup_choked;
  //       }
  //   }

@@ -71,6 +71,7 @@ public:
 
     void reset( );
     bool hitchance( c_cs_player *player, const vector_3d &angle, lag_record *record );
+    bool extrapolate_target( aim_player &target );
     void on_create_move( c_user_cmd *cmd );
     bool get_hitbox_position( c_cs_player *player, matrix_3x4 *bones, int hitbox, vector_3d &position );
 };

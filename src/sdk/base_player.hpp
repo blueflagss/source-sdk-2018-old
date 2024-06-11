@@ -110,6 +110,7 @@ public:
 
     bool compute_bounding_box( box &box_dimensions );
     bool is_player_on_steam_friends( ) const;
+    void update_clientside_animation( );
     void select_item( const char *str, int subtype );
     void update_button_state( int button_mask );
     void pre_think( );

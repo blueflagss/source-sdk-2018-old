@@ -75,7 +75,7 @@ std::pair< c_csgo_player_animstate, c_animation_layer * > c_animation_state_rebu
 
     std::array< c_animation_layer, 13 > backup_layers = { };
 
-    const auto backup_poses = player->pose_parameters( );
+    //const auto backup_poses = player->pose_parameters( );
     const auto backup_state = *player->anim_state( );
 
     std::memcpy( backup_layers.data( ), player->anim_overlays( ), sizeof( c_animation_layer ) * 13 );
@@ -86,7 +86,8 @@ std::pair< c_csgo_player_animstate, c_animation_layer * > c_animation_state_rebu
     const auto backup_clientside_anim = player->client_side_animation( );
 
     globals::allow_animations[ player->index( ) ] = player->client_side_animation( ) = true;
-    state->update( globals::local_angles );
+    //update_animation_state( player->anim_state( ), globals::local_angles, globals::local_player->tick_base( ) );
+    player->update_clientside_animation( );
     globals::allow_animations[ player->index( ) ] = backup_clientside_anim;
 
     const auto pred = backup_state;
@@ -94,7 +95,7 @@ std::pair< c_csgo_player_animstate, c_animation_layer * > c_animation_state_rebu
 
     *player->anim_state( ) = backup_state;
     std::memcpy( player->anim_overlays( ), backup_layers.data( ), sizeof( c_animation_layer ) * 13 );
-    player->pose_parameters( ) = backup_poses;
+    //player->pose_parameters( ) = backup_poses;
 
     return { pred, layers };
 }

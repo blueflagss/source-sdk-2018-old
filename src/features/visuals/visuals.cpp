@@ -36,7 +36,58 @@ void visuals::render( ) {
         }
     }
 
+    render_hud_scope( );
     render_hitmarker( );
+    render_indicators( );
+}
+
+void visuals::render_hud_scope( ) {
+    if ( !g_vars.visuals_other_remove_scope_overlay.value )
+        return;
+
+    if ( !globals::local_player->scoped( ) )
+        return;
+
+    vector_4d area = {
+            globals::ui::screen_size.x,
+            globals::ui::screen_size.y,
+            globals::ui::screen_size.x / 2.0f,
+            globals::ui::screen_size.y / 2.0f 
+    };
+
+    render::filled_rect( area.z, 0, 1.0f, area.y, color::black( ) );
+    render::filled_rect( 0, area.w, area.x, 1.0f, color::black( ) );
+}
+
+void visuals::render_indicators( ) {
+    if ( !globals::local_player->alive( ) )
+        return;
+
+    float time = std::clamp< float >( g_animations.lower_body_realign_timer - g_interfaces.global_vars->curtime, 0.0f, 1.0f );
+
+    std::deque< std::tuple< const char *, color, float > > indicators{ };
+
+    indicators.emplace_back( std::tuple< const char *, color, float >{ "LBY", color( 200, 200, 200 ), time } );
+
+    if ( indicators.empty( ) )
+        return;
+
+    const auto lby_indicator_col = color( 137, 195, 49 ).lerp( color( 186, 1, 1 ), time );
+
+    for ( int i = 0; i < indicators.size( ); ++i ) {
+        auto &indicator = indicators[ i ];
+
+        auto text_dimensions = render::get_text_size( fonts::visuals_indicators, std::get< 0 >( indicator ) );
+        auto position = vector_2d( 8.0f, ( globals::ui::screen_size.y / 2.0f ) + ( i * ( text_dimensions.y + 4 ) ) );
+
+        if ( HASH( std::get< 0 >( indicator ) ) == HASH_CT( "LBY" ) ) {
+            render::string( fonts::visuals_indicators, position, color( 0, 0, 0, 190 ), std::get< 0 >( indicator ) );
+
+            render::scissor_rect( position, vector_2d( text_dimensions.x * ( 1.f - time ), text_dimensions.y ), [ & ] {
+                render::string( fonts::visuals_indicators, position, lby_indicator_col, std::get< 0 >( indicator ), true );
+            } );
+        }
+    }
 }
 
 void visuals::render_hitmarker( ) {
@@ -184,8 +235,7 @@ void visuals::render_player( c_cs_player *player ) {
 
         if ( g_vars.visuals_player_flags_lag_amount.value && g_animations.lag_info[ player->index( ) ].anim_records.size( ) > 1 ) {
             auto &log = g_animations.lag_info[ player->index( ) ].anim_records.front( );
-
-            auto lag_amount = fmt::format( "LAG: {}", log.choked );
+            auto lag_amount = fmt::format( "{}", log.choked );
 
             flags.push_back( { lag_amount, { 255, 255, 255 } } );
         }
@@ -200,10 +250,6 @@ void visuals::render_player( c_cs_player *player ) {
 
         render::string( fonts::visuals_04b03, player_box.x + player_box.w + 2, player_box.y + offset - 1, color{ color::white( ), 240 * opacity_array[ player->index( ) ] }, flag_object.first, true );
     }
-}
-
-void visuals::draw_hud_scope( ) {
-
 }
 
 void visuals::world_modulation( ) {
@@ -251,13 +297,12 @@ void visuals::render_offscreen( c_cs_player *player, const player_info_t &player
     vector_2d origin_screen;
     vector_3d origin, local_origin;
 
-    origin = log.abs_origin, local_origin = globals::local_player->get_abs_origin( );
+    origin = log.origin, local_origin = globals::local_player->get_abs_origin( );
 
     vector_3d forward = { };
     math::angle_vectors( globals::view_angles, &forward );
 
     auto origin_lerped = math::lerp_vector( local_origin, globals::shoot_position, forward.y );
-
     auto angle_to = math::clamp_angle( math::vector_angle( origin - globals::shoot_position ) );
 
     if ( !render::world_to_screen( origin, origin_screen ) ) {
@@ -275,7 +320,7 @@ void visuals::render_offscreen( c_cs_player *player, const player_info_t &player
 
         auto position = vector_2d(
                 ( globals::ui::screen_size.x / 2.0f ) - ( 400 * ( distance / 100.f ) ) * std::cosf( angle_radians ),
-                ( globals::ui::screen_size.y / 2.0f ) - ( 400 * ( distance / 100.f ) ) * std::sinf( angle_radians ) 
+                ( globals::ui::screen_size.y / 2.0f ) - ( 400 * ( distance / 100.f ) ) * std::sinf( angle_radians )
         );
 
         std::array< vector_2d, 3 > points = {

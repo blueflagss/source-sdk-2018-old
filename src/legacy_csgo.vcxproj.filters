@@ -1131,6 +1131,12 @@
     <ClInclude Include="hooks\physics_simulate\physics_simulate.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hooks\cl_move\cl_move.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\get_eye_angles\get_eye_angles.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sdk\interfaces\cvar.cpp">
@@ -1497,6 +1503,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks\physics_simulate\physics_simulate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\cl_move\cl_move.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\get_eye_angles\get_eye_angles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

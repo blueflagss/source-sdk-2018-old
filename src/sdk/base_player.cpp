@@ -19,8 +19,7 @@ bool c_base_player::compute_bounding_box( box &box_dimensions ) {
             vector_3d( maxs.x, maxs.y, maxs.z ),
             vector_3d( mins.x, maxs.y, maxs.z ),
             vector_3d( mins.x, mins.y, maxs.z ),
-            vector_3d( maxs.x, mins.y, maxs.z ) 
-    };
+            vector_3d( maxs.x, mins.y, maxs.z ) };
 
     const matrix_3x4 &trans = this->renderable_to_world_transform( );
 
@@ -49,8 +48,7 @@ bool c_base_player::compute_bounding_box( box &box_dimensions ) {
             static_cast< float >( left ),
             static_cast< float >( top ),
             static_cast< float >( right - left ),
-            static_cast< float >( bottom - top )
-    );
+            static_cast< float >( bottom - top ) );
 
     return true;
 }
@@ -69,6 +67,10 @@ bool c_base_player::is_player_on_steam_friends( ) const {
     }
 
     return false;
+}
+
+void c_base_player::update_clientside_animation( ) {
+    return utils::get_method< void( __thiscall * )( void * ) >( this, 218 )( this );
 }
 
 void c_base_player::pre_think( ) {

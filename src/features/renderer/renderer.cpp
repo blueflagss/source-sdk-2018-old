@@ -14,6 +14,7 @@ void render::init( HWND hwnd, IDirect3DDevice9 *device ) {
 
     auto &io = ImGui::GetIO( );
 
+    fonts::visuals_indicators = create_from_system( "C:\\Windows\\Fonts\\verdanab.ttf", 27.5f, 0, io.Fonts->GetGlyphRangesCyrillic( ) );
     fonts::visuals_04b03 = create_from_system( small_font_data, 8.0f, sizeof( small_font_data ), ImGuiFreeTypeBuilderFlags_LightHinting, io.Fonts->GetGlyphRangesCyrillic( ) );
     fonts::visuals_segoe_ui = create_from_system( "C:\\Windows\\Fonts\\seguisb.ttf", 16.0f, ImGuiFreeTypeBuilderFlags_LightHinting, io.Fonts->GetGlyphRangesCyrillic( ) );
     fonts::montserrat_semibold = create_from_system( montserrat_semibold_data, 16.0f, sizeof( montserrat_semibold_data ), 0, io.Fonts->GetGlyphRangesCyrillic( ) );

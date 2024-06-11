@@ -11,6 +11,8 @@ void globals::cvars::init( ) {
     cam_ideallag->remove_callbacks( );
     cam_ideallag->set_int( 0 );
 
+    sv_jump_impulse = g_interfaces.cvar->find_var( HASH_CT( "sv_jump_impulse" ) );
+    sv_gravity = g_interfaces.cvar->find_var( HASH_CT( "sv_gravity" ) );
     cl_interp_ratio = g_interfaces.cvar->find_var( HASH_CT( "cl_interp_ratio" ) );
     cl_updaterate = g_interfaces.cvar->find_var( HASH_CT( "cl_updaterate" ) );
     weapon_accuracy_shotgun_spread_patterns = g_interfaces.cvar->find_var( HASH_CT( "weapon_accuracy_shotgun_spread_patterns" ) );

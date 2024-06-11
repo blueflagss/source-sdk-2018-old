@@ -43,10 +43,14 @@
 #include <hooks/physics_simulate/physics_simulate.hpp>
 #include <hooks/packet_start/packet_start.hpp>
 #include <hooks/cl_fire_events/cl_fire_events.hpp>
+#include <hooks/cl_move/cl_move.hpp>
+#include <hooks/get_eye_angles/get_eye_angles.hpp>
 
 std::unique_ptr< event_handler > game_event_handler = nullptr;
 
-void hooks::impl::init( ) {
+void hooks::impl::init( )  {
+    get_eye_angles::init( );
+    cl_move::init( );
     cl_fire_events::init( );
     packet_start::init( );
     physics_simulate::init( );
@@ -93,6 +97,8 @@ void hooks::impl::init( ) {
 }
 
 void hooks::impl::remove( ) {
+    get_eye_angles::original = { };
+    cl_move::original = { };
     cl_fire_events::original = { };
     packet_start::original = { };
     physics_simulate::original = { };

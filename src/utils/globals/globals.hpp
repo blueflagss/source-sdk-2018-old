@@ -61,6 +61,8 @@ namespace globals
         inline convar *cl_csm_shadows{ nullptr };
         inline convar *name{ nullptr };
         inline convar *sv_maxusrcmdprocessticks{ nullptr };
+        inline convar *sv_gravity{ nullptr };
+        inline convar *sv_jump_impulse{ nullptr };
         inline convar *weapon_accuracy_shotgun_spread_patterns{ nullptr };
         inline convar *weapon_recoil_scale{ nullptr };
         inline convar *cl_interp{ nullptr };
@@ -80,6 +82,9 @@ namespace globals
     inline bool did_setup_datamap{ false };
     inline int target_index{ -1 };
     inline c_user_cmd *user_cmd{ nullptr };
+    inline int arrival_tick{ };
+    inline int server_tick{ };
+    inline int latency_ticks{ };
     inline vector_3d view_angles{ };
     inline vector_3d sent_angles{ };
     inline v_matrix view_matrix{ };

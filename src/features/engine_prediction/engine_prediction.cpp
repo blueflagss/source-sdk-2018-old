@@ -27,12 +27,12 @@ void engine_prediction::start( c_user_cmd *ucmd ) {
     if ( !globals::local_player || !ucmd || !g_interfaces.move_helper )
         return;
 
-    if ( g_interfaces.client_state->delta_tick > 0 ) {
+    if ( g_interfaces.client_state->delta_tick( ) > 0 ) {
         g_interfaces.prediction->update(
-                g_interfaces.client_state->delta_tick,
-                g_interfaces.client_state->delta_tick > 0,
-                g_interfaces.client_state->last_command_ack,
-                g_interfaces.client_state->last_outgoing_command + g_interfaces.client_state->choked_commands( )
+                g_interfaces.client_state->delta_tick( ),
+                g_interfaces.client_state->delta_tick( ) > 0,
+                g_interfaces.client_state->last_command_ack( ),
+                g_interfaces.client_state->last_outgoing_command( ) + g_interfaces.client_state->choked_commands( )
         );
     }
 

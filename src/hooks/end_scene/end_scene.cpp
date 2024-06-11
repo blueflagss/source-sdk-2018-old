@@ -28,21 +28,6 @@ long __fastcall hooks::end_scene::hook( REGISTERS, IDirect3DDevice9 *device ) {
 
         render::begin( [ & ] {
             g_visuals.render( );
-
-            if ( globals::local_player && globals::local_player->alive( ) && g_vars.visuals_other_remove_scope_overlay.value ) {
-                vector_4d area = {
-                        globals::ui::screen_size.x,
-                        globals::ui::screen_size.y,
-                        globals::ui::screen_size.x / 2.0f,
-                        globals::ui::screen_size.y / 2.0f 
-                };
-
-                if ( globals::local_player->scoped( ) ) {
-                    render::filled_rect( area.z, 0, 1.0f, area.y, color::black( ) );
-                    render::filled_rect( 0, area.w, area.x, 1.0f, color::black( ) );
-                }
-            }
-
             g_notify.render( );
             g_menu.render( );
         } );

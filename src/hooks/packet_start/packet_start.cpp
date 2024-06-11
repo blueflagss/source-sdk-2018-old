@@ -1,19 +1,14 @@
 #include "packet_start.hpp"
 
 int __fastcall hooks::packet_start::hook( REGISTERS, int incoming_sequence, int outgoing_acknowledged ) {
-    //for ( const int it : globals::sent_commands ) {
-    //    if ( it == outgoing_acknowledged ) {
-    //        original.fastcall< int >( ecx, edx, incoming_sequence, outgoing_acknowledged );
-    //        break;
-    //    }
-    //}
+    globals::sent_commands.erase( std::ranges::remove_if( globals::sent_commands, [ & ]( const uint32_t &cmd ) { return abs( static_cast< int32_t >( outgoing_acknowledged - cmd ) ) >= 90; } ).begin( ), globals::sent_commands.end( ) );
 
-    //for ( auto it = globals::sent_commands.begin( ); it != globals::sent_commands.end( ); ) {
-    //    if ( *it < outgoing_acknowledged )
-    //        it = globals::sent_commands.erase( it );
-    //    else
-    //        it++;
-    //}
+    auto target_acknowledged = outgoing_acknowledged;
+
+    for ( const auto cmd : globals::sent_commands ) {
+        if ( outgoing_acknowledged >= cmd )
+            target_acknowledged = cmd;
+    }
 
     return original.fastcall< int >( ecx, edx, incoming_sequence, outgoing_acknowledged );
 }

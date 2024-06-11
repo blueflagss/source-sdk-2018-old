@@ -94,6 +94,68 @@ bool aimbot::hitchance( c_cs_player *player, const vector_3d &angle, lag_record 
     return false;
 }
 
+bool aimbot::extrapolate_target( aim_player &target ) {
+    auto &records = g_animations.lag_info[ target.entity->index( ) ].anim_records;
+
+    if ( records.empty( ) )
+        return false;
+
+    if ( target.entity->dormant( ) )
+        return false;
+
+    auto state = target.entity->anim_state( );
+
+    if ( !state )
+        return false;
+
+    size_t size{ };
+
+    for ( const auto &it : records ) {
+        if ( it.dormant )
+            break;
+
+        ++size;
+    }
+
+    auto record = records[ 0 ];
+
+    if ( !record.break_lc )
+        return false;
+
+    int simulation = game::time_to_ticks( record.sim_time );
+
+    if ( std::abs( globals::arrival_tick - simulation ) >= 128 )
+        return true;
+
+    auto lag = std::clamp< int >( record.choked - 1, 0, 17 );
+
+    int updatedelta = globals::server_tick - record.tick;
+
+    if ( globals::latency_ticks <= lag - updatedelta )
+        return true;
+
+    int next = record.tick + 1;
+
+    if ( next + lag >= globals::arrival_tick )
+        return true;
+
+    int pred = 0;
+
+    while ( true ) {
+        for ( int i = 0; i < lag; i++ )
+            g_animations.extrapolate( target.entity, target.entity->origin( ), target.entity->velocity( ), target.entity->flags( ), ( target.entity->flags( ) & player_flags::on_ground ) || state->m_bOnGround );
+
+        pred++;
+    }
+
+    if ( pred <= 0 )
+        return true;
+    
+    g_animations.update_player_animation( target.entity, *target.record, nullptr, false );
+
+    return false;
+}
+
 bool aimbot::get_hitbox_position( c_cs_player *player, matrix_3x4 *bones, int i, vector_3d &position ) {
     auto model = player->get_model( );
 
@@ -257,12 +319,6 @@ void aimbot::generate_points( c_cs_player *player, lag_record *record ) {
         }
     }
 
-    //
-
-    //if ( !aim_points.empty( ) )
-    //    Threading::QueueJobRef( run_hitscan, ( void * )nullptr );
-
-    //Threading::FinishQueue( true );
 }
 
 bool aimbot::scan_target( c_cs_player *player, lag_record *record, aim_player &target ) {
@@ -300,7 +356,7 @@ bool aimbot::scan_target( c_cs_player *player, lag_record *record, aim_player &t
     return true;
 }
 
-void aimbot::adjust_speed( c_user_cmd *cmd ) { /* kinda shit. */
+void aimbot::adjust_speed( c_user_cmd *cmd ) {    
     if ( !globals::local_player->alive( ) || !( globals::local_player->flags( ) & FL_ONGROUND ) || !globals::local_weapon || !globals::local_weapon->get_weapon_data( ) )
         return;
 
@@ -334,7 +390,6 @@ void aimbot::adjust_speed( c_user_cmd *cmd ) { /* kinda shit. */
     const auto pure_accurate_speed = max_speed * 0.34f;
     const auto accurate_speed = max_speed * 0.315f;
 
-    //    actually slowwalk
     if ( speed <= pure_accurate_speed ) {
         const auto cmd_speed = sqrt( cmd->forward_move * cmd->forward_move + cmd->side_move * cmd->side_move );
         const auto local_speed = std::max( math::length_2d( globals::local_player->velocity( ) ), 0.1f );
@@ -346,7 +401,6 @@ void aimbot::adjust_speed( c_user_cmd *cmd ) { /* kinda shit. */
         cmd->buttons &= ~buttons::walk;
         cmd->buttons |= buttons::speed;
     }
-    //    we are fast
     else {
         quick_stop( );
     }
@@ -428,21 +482,34 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
         if ( hitboxes.empty( ) )
             continue;
 
-        auto ideal = g_resolver.find_ideal_record( &target );
+        if ( extrapolate_target( target ) && !g_animations.lag_info[ target.entity->index( ) ].anim_records.empty( ) ) {
+            auto front = &g_animations.lag_info[ target.entity->index( ) ].anim_records.front( );
 
-        if ( !ideal )
-            continue;
+            if ( !front )
+                continue;
 
-        if ( !scan_target( target.entity, ideal, target ) )
-            continue;
+            if ( !scan_target( target.entity, front, target ) )
+                continue;
+        }
 
-        auto last = g_resolver.find_last_record( &target );
+        else {
+            auto ideal = g_resolver.find_ideal_record( &target );
 
-        if ( !last )
-            continue;
+            if ( !ideal )
+                continue;
 
-        if ( !scan_target( target.entity, last, target ) )
-            continue;
+            if ( !scan_target( target.entity, ideal, target ) )
+                continue;
+
+            auto last = g_resolver.find_last_record( &target );
+
+            if ( !last )
+                continue;
+
+            if ( !scan_target( target.entity, last, target ) )
+                continue;
+        }
+
     };
 
     if ( !best.record || !best.target || best.damage <= 0.f )
@@ -452,7 +519,6 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
 
     adjust_speed( cmd );
 
-    /* re-calculate eye position */
     auto backup_pose = globals::local_player->pose_parameters( )[ 12 ];
 
     globals::local_player->pose_parameters( )[ 12 ] = ( math::normalize_angle( globals::local_player->aim_punch( ).x * globals::cvars::weapon_recoil_scale->get_float( ), -180.0f, 180.0f ) + 90.f ) / 180.f;
@@ -473,7 +539,6 @@ void aimbot::on_create_move( c_user_cmd *cmd ) {
 
     bool should_target = g_vars.aimbot_automatic_shoot.value || cmd->buttons & buttons::attack;
 
-    /* restore player data */
     const auto backup_origin = best.target->origin( );
     const auto backup_mins = best.target->collideable( )->mins( );
     const auto backup_maxs = best.target->collideable( )->maxs( );

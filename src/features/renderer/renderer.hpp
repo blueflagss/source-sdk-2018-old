@@ -7,6 +7,7 @@ namespace fonts
     inline ImFont *montserrat = nullptr;
     inline ImFont *visuals_04b03 = nullptr;
     inline ImFont *visuals_segoe_ui = nullptr;
+    inline ImFont *visuals_indicators = nullptr;
     inline ImFont *montserrat_main = nullptr;
     inline ImFont *montserrat_semibold = nullptr;
     inline ImFont *font_awesome = nullptr;

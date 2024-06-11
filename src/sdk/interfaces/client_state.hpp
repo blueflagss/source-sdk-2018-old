@@ -131,52 +131,11 @@ class c_client_state {
 public:
     PAD( 156 );
     c_net_channel *net_channel;
-    int challenge_nr;
-    PAD( 4 );
-    double connect_time;
-    int retry_number;
-    PAD( 84 );
-    int signon_state;
-    PAD( 4 );
-    double next_cmd_time;
-    int server_count;
-    int current_sequence;
-    PAD( 8 );
 
-    struct {
-        float clock_offsets[ 16 ];
-        int cur_clock_offset;
-        int server_tick;
-        int client_tick;
-    } clock_drift_mgr;
-
-    int delta_tick;
-    PAD( 4 );
-    int view_entity;
-    int player_slot;
-    bool paused;
-    PAD( 3 );
-    char level_name[ 260 ];
-    char level_name_short[ 40 ];
-    PAD( 212 );
-    int max_clients;
-    PAD( 18836 );
-    int old_tickcount;
-    float tick_remainder;
-    float frametime;
-    int last_outgoing_command;
-    PAD( 4 );
-    int last_command_ack;
-    int last_server_tick;
-    int command_ack;
-    int sound_sequence;
-    int last_progress_percent;
-    bool is_hltv;
-    PAD( 75 );
-    vector_3d ang;
-    PAD( 204 );
-    //client_event_t *events;
-
+    OFFSET( server_tick, int, 0x016C );
+    OFFSET( last_command_ack, int, 0x4CB4 );
+    OFFSET( delta_tick, int, 0x174 );
+    OFFSET( last_outgoing_command, int, 0x4CAC );
     OFFSET( events, client_event_t *, 0x4DEC );
     OFFSET( choked_commands, int, 0x4CB0 );
 };
