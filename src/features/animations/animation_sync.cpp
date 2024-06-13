@@ -4,10 +4,11 @@
 void lag_record::reset( c_cs_player *player ) {
     this->player = player;
 
+    renderable_to_world_transform = player->renderable_to_world_transform( );
     flags = player->flags( );
     origin = player->origin( );
-    mins = player->mins( );
-    maxs = player->maxs( );
+    mins = player->collideable( )->mins( );
+    maxs = player->collideable( )->maxs( );
     sim_time = player->simtime( );
     old_sim_time = player->old_simtime( );
     abs_angles = player->get_abs_angles( );
@@ -67,6 +68,7 @@ void lag_record::cache( ) {
     player->origin( ) = this->origin;
     player->set_collision_bounds( this->mins, this->maxs );
     player->set_abs_angles( this->abs_angles );
+    player->set_abs_origin( this->origin );
     player->invalidate_bone_cache( );
     player->bone_cache( ) = this->bones.data( );
 }
@@ -136,7 +138,7 @@ bool animation_sync::get_lagcomp_bones( c_cs_player *player, std::array< matrix_
         return fabs( correct - ( g_interfaces.global_vars->curtime - t ) ) <= 0.2f;
     };
 
-    auto &log = g_animations.lag_info[ player->index( ) ];
+    auto &log = g_animations.player_log[ player->index( ) ];
 
     if ( !log.anim_records.empty( ) ) {
         const auto lag_records = log.anim_records;
@@ -258,42 +260,37 @@ void animation_sync::update_velocity( c_cs_player *player, lag_record *record, l
     if ( !weapon )
         return;
 
-    player_info_t player_info;
-    g_interfaces.engine_client->get_player_info( player->index( ), &player_info );
+    if ( record->choked > 0 && record->choked < 16 && previous && !previous->dormant )
+        record->velocity = ( record->origin - previous->origin ) * ( 1.f / game::ticks_to_time( record->choked ) );
 
-    if ( !player_info.fake_player ) {
-        if ( record->choked > 0 && record->choked < 16 && previous && !previous->dormant )
-            record->velocity = ( record->origin - previous->origin ) * ( 1.f / game::ticks_to_time( record->choked ) );
+    record->anim_velocity = record->velocity;
 
-        record->anim_velocity = record->velocity;
+    if ( record->flags & player_flags::on_ground && record->velocity.length( ) > 0.1f && record->layer_records[ ANIMATION_LAYER_LEAN ].weight == 0.f && record->layer_records[ ANIMATION_LAYER_MOVEMENT_MOVE ].weight < 0.1f )
+        record->fake_walk = true;
 
-        if ( record->flags & player_flags::on_ground && record->velocity.length( ) > 0.1f && record->layer_records[ ANIMATION_LAYER_LEAN ].weight == 0.f && record->layer_records[ ANIMATION_LAYER_MOVEMENT_MOVE ].weight < 0.1f )
-            record->fake_walk = true;
+    if ( player->flags( ) & player_flags::on_ground && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight > 0.f && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight < 1.f && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].cycle > previous->layer_records[ ANIMATION_LAYER_ALIVELOOP ].cycle ) {
+        if ( weapon ) {
+            float max_speed = 260.f;
+            auto weapon_info = weapon->get_weapon_data( );
 
-        if ( player->flags( ) & player_flags::on_ground && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight > 0.f && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight < 1.f && record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].cycle > previous->layer_records[ ANIMATION_LAYER_ALIVELOOP ].cycle ) {
-            if ( weapon ) {
-                float max_speed = 260.f;
-                auto weapon_info = weapon->get_weapon_data( );
+            if ( weapon_info )
+                max_speed = player->scoped( ) ? weapon_info->max_speed_alt : weapon_info->max_speed;
 
-                if ( weapon_info )
-                    max_speed = player->scoped( ) ? weapon_info->max_speed_alt : weapon_info->max_speed;
+            float modifier = 0.35f * ( 1.f - record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight );
 
-                float modifier = 0.35f * ( 1.f - record->layer_records[ ANIMATION_LAYER_ALIVELOOP ].weight );
-
-                if ( modifier > 0.f && modifier < 1.f )
-                    record->anim_speed = max_speed * ( modifier + 0.55f );
-            }
+            if ( modifier > 0.f && modifier < 1.f )
+                record->anim_speed = max_speed * ( modifier + 0.55f );
         }
-
-        if ( record->anim_speed > 0.f ) {
-            record->anim_speed /= glm::length( record->velocity );
-
-            record->anim_velocity *= record->anim_speed;
-        }
-
-        if ( record->fake_walk )
-            record->anim_velocity = { 0.f, 0.f, 0.f };
     }
+
+    if ( record->anim_speed > 0.f ) {
+        record->anim_speed /= glm::length( record->velocity );
+
+        record->anim_velocity *= record->anim_speed;
+    }
+
+    if ( record->fake_walk )
+        record->anim_velocity = { 0.f, 0.f, 0.f };
 }
 
 void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
@@ -304,23 +301,68 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
 
     auto state = globals::local_player->anim_state( );
 
-    if ( !state ) {
+    if ( !state )
         return;
-    }
 
-    vector_3d last_choked_angles { };
+    auto copy_layers = [ ]( c_animation_layer *to, c_animation_layer *from, bool swap_layers = true ) -> void {
+        if ( swap_layers ) {
+            for ( int i = 0; i < ANIMATION_LAYER_COUNT; i++ ) {
+                switch ( i ) {
+                    case ANIMATION_LAYER_ALIVELOOP:
+                    case ANIMATION_LAYER_WHOLE_BODY:
+                    case ANIMATION_LAYER_WEAPON_ACTION:
+                    case ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL:
+                    case ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB: {
+                        to[ i ].weight_delta_rate = from[ i ].weight_delta_rate;
+                        to[ i ].sequence = from[ i ].sequence;
+                        to[ i ].previous_cycle = from[ i ].previous_cycle;
+                        to[ i ].weight = from[ i ].weight;
+                        to[ i ].playback_rate = from[ i ].playback_rate;
+                        to[ i ].cycle = from[ i ].cycle;
+                        to[ i ].owner = from[ i ].owner;
+                    } break;
+                }
+            }
+        }
+        
+        else {
+            for ( int i = 0; i < ANIMATION_LAYER_COUNT; i++ ) {
+                switch ( i ) {
+                    case ANIMATION_LAYER_ADJUST:
+                    case ANIMATION_LAYER_WEAPON_ACTION:
+                    case ANIMATION_LAYER_FLINCH: {
+                        to[ i ].weight_delta_rate = from[ i ].weight_delta_rate;
+                        to[ i ].sequence = from[ i ].sequence;
+                        to[ i ].previous_cycle = from[ i ].previous_cycle;
+                        to[ i ].weight = from[ i ].weight;
+                        to[ i ].playback_rate = from[ i ].playback_rate;
+                        to[ i ].cycle = from[ i ].cycle;
+                        to[ i ].owner = from[ i ].owner;
+                    } break;
+                }
+            }
+        }
 
-    if ( !*globals::packet && g_interfaces.client_state->choked_commands( ) == 0 )   
-        last_choked_angles = user_cmd->view_angles;             
+    };
+
+
+    g_rebuilt.handle_animation_events( globals::local_player, state );
+
+    copy_layers( animation_layers.data( ), globals::local_player->anim_overlays( ) );
+    auto new_layers = queued_animation_layers;
+    memcpy( new_layers.data( ), globals::local_player->anim_overlays( ), sizeof( c_animation_layer ) * 13 );
+
+    vector_3d last_choked_angles{ };
+
+    if ( !*globals::packet && g_interfaces.client_state->choked_commands( ) == 0 )
+        last_choked_angles = user_cmd->view_angles;
 
     else if ( globals::packet && g_interfaces.client_state->choked_commands( ) > 0 )
-        globals::local_angles = last_choked_angles;      
-
-/*    else if ( globals::packet && g_interfaces.client_state->choked_commands( ) == 0 )
-        globals::local_angles = user_cmd->view_angles; */                        
+        globals::local_angles = last_choked_angles;
 
     if ( g_interfaces.client_state->choked_commands( ) != 0 ) {
         foot_yaw = state->m_flFootYaw;
+        copy_layers( animation_layers.data( ), globals::local_player->anim_overlays( ), true );
         pose_parameters = globals::local_player->pose_parameters( );
         globals::local_angles = user_cmd->view_angles;
         return;
@@ -337,19 +379,21 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
     //}
 
     globals::local_player->player_state( ).v_angle = angles;
-    globals::local_player->flags( ) &= ~player_flags::on_ground;
+    //globals::local_player->flags( ) &= ~player_flags::on_ground;
 
-    if ( g_movement.ground_ticks >= 2 ) {
-        globals::local_player->flags( ) |= player_flags::on_ground;
-    }
+    //if ( g_movement.ground_ticks >= 2 ) {
+    //    globals::local_player->flags( ) |= player_flags::on_ground;
+    //}
 
-    memcpy( animation_layers.data( ), globals::local_player->anim_overlays( ), sizeof( c_animation_layer ) * 13 );
+    copy_layers( queued_animation_layers.data( ), animation_layers.data( ) );
     pose_parameters = globals::local_player->pose_parameters( );
 
     const auto client_side_backup = globals::local_player->client_side_animation( );
 
     globals::allow_animations[ globals::local_player->index( ) ] = globals::local_player->client_side_animation( ) = true;
-    g_rebuilt.update_animation_state( state, globals::lby_updating ? globals::sent_angles : globals::local_angles, game::time_to_ticks( globals::local_player->simtime( ) ) );
+
+    g_rebuilt.update_animation_state( state, globals::lby_updating ? globals::sent_angles : globals::local_angles, game::time_to_ticks( globals::local_player->simtime( ) ), true );
+    copy_layers( queued_animation_layers.data( ), globals::local_player->anim_overlays( ), false );
     globals::allow_animations[ globals::local_player->index( ) ] = false;
     globals::local_player->client_side_animation( ) = client_side_backup;
 
@@ -357,9 +401,9 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
 
     build_bones( globals::local_player, animated_bones[ globals::local_player->index( ) ].data( ), globals::local_player->simtime( ) );
 
-    if ( g_movement.ground_ticks ) {
-        globals::local_player->flags( ) |= player_flags::on_ground;
-    }
+    //if ( g_movement.ground_ticks ) {
+    //    globals::local_player->flags( ) |= player_flags::on_ground;
+    //}
 
     if ( !on_ground && state->m_bOnGround ) {
         body = globals::sent_angles.y;
@@ -377,7 +421,7 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
         }
     }
 
-    memcpy( globals::local_player->anim_overlays( ), animation_layers.data( ), sizeof( c_animation_layer ) * 13 );
+    memcpy( globals::local_player->anim_overlays( ), queued_animation_layers.data( ), sizeof( c_animation_layer ) * 13 );
     globals::local_player->pose_parameters( ) = pose_parameters;
 
     on_ground = state->m_bOnGround;
@@ -388,9 +432,32 @@ void animation_sync::maintain_local_animations( ) {
     if ( !globals::local_player )
         return;
 
+    auto copy_layers = [ ]( c_animation_layer *to, c_animation_layer *from ) -> void {
+        for ( int i = 0; i < ANIMATION_LAYER_COUNT; i++ ) {
+            switch ( i ) {
+                case ANIMATION_LAYER_ADJUST:
+                case ANIMATION_LAYER_FLINCH:
+                case ANIMATION_LAYER_WEAPON_ACTION:
+                case ANIMATION_LAYER_WHOLE_BODY:
+                case ANIMATION_LAYER_ALIVELOOP: {
+                    to[ i ].weight_delta_rate = from[ i ].weight_delta_rate;
+                    to[ i ].sequence = from[ i ].sequence;
+                    to[ i ].previous_cycle = from[ i ].previous_cycle;
+                    to[ i ].weight = from[ i ].weight;
+                    to[ i ].playback_rate = from[ i ].playback_rate;
+                    to[ i ].cycle = from[ i ].cycle;
+                    to[ i ].owner = from[ i ].owner;
+                } break;
+            }
+        }
+    };
+
+    auto new_layers = queued_animation_layers;
+    copy_layers( animation_layers.data( ), new_layers.data( ) );
+
     if ( !g_interfaces.client_state->choked_commands( ) ) {
+        memcpy( globals::local_player->anim_overlays( ), animation_layers.data( ), animation_layers.size( ) );
         globals::local_player->pose_parameters( ) = pose_parameters;
-        memcpy( animation_layers.data( ), globals::local_player->anim_overlays( ), sizeof( c_animation_layer ) * 13 );
     }
 
     globals::local_player->set_abs_angles( vector_3d( 0.f, foot_yaw, 0.f ) );
@@ -441,7 +508,8 @@ void animation_sync::update_player_animation( c_cs_player *player, lag_record &r
         auto last_client_side_anim = player->client_side_animation( );
 
         globals::allow_animations[ player->index( ) ] = player->client_side_animation( ) = true;
-        g_rebuilt.update_animation_state( state, player->eye_angles( ), record.anim_time );
+        g_rebuilt.update_animation_state( state, player->eye_angles( ), record.anim_time, true );
+        //state->update( player->eye_angles( ) );
         globals::allow_animations[ player->index( ) ] = false;
         player->client_side_animation( ) = last_client_side_anim;
     };
@@ -459,16 +527,21 @@ void animation_sync::update_player_animation( c_cs_player *player, lag_record &r
 
     player->set_abs_origin( record.origin );
 
-    update_land( player, &record, previous );
-    update_velocity( player, &record, previous );
+    player_info_t player_info;
+    g_interfaces.engine_client->get_player_info( player->index( ), &player_info );
 
-    // fix various issues with the game
-    // these issues can only occur when a player is choking data.
-    if ( record.choked > 1 && previous && !previous->dormant ) {
-        if ( record.on_ground )
-            player->flags( ) |= player_flags::on_ground;
-        else
-            player->flags( ) &= ~player_flags::on_ground;
+    if ( !player_info.fake_player ) {
+        update_land( player, &record, previous );
+        update_velocity( player, &record, previous );
+
+        // fix various issues with the game
+        // these issues can only occur when a player is choking data.
+        if ( record.choked > 1 && previous && !previous->dormant ) {
+            if ( record.on_ground )
+                player->flags( ) |= player_flags::on_ground;
+            else
+                player->flags( ) &= ~player_flags::on_ground;
+        }
     }
 
     player->origin( ) = record.origin;
@@ -520,80 +593,74 @@ void animation_sync::clear_data( int index ) {
     if ( !index || index > 65 )
         return;
 
-    if ( !lag_info[ index ].anim_records.empty( ) )
-        lag_info[ index ].anim_records.clear( );
+    if ( !player_log[ index ].anim_records.empty( ) )
+        player_log[ index ].anim_records.clear( );
 }
 
-void animation_sync::should_interpolate( c_cs_player *player, bool state ) {
-    auto map = player->get_var_mapping( );
+void animation_sync::on_post_frame_stage_notify( client_frame_stage stage ) {
+    if ( !g_interfaces.engine_client->is_in_game( ) || !g_interfaces.engine_client->is_connected( ) )
+        return;
 
-    if ( map ) {
-        for ( int i = 0; i < map->interpolated_entries; i++ ) {
-            var_map_entry_t *e = &map->entries[ i ];
+    if ( !globals::local_player )
+        return;
 
-            e->needs_to_interpolate = state;
+    if ( stage == client_frame_stage::frame_net_update_end )
+        on_net_update_end( );
+
+    if ( stage == client_frame_stage::frame_render_start ) {
+        static auto update_all_viewmodel_addons = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 5E 8B E5 5D C3 53 57" ) ).add( 0x1 ).rel32( ).get< void( __thiscall * )( void * ) >( );
+
+        if ( globals::local_player->viewmodel_handle( ) != 0xFFFFFFFF ) {
+            auto view_model = globals::local_player->get_view_model( );
+
+            if ( view_model )
+                update_all_viewmodel_addons( view_model );
+        }
+
+        static auto draw_server_hitboxes = signature::find( XOR( "server.dll" ), XOR( "E8 ? ? ? ? F6 83 ? ? ? ? ? 0F 84 ? ? ? ? 33 FF 39 BB" ) ).add( 0x1 ).rel32( ).get< void * >( );
+        static auto util_player_by_index = signature::find( XOR( "server.dll" ), XOR( "85 C9 7E 2A A1" ) ).get< c_cs_player *( __fastcall * ) ( int ) >( );
+
+        if ( g_vars.visuals_other_show_server_hitboxes.value ) {
+            float duration = -1.0f;
+
+            for ( int i = 1; i < g_interfaces.global_vars->max_clients; i++ ) {
+                auto e = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
+
+                if ( !e )
+                    continue;
+
+                auto ent = util_player_by_index( e->index( ) );
+
+                if ( !ent )
+                    continue;
+
+                __asm {
+					    pushad
+					    movss xmm1, duration
+					    push 1//bool monoColor
+					    mov ecx, ent
+					    call draw_server_hitboxes
+					    popad
+                }
+            }
         }
     }
 }
 
-void animation_sync::on_net_update_postdataupdate_start( ) {
+void animation_sync::on_pre_frame_stage_notify( client_frame_stage stage ) {
     if ( !g_interfaces.engine_client->is_in_game( ) || !g_interfaces.engine_client->is_connected( ) )
         return;
 
     if ( !globals::local_player )
         return;
 
-    for ( int n = 1; n <= g_interfaces.global_vars->max_clients; ++n ) {
-        const auto player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( n );
+    memcpy( queued_animation_layers.data( ), globals::local_player->anim_overlays( ), queued_animation_layers.size( ) );
 
-        if ( !player || !player->is_player( ) || !player->alive( ) || player == globals::local_player )
-            continue;
+    if ( stage == client_frame_stage::frame_render_start )
+        apply_animations( );
 
-        /* remove interpolation and get last networked data from the entity before animating. */
-        //should_interpolate( player, false );
-    }
-}
-
-void animation_sync::on_pre_frame_render_start( ) {
-    if ( !g_interfaces.engine_client->is_in_game( ) || !g_interfaces.engine_client->is_connected( ) )
-        return;
-
-    if ( !globals::local_player )
-        return;
-
-    for ( int n = 1; n <= ( g_interfaces.entity_list->get_highest_entity_index( ) + 1 ); ++n ) {
-        const auto player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( n );
-
-        if ( !player || !player->alive( ) || !player->is_player( ) || player == globals::local_player )
-            continue;
-
-        auto &info = lag_info[ n ];
-
-        if ( info.anim_records.empty( ) )
-            continue;
-
-        auto &front = info.anim_records.front( );
-
-        animated_bones[ player->index( ) ] = front.bones;
-        animated_origin[ player->index( ) ] = front.origin;
-    }
-}
-
-void animation_sync::on_post_frame_render_start( ) {
-    if ( !g_interfaces.engine_client->is_in_game( ) || !g_interfaces.engine_client->is_connected( ) )
-        return;
-
-    if ( !globals::local_player )
-        return;
-
-    static auto update_all_viewmodel_addons = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 5E 8B E5 5D C3 53 57" ) ).add( 0x1 ).rel32( ).get< void( __thiscall * )( void * ) >( );
-
-    if ( globals::local_player->viewmodel_handle( ) != 0xFFFFFFFF ) {
-        auto view_model = globals::local_player->get_view_model( );
-
-        if ( view_model )
-            update_all_viewmodel_addons( view_model );
-    }
+    if ( stage == client_frame_stage::frame_render_start || stage == client_frame_stage::frame_net_update_end )
+        maintain_local_animations( );
 }
 
 void animation_sync::on_net_update_end( ) {
@@ -614,7 +681,7 @@ void animation_sync::on_net_update_end( ) {
         if ( !player || !player->is_player( ) || player == globals::local_player )
             continue;
 
-        auto &info = lag_info[ n ];
+        auto &info = player_log[ n ];
 
         if ( !info.lag_records.empty( ) )
             info.lag_records.clear( );
@@ -716,5 +783,30 @@ void animation_sync::on_net_update_end( ) {
         //    lag_track[player->index()].pop_back();
         //    tail_index = lag_track[player->index()].size() - 1;
         // }
+    }
+}
+
+void animation_sync::apply_animations( ) {
+    if ( !g_interfaces.engine_client->is_in_game( ) || !g_interfaces.engine_client->is_connected( ) )
+        return;
+
+    if ( !globals::local_player )
+        return;
+
+    for ( int n = 1; n <= ( g_interfaces.entity_list->get_highest_entity_index( ) + 1 ); ++n ) {
+        const auto player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( n );
+
+        if ( !player || !player->alive( ) || !player->is_player( ) || player == globals::local_player )
+            continue;
+
+        auto &info = player_log[ n ];
+
+        if ( info.anim_records.empty( ) )
+            continue;
+
+        auto &front = info.anim_records.front( );
+
+        animated_bones[ player->index( ) ] = front.bones;
+        animated_origin[ player->index( ) ] = front.origin;
     }
 }

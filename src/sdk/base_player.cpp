@@ -1,15 +1,15 @@
 #include "base_player.hpp"
+#include <features/animations/animation_sync.hpp>
 
-bool c_base_player::compute_bounding_box( box &box_dimensions ) {
-    if ( !this || !this->alive( ) ) return false;
+bool c_base_player::get_screen_bounding_box( entity_box &box_dimensions ) {
+    if ( !this ) return false;
 
-    const auto collision_property = this->collideable( );
+    if ( g_animations.player_log[ this->index( ) ].anim_records.empty( ) ) return false;
 
-    if ( !collision_property )
-        return false;
+    auto &record = g_animations.player_log[ this->index( ) ].anim_records.front( );
 
-    auto mins = collision_property->mins( );
-    auto maxs = collision_property->maxs( );
+    const auto mins = record.mins;
+    const auto maxs = record.maxs;
 
     std::array< vector_3d, 8 > points = {
             vector_3d( mins.x, mins.y, mins.z ),
@@ -19,9 +19,10 @@ bool c_base_player::compute_bounding_box( box &box_dimensions ) {
             vector_3d( maxs.x, maxs.y, maxs.z ),
             vector_3d( mins.x, maxs.y, maxs.z ),
             vector_3d( mins.x, mins.y, maxs.z ),
-            vector_3d( maxs.x, mins.y, maxs.z ) };
+            vector_3d( maxs.x, mins.y, maxs.z )
+    };
 
-    const matrix_3x4 &trans = this->renderable_to_world_transform( );
+    const matrix_3x4 &trans = record.renderable_to_world_transform;
 
     auto left = std::numeric_limits< float >::max( );
     auto top = std::numeric_limits< float >::max( );
@@ -44,11 +45,12 @@ bool c_base_player::compute_bounding_box( box &box_dimensions ) {
         bottom = std::max( bottom, screen_points[ i ].y );
     }
 
-    box_dimensions = box(
+    box_dimensions = entity_box(
             static_cast< float >( left ),
             static_cast< float >( top ),
             static_cast< float >( right - left ),
-            static_cast< float >( bottom - top ) );
+            static_cast< float >( bottom - top )
+    );
 
     return true;
 }

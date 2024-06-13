@@ -67,12 +67,12 @@ public:
     std::array< std::vector<aim_point>, 19> aim_points = { };
     std::deque< int > hitboxes = { };
     std::deque< aim_player > targets = { };
+    std::unique_lock< std::mutex > gay;
     target_info best = { };
     backup_record m_backup[ 64 ];
 
     void reset( );
     bool hitchance( c_cs_player *player, const vector_3d &angle, lag_record *record );
-    bool extrapolate_target( aim_player &target );
     void on_create_move( c_user_cmd *cmd );
     bool get_hitbox_position( c_cs_player *player, matrix_3x4 *bones, int hitbox, vector_3d &position );
 };

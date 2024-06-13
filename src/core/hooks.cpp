@@ -1,6 +1,7 @@
 #include "hooks.hpp"
 
 #include <features/event_handler/event_handler.hpp>
+
 #include <hooks/create_move/create_move.hpp>
 #include <hooks/draw_model_execute/draw_model_execute.hpp>
 #include <hooks/end_scene/end_scene.hpp>
@@ -38,6 +39,7 @@
 #include <hooks/hud_scope_paint/hud_scope_paint.hpp>
 #include <hooks/notify_on_layer_change_cycle/notify_on_layer_change_cycle.hpp>
 #include <hooks/notify_on_layer_change_weight/notify_on_layer_change_weight.hpp>
+#include <hooks/notify_on_layer_change_sequence/notify_on_layer_change_sequence.hpp>
 #include <hooks/do_procedural_footplant/do_procedural_footplant.hpp>
 #include <hooks/update_animation_state/update_animation_state.hpp>
 #include <hooks/physics_simulate/physics_simulate.hpp>
@@ -58,6 +60,7 @@ void hooks::impl::init( )  {
     do_procedural_footplant::init( );
     notify_on_layer_change_cycle::init( );
     notify_on_layer_change_weight::init( );
+    notify_on_layer_change_sequence::init( );
     hud_scope_paint::init( );
     render_smoke_overlay::init( );
     calc_viewmodel_bob::init( );
@@ -99,6 +102,7 @@ void hooks::impl::init( )  {
 void hooks::impl::remove( ) {
     get_eye_angles::original = { };
     cl_move::original = { };
+    notify_on_layer_change_sequence::original = { };
     cl_fire_events::original = { };
     packet_start::original = { };
     physics_simulate::original = { };

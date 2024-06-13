@@ -1336,14 +1336,14 @@ public:
     void try_initiate_animation( c_cs_player *player, int layer, int activity, c_utl_vector< uint16_t > modifiers );
     c_utl_vector< uint16_t > build_activity_modifiers( c_cs_player *player );
     std::pair< c_csgo_player_animstate, c_animation_layer * > predict_animation_state( c_cs_player *player );
-    void handle_animation_events( const c_csgo_player_animstate &pred_state, c_user_cmd *cmd );
     void set_layer_weight_rate( c_csgo_player_animstate *state, int layer_idx, float previous );
     void set_sequence( c_csgo_player_animstate *state, int layer_idx, int sequence );
     int select_weighted_sequence( c_csgo_player_animstate *state, int act );
     void set_cycle( c_csgo_player_animstate *state, int layer_idx, float cycle );
     void set_weight_delta_rate( c_csgo_player_animstate *state, int layer_idx, float old_weight );
     void increment_layer_cycle_weight_rate_generic( c_csgo_player_animstate *state, int layer_idx );
-    void update_animation_state( c_csgo_player_animstate *animstate, const vector_3d &angles, int tick );
+    void handle_animation_events( c_cs_player *player, c_csgo_player_animstate *animstate );
+    void update_animation_state( c_csgo_player_animstate *animstate, const vector_3d &angles, int tick, bool handle_events = false );
     void set_weight( c_csgo_player_animstate *state, int layer_idx, float weight );
     float get_layer_ideal_weight_from_sequence_cycle( c_csgo_player_animstate *state, int layer_idx );
     bool is_layer_sequence_completed( c_csgo_player_animstate *state, int layer_idx );

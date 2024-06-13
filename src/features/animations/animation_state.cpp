@@ -67,201 +67,6 @@ c_utl_vector< uint16_t > c_animation_state_rebuilt::build_activity_modifiers( c_
     return modifier_wrapper.get( );
 }
 
-std::pair< c_csgo_player_animstate, c_animation_layer * > c_animation_state_rebuilt::predict_animation_state( c_cs_player *player ) {
-    auto state = player->anim_state( );
-
-    if ( !state )
-        return { };
-
-    std::array< c_animation_layer, 13 > backup_layers = { };
-
-    //const auto backup_poses = player->pose_parameters( );
-    const auto backup_state = *player->anim_state( );
-
-    std::memcpy( backup_layers.data( ), player->anim_overlays( ), sizeof( c_animation_layer ) * 13 );
-
-    if ( state->m_nLastUpdateFrame >= g_interfaces.global_vars->framecount )
-        state->m_nLastUpdateFrame = g_interfaces.global_vars->framecount - 1;
-
-    const auto backup_clientside_anim = player->client_side_animation( );
-
-    globals::allow_animations[ player->index( ) ] = player->client_side_animation( ) = true;
-    //update_animation_state( player->anim_state( ), globals::local_angles, globals::local_player->tick_base( ) );
-    player->update_clientside_animation( );
-    globals::allow_animations[ player->index( ) ] = backup_clientside_anim;
-
-    const auto pred = backup_state;
-    const auto layers = player->anim_overlays( );
-
-    *player->anim_state( ) = backup_state;
-    std::memcpy( player->anim_overlays( ), backup_layers.data( ), sizeof( c_animation_layer ) * 13 );
-    //player->pose_parameters( ) = backup_poses;
-
-    return { pred, layers };
-}
-
-void c_animation_state_rebuilt::handle_animation_events( const c_csgo_player_animstate &pred_state, c_user_cmd *cmd ) {
-    static auto get_seq_desc = signature::find( XOR( "client.dll" ), XOR( "55 8B EC 83 79 04 00 75 25 8B 45 08 8B 09 85 C0 78 08 3B 81" ) ).get< mstudioseqdesc_t *( __thiscall * ) ( void *, int ) >( );
-
-    if ( !globals::local_player || !cmd )
-        return;
-
-    if ( !g_interfaces.engine_client->is_in_game( ) || !g_interfaces.engine_client->is_connected( ) )
-        return;
-
-    if ( !globals::local_player->alive( ) )
-        return;
-
-    const auto state = globals::local_player->anim_state( );
-
-    if ( !state )
-        return;
-
-    auto modifiers = build_activity_modifiers( globals::local_player );
-
-    const auto p = &pred_state;
-
-    bool in_jump = false;
-    bool in_idle = false;
-    float adjust_weight = 0.0f;
-    bool in_deploy_rate_limit = false;
-
-    if ( cmd->buttons & buttons::jump && !( globals::local_player->flags( ) & player_flags::on_ground ) && state->m_bOnGround ) {
-        try_initiate_animation( globals::local_player, 4, 985, modifiers );
-        in_jump = true;
-    }
-
-    auto &layer3 = globals::local_player->anim_overlays( )[ 3 ];
-
-    if ( !in_idle && p->m_flVelocityLengthXY <= 0.f && state->m_flDurationStill <= 0.f && state->m_bOnGround && !state->m_bOnLadder && !state->m_bLanding && state->m_flStutterStep < 50.f ) {
-        try_initiate_animation( globals::local_player, 3, 980, modifiers );
-        in_idle = true;
-    }
-
-    const auto update_time = fmaxf( 0.f, p->m_flLastUpdateTime - state->m_flLastUpdateTime );
-    const auto layer3_act = globals::local_player->get_sequence_activity( layer3.sequence );
-
-    if ( layer3_act == 980 || layer3_act == 979 ) {
-        if ( in_idle && p->m_flAnimDuckAmount <= .25f ) {
-            increment_layer_cycle_weight_rate_generic( state, 3 );
-            in_idle = !is_layer_sequence_completed( state, 3 );
-        }
-
-        else {
-            const auto weight = layer3.weight;
-            layer3.weight = valve_math::approach( 0.f, weight, update_time * 5.f );
-            set_layer_weight_rate( state, 3, layer3.weight );
-
-            in_idle = false;
-        }
-    }
-
-    if ( p->m_flVelocityLengthXY <= 1.f && state->m_bOnGround && !state->m_bOnLadder && !state->m_bLanding && fabsf( valve_math::angle_diff( state->m_flFootYaw, p->m_flEyeYaw ) ) / update_time > 120.f ) {
-        try_initiate_animation( globals::local_player, 3, 979, modifiers );
-        in_idle = true;
-    }
-
-    adjust_weight = layer3.weight;
-
-    const auto swapped_ground = state->m_bOnGround != p->m_bOnGround || state->m_bOnLadder != p->m_bOnLadder;
-
-    if ( p->m_bOnGround ) {
-        auto &layer5 = globals::local_player->anim_overlays( )[ 5 ];
-
-        if ( !state->m_bLanding && swapped_ground )
-            try_initiate_animation( globals::local_player, 5, state->m_flDurationInAir > 1.f ? 989 : 988, modifiers );
-
-        if ( p->m_bLanding && globals::local_player->get_sequence_activity( layer5.sequence ) != 987 )
-            in_jump = false;
-
-        if ( !p->m_bLanding && !in_jump && p->m_flLadderSpeed <= 0.f )
-            layer5.weight = 0.f;
-    }
-    else if ( swapped_ground && !in_jump )
-        try_initiate_animation( globals::local_player, 4, 986, modifiers );
-
-    //if (!p->m_bOnGround) {
-    //    globals::local_player->anim_overlays( )[ 6 ].weight = 0.f;
-    //    globals::local_player->anim_overlays( )[ 6 ].cycle = 0.f;
-    //}
-
-    auto &alive = globals::local_player->anim_overlays( )[ 11 ];
-
-    //globals::local_player->anim_overlays( )[ 12 ].weight = 0.f;
-
-    if ( globals::local_player->get_sequence_activity( alive.sequence ) == 981 ) {
-        if ( p->m_pWeapon && p->m_pWeapon != p->m_pWeaponLast ) {
-            const auto cycle = alive.cycle;
-            try_initiate_animation( globals::local_player, 11, 981, modifiers );
-            alive.cycle = cycle;
-        }
-
-        else if ( !is_layer_sequence_completed( state, 11 ) )
-            alive.weight = 1.f - std::clamp( ( p->m_flSpeedAsPortionOfWalkTopSpeed - .55f ) / .35f, 0.f, 1.f );
-    }
-
-    const auto world_model = globals::local_weapon ? g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( globals::local_weapon->weapon_world_model( ) ) : nullptr;
-
-    auto &action = globals::local_player->anim_overlays( )[ 1 ];
-    auto increment = true;
-
-    if ( globals::local_weapon && in_deploy_rate_limit && globals::local_player->get_sequence_activity( action.sequence ) == 972 ) {
-        if ( world_model )
-            world_model->effects( ) |= effects::nodraw;
-
-        if ( action.cycle >= .15f ) {
-            in_deploy_rate_limit = false;
-            try_initiate_animation( globals::local_player, 1, 972, modifiers );
-            increment = false;
-        }
-    }
-
-    auto &recrouch = globals::local_player->anim_overlays( )[ 2 ];
-    auto recrouch_weight = 0.f;
-
-    if ( action.weight > 0.f ) {
-        if ( recrouch.sequence <= 0 ) {
-            const auto seq = globals::local_player->lookup_sequence( "recrouch_generic" );
-
-            recrouch.playback_rate = globals::local_player->get_sequence_cycle_rate( seq );
-            recrouch.sequence = seq;
-            recrouch.cycle = recrouch.weight = 0.f;
-        }
-
-        auto has_modifier = false;
-
-        const auto &seqdesc = get_seq_desc( globals::local_player->get_model_ptr( ), action.sequence );
-
-        for ( auto i = 0; i < seqdesc->numactivitymodifiers; i++ )
-            if ( !strcmp( seqdesc->activity_modifier( i )->name( ), "crouch" ) ) {
-                has_modifier = true;
-                break;
-            }
-
-        if ( has_modifier ) {
-            if ( p->m_flAnimDuckAmount < 1.f )
-                recrouch_weight = action.weight * ( 1.f - p->m_flAnimDuckAmount );
-        }
-
-        else if ( p->m_flAnimDuckAmount > 0.f )
-            recrouch_weight = action.weight * p->m_flAnimDuckAmount;
-    }
-
-    else if ( recrouch.weight > 0.f )
-        recrouch_weight = valve_math::approach( 0.f, recrouch.weight, 4.f * update_time );
-
-    recrouch.weight = std::clamp( recrouch_weight, 0.f, 1.f );
-
-    if ( increment ) {
-        increment_layer_cycle( state, 1, false );
-        get_layer_ideal_weight_from_sequence_cycle( state, 1 );
-        set_layer_weight_rate( state, 1, action.weight );
-
-        action.cycle = std::clamp( action.cycle - p->m_flLastUpdateIncrement * action.playback_rate, 0.f, 1.f );
-        action.weight = std::clamp( action.weight - p->m_flLastUpdateIncrement * action.weight_delta_rate, .0000001f, 1.f );
-    }
-}
-
 void c_animation_state_rebuilt::set_layer_weight_rate( c_csgo_player_animstate *state, int layer_idx, float previous ) {
     const auto player = state->m_pPlayer;
 
@@ -420,18 +225,17 @@ void c_animation_state_rebuilt::increment_layer_cycle_weight_rate_generic( c_csg
     set_weight_delta_rate( state, layer_idx, prev_weight );
 }
 
-void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate *animstate, const vector_3d &angles, int tick ) {
+void c_animation_state_rebuilt::handle_animation_events( c_cs_player *player, c_csgo_player_animstate *animstate ) {
     const auto backup_cur_time = g_interfaces.global_vars->curtime;
     const auto backup_frametime = g_interfaces.global_vars->frametime;
     const auto backup_framecount = g_interfaces.global_vars->framecount;
 
-    g_interfaces.global_vars->curtime = static_cast< float >( tick ) * g_interfaces.global_vars->interval_per_tick;
+    animstate->m_flLastUpdateTime = game::time_to_ticks( player->simtime( ) ) - game::ticks_to_time( 1 );
+
+    g_interfaces.global_vars->curtime = static_cast< float >( player->tick_base( ) ) * g_interfaces.global_vars->interval_per_tick;
     g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
     g_interfaces.global_vars->framecount = tick;
 
-    auto animlayers = animstate->m_pPlayer->anim_overlays( );
-
-    const auto backup_animlayers = *animlayers;
     const c_csgo_player_animstate backup_animstate = *animstate;
 
     const bool on_ground = ( globals::local_player->flags( ) & player_flags::on_ground ) != 0;
@@ -439,7 +243,7 @@ void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate 
 
     bool &m_bJumping = animstate->m_bFlashed;
 
-    if ( !on_ground && animstate->m_bOnGround && animstate->m_pPlayer->velocity( ).z > 0.0f ) {
+    if ( animstate->m_pPlayer == globals::local_player && !on_ground && animstate->m_bOnGround && animstate->m_pPlayer->velocity( ).z > 0.0f ) {
         m_bJumping = true;
         set_sequence( animstate, ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL, select_weighted_sequence( animstate, ACT_CSGO_JUMP ) );
     }
@@ -512,53 +316,81 @@ void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate 
         const bool strafe_back = ( animstate->m_flSpeedAsPortionOfWalkTopSpeed >= 0.65f && move_backward && !move_forward && vel_to_forward_dot > 0.55f );
 
         *reinterpret_cast< bool * >( reinterpret_cast< uintptr_t >( animstate->m_pPlayer ) + 0x39E0 ) = ( strafe_right || strafe_left || strafe_forward || strafe_back );
-    }
 
-    if ( ( animstate->m_flLadderWeight > 0.0f || on_ladder ) && started_laddering_this_frame )
-        set_sequence( animstate, ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB, select_weighted_sequence( animstate, 987 ) );
 
-    if ( on_ground ) {
-        bool next_landing = false;
-        if ( !animstate->m_bLanding && ( landed_on_ground_this_frame || stopped_laddering_this_frame ) ) {
-            set_sequence( animstate, ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB, select_weighted_sequence( animstate, ( animstate->m_flDurationInAir > 1.0f ) ? 989 : 988 ) );
-            next_landing = true;
-        }
+        if ( ( animstate->m_flLadderWeight > 0.0f || on_ladder ) && started_laddering_this_frame )
+            set_sequence( animstate, ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB, select_weighted_sequence( animstate, 987 ) );
 
-        if ( next_landing && get_layer_activity( animstate, ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB ) != 987 ) {
-            m_bJumping = false;
-
-            /* some client code here */
-            auto &layer = animstate->m_pPlayer->anim_overlays( )[ ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB ];
-
-            /* dont actually mess up the value */
-            const float backup_cycle = layer.cycle;
-
-            /* run this calculation ahead of time so we dont get 1-tick-late landing */
-            increment_layer_cycle( animstate, ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB, false );
-
-            if ( is_layer_sequence_completed( animstate, ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB ) )
-                next_landing = false;
-
-            layer.cycle = backup_cycle;
-        }
-
-        if ( !next_landing && !m_bJumping && animstate->m_flLadderWeight <= 0.0f ) {
-            auto &layer = animstate->m_pPlayer->anim_overlays( )[ ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB ];
-            layer.weight = 0.0f;
-        }
-    } else if ( !on_ladder ) {
-        if ( animstate->m_bOnGround || stopped_laddering_this_frame ) {
-            if ( !m_bJumping ) {
-                //play_animation ( animstate, ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL, 986 );
-                set_sequence( animstate, ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL, select_weighted_sequence( animstate, ACT_CSGO_FALL ) );
+        if ( on_ground ) {
+            bool next_landing = false;
+            if ( !animstate->m_bLanding && ( landed_on_ground_this_frame || stopped_laddering_this_frame ) ) {
+                set_sequence( animstate, ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB, select_weighted_sequence( animstate, ( animstate->m_flDurationInAir > 1.0f ) ? 989 : 988 ) );
+                next_landing = true;
             }
+
+            if ( next_landing && get_layer_activity( animstate, ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB ) != 987 ) {
+                m_bJumping = false;
+
+                /* some client code here */
+                auto &layer = animstate->m_pPlayer->anim_overlays( )[ ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB ];
+
+                /* dont actually mess up the value */
+                const float backup_cycle = layer.cycle;
+
+                /* run this calculation ahead of time so we dont get 1-tick-late landing */
+                increment_layer_cycle( animstate, ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB, false );
+
+                if ( is_layer_sequence_completed( animstate, ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB ) )
+                    next_landing = false;
+
+                layer.cycle = backup_cycle;
+            }
+
+            if ( !next_landing && !m_bJumping && animstate->m_flLadderWeight <= 0.0f ) {
+                auto &layer = animstate->m_pPlayer->anim_overlays( )[ ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB ];
+                layer.weight = 0.0f;
+            }
+        } else if ( !on_ladder ) {
+
+
+            if ( !animstate->m_bOnGround || stopped_laddering_this_frame ) {
+                if ( m_bJumping ) {
+                    //play_animation ( animstate, ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL, 986 );
+                    set_sequence( animstate, ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL, select_weighted_sequence( animstate, ACT_CSGO_FALL ) );
+                }
+
+            }
+            //#ifndef CLIENT_DLL
+            //		Msg( "%f\n", m_flDurationInAir );
+            //#endif
+
+            increment_layer_cycle( animstate, ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL, false );
         }
     }
+
+    *player->anim_state( ) = backup_animstate;
+    /* restore client vars */
+    g_interfaces.global_vars->curtime = backup_cur_time;
+    g_interfaces.global_vars->frametime = backup_frametime;
+    g_interfaces.global_vars->framecount = backup_framecount;
+}
+
+void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate *animstate, const vector_3d &angles, int tick, bool handle_events ) {
+    const auto backup_cur_time = g_interfaces.global_vars->curtime;
+    const auto backup_frametime = g_interfaces.global_vars->frametime;
+    const auto backup_framecount = g_interfaces.global_vars->framecount;
+
+    g_interfaces.global_vars->curtime = static_cast< float >( tick ) * g_interfaces.global_vars->interval_per_tick;
+    g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
+    g_interfaces.global_vars->framecount = tick;
+
+    std::array< c_animation_layer, 13 > backup_layers;
+    const c_csgo_player_animstate backup_animstate = *animstate;
 
     /* update animation */
     animstate->update( angles );
 
-    auto &adjust_layer = animlayers[ ANIMATION_LAYER_ADJUST ];
+    auto &adjust_layer = animstate->m_pPlayer->anim_overlays( )[ ANIMATION_LAYER_ADJUST ];
 
     if ( adjust_layer.weight > 0.0f ) {
         adjust_layer.cycle = std::clamp( adjust_layer.cycle - animstate->m_flLastUpdateIncrement * adjust_layer.playback_rate, 0.0f, 0.999f );
@@ -570,9 +402,8 @@ void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate 
         animstate->m_bAdjustStarted = true;
     }
 
-    memcpy( animstate->m_pPlayer->anim_overlays( ), animlayers, sizeof( c_animation_layer ) * 13 );
     *animstate = backup_animstate;
-
+    
     /* restore client vars */
     g_interfaces.global_vars->curtime = backup_cur_time;
     g_interfaces.global_vars->frametime = backup_frametime;

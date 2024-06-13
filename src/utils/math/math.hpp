@@ -2,9 +2,9 @@
 #include <globals.hpp>
 #include <glm/gtx/norm.hpp>
 
-struct box {
-    box( ) = default;
-    box( float x, float y, float w, float h ) : x( x ), y( y ), w( w ), h( h ){ };
+struct entity_box {
+    entity_box( ) = default;
+    entity_box( float x, float y, float w, float h ) : x( x ), y( y ), w( w ), h( h ){ };
 
     float x, y, w, h;
 };

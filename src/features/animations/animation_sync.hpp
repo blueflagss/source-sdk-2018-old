@@ -34,10 +34,10 @@ public:
 
         m_bone_count = player->bone_count( );
         m_origin = player->origin( );
-        m_mins = player->mins( );
+        m_mins = player->collideable()->mins( );
         m_sim_time = player->simtime( );
         m_flags = player->flags( );
-        m_maxs = player->maxs( );
+        m_maxs = player->collideable( )->maxs( );
         m_abs_origin = player->get_abs_origin( );
         m_abs_ang = player->get_abs_angles( );
     }
@@ -76,6 +76,7 @@ public:
     vector_3d velocity;
     vector_3d anim_velocity;
     vector_3d abs_angles;
+    matrix_3x4 renderable_to_world_transform;
     float anim_speed;
     vector_3d mins;
     vector_3d maxs;
@@ -110,6 +111,9 @@ public:
 class animation_sync {
 public:
     void should_interpolate( c_cs_player *player, bool state );
+    void on_post_frame_stage_notify( client_frame_stage stage );
+    void apply_animations( );
+    void on_pre_frame_stage_notify( client_frame_stage stage );
     void on_net_update_postdataupdate_start( );
     void on_pre_frame_render_start( );
     void on_post_frame_render_start( );
@@ -121,6 +125,8 @@ public:
     bool build_bones( c_cs_player *player, matrix_3x4 *out, float curtime );
     void update_land( c_cs_player *player, lag_record *record, lag_record *last_record );
     void update_velocity( c_cs_player *player, lag_record *record, lag_record *previous );
+    void copy_anim_layers( c_animation_layer *to, c_animation_layer *from, const std::array< int, 13 > &layer_selection );
+    void copy_layers( c_animation_layer to[ 13 ], c_animation_layer *from );
     void update_local_animations( c_user_cmd *user_cmd );
     void maintain_local_animations( );
     void update_player_animation( c_cs_player *player, lag_record &record, lag_record *previous, bool update = true );
@@ -140,7 +146,7 @@ public:
         }
     };
 
-    std::array< animation_info, 64 > lag_info;
+    std::array< animation_info, 64 > player_log;
     std::array< std::array< matrix_3x4, 128 >, 64 > animated_bones;
     std::array< vector_3d, 64 > animated_origin;
     float lower_body_realign_timer;
@@ -154,6 +160,7 @@ public:
     bool on_ground;
     std::array< float, 24 > pose_parameters;
     std::array< c_animation_layer, 13 > animation_layers;
+    std::array< c_animation_layer, 13 > queued_animation_layers;
 
 private:
 };

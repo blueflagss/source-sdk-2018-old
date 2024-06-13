@@ -108,7 +108,7 @@ public:
     NETVAR( next_attack, float, "DT_BaseCombatCharacter", "m_flNextAttack" );
     NETVAR( player_state, c_player_state, "DT_BasePlayer", "pl" );
 
-    bool compute_bounding_box( box &box_dimensions );
+    bool get_screen_bounding_box( entity_box &box_dimensions );
     bool is_player_on_steam_friends( ) const;
     void update_clientside_animation( );
     void select_item( const char *str, int subtype );

@@ -1,6 +1,7 @@
 #include "post_network_data_received.hpp"
 #include <features/engine_prediction/netvar_compression.hpp>
 #include <sdk/other/prediction_copy.hpp>
+#include <features/animations/animation_sync.hpp>
 
 void __fastcall hooks::post_network_data_received::hook( REGISTERS, int commands_acknowledged ) {
     globals::local_player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( g_interfaces.engine_client->get_local_player( ) );
@@ -55,8 +56,10 @@ void __fastcall hooks::post_network_data_received::hook( REGISTERS, int commands
             }
         }
 
-        if ( globals::local_player->alive( ) && commands_acknowledged > 0 )
+        if ( globals::local_player->alive( ) && commands_acknowledged > 0 ) {
+            //memcpy( g_animations.tranny_code_premium_layers.data( ), globals::local_player->anim_overlays( ), g_animations.tranny_code_premium_layers.size( ) );
             g_netvar_compression.post_update( globals::local_player );
+        }
     }
 
     return original.fastcall< void >( REGISTERS_OUT, commands_acknowledged );

@@ -19,7 +19,7 @@ void __fastcall hooks::build_transformations::hook( REGISTERS, c_studio_hdr *hdr
         if ( bone )
             bone->flags &= ~0x04;
     }
-
+    
     const auto backup_is_jiggle_bones_enabled = entity->is_jiggle_bones_enabled( );
 
     entity->is_jiggle_bones_enabled( ) = false;

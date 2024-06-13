@@ -5,7 +5,7 @@ void resolver::update( lag_record *previous, lag_record *record ) {
 }
 
 lag_record *resolver::find_ideal_record( aim_player *data ) {
-    auto &log = g_animations.lag_info[ data->entity->index() ];
+    auto &log = g_animations.player_log[ data->entity->index() ];
 
     if ( !log.player )
         return nullptr;
@@ -41,7 +41,7 @@ lag_record *resolver::find_ideal_record( aim_player *data ) {
 }
 
 lag_record *resolver::find_last_record( aim_player *data ) {
-    auto &log = g_animations.lag_info[ data->entity->index( ) ];
+    auto &log = g_animations.player_log[ data->entity->index( ) ];
 
     if ( !log.player )
         return nullptr;
