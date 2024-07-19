@@ -18,38 +18,27 @@ bool ragebot::can_hit_player( c_cs_player *player, vector_3d start, vector_3d en
     if ( !record || !matrix )
         return false;
 
-    bool did_intersect_anything = false;
-
     for ( int i = 0; i < hitbox_max; i++ ) {
-        if ( can_hit_player( player, start, end, record, i, matrix ) ) {
-            did_intersect_anything = true;
-            break;
-        }
+        if ( can_hit_player( player, start, end, record, i, matrix ) )
+            return true;
     }
-
-    return did_intersect_anything;
+    return false;
 }
 
 bool ragebot::can_hit_player( c_cs_player *player, vector_3d start, vector_3d end, lag_record *record, int hitbox, matrix_3x4 *matrix ) {
-    if ( !record )
-        return false;
-
-    if ( !matrix )
+    if ( !record || !matrix )
         return false;
 
     hitbox_data hitbox_data;
 
-    if ( !get_hitbox_data( start, &hitbox_data, player, hitbox, matrix ) ) {
+    if ( !get_hitbox_data( start, &hitbox_data, player, hitbox, matrix ) )
         return false;
-    }
 
     auto dir = math::normalize_angle( end - start );
-
     bool intersect = false;
     if ( hitbox_data.is_obb ) {
         vector_3d delta;
         math::vector_irotate( ( dir * 8192.f ), matrix[ hitbox_data.bone ], delta );
-
         intersect = math::intersect_bb( hitbox_data.start_scaled, delta, hitbox_data.mins, hitbox_data.maxs );
     } else {
         intersect = math::intersect( start, end, hitbox_data.mins, hitbox_data.maxs, hitbox_data.radius );
@@ -58,18 +47,15 @@ bool ragebot::can_hit_player( c_cs_player *player, vector_3d start, vector_3d en
     if ( !intersect )
         return false;
 
-    // https://www.unknowncheats.me/forum/counterstrike-global-offensive/345397-performance-raytracer.html
     if ( !hitbox_data.is_obb ) {
-        RayTracer::Ray ray( start, end );// what about hitbox_data.m_start_scaled
+        RayTracer::Ray ray( start, end );
         RayTracer::Trace trace;
         RayTracer::Hitbox trace_hitbox( hitbox_data.mins, hitbox_data.maxs, hitbox_data.radius );
         RayTracer::TraceHitbox( ray, trace_hitbox, trace );
 
-        if ( !trace.m_hit ) {
+        if ( !trace.m_hit )
             return false;
-        }
     }
-
     return true;
 }
 
@@ -81,7 +67,6 @@ bool ragebot::get_hitbox_data( vector_3d start, hitbox_data *rtn, c_cs_player *p
         return false;
 
     auto model = player->get_model( );
-
     if ( !model )
         return false;
 
@@ -124,16 +109,15 @@ bool ragebot::get_hitbox_data( vector_3d start, hitbox_data *rtn, c_cs_player *p
 }
 
 bool ragebot::should_hit( c_cs_player *player, const vector_3d &angle, lag_record *record ) {
-    /* https://github.com/OneshotGH/supremacy/blob/9d56ba52f4ab380f48ca3f066c9c5009ea2bb74f/aimbot.cpp#L658 */
     vector_3d fwd, right, up;
-    size_t total_hits{ }, needed_hits{ ( size_t ) std::ceil( ( g_vars.aimbot_hit_chance.value * 255 ) / 100 ) };
+    size_t total_hits = 0, needed_hits = ( size_t ) std::ceil( ( g_vars.aimbot_hit_chance.value * 255 ) / 100 );
 
     math::angle_vectors( angle, &fwd, &right, &up );
 
     auto inaccuracy = globals::local_weapon->get_inaccuracy( );
     auto spread = globals::local_weapon->get_spread( );
 
-    for ( int i{ }; i <= 255; ++i ) {
+    for ( int i = 0; i <= 255; ++i ) {
         auto spread_direction = globals::local_weapon->calculate_spread( i, inaccuracy, spread );
         auto dir = math::normalize_angle( fwd + ( right * spread_direction.x ) + ( up * spread_direction.y ) );
         auto end = globals::local_player->get_shoot_position( ) + ( dir * globals::local_weapon_data->range );
@@ -153,7 +137,6 @@ bool ragebot::should_hit( c_cs_player *player, const vector_3d &angle, lag_recor
         if ( ( 255 - i + total_hits ) < needed_hits )
             return false;
     }
-
     return false;
 }
 
@@ -186,10 +169,9 @@ bool ragebot::get_hitbox_position( c_cs_player *player, matrix_3x4 *bones, int i
     position = ( min + max ) * 0.5f;
 
     return true;
-};
-
+}
 void ragebot::search_targets( ) {
-    for ( int i = 1; i <= ( g_interfaces.entity_list->get_highest_entity_index( ) + 1 ); ++i ) {
+    for ( int i = 1; i <= g_interfaces.entity_list->get_highest_entity_index( ); ++i ) {
         const auto entity = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
 
         if ( !entity || !entity->is_player( ) || !entity->alive( ) || entity->dormant( ) || entity->team( ) == globals::local_player->team( ) || entity == globals::local_player ) {
@@ -199,7 +181,6 @@ void ragebot::search_targets( ) {
         if ( g_animations.player_log[ entity->index( ) ].anim_records.empty( ) )
             continue;
 
-        //players[ entity->index( ) ] = target;
         targets.push_back( aim_player{ entity, math::calculate_fov( globals::view_angles, math::clamp_angle( entity->origin( ) ) ), glm::length( entity->origin( ) - globals::local_player->origin( ) ) } );
     }
 
@@ -210,18 +191,16 @@ void ragebot::search_targets( ) {
         switch ( g_vars.aimbot_sort_by.value ) {
             case 0:
                 return lhs.distance < rhs.distance;
-                break;
             case 1:
                 return lhs.fov < rhs.fov;
-                break;
+            default:
+                return lhs.distance < rhs.distance;
         }
     } );
 }
 
 std::vector< int > ragebot::get_hitboxes( ) {
-    std::vector< int > hitboxes{ };
-
-    hitboxes.clear( );
+    std::vector< int > hitboxes;
 
     if ( g_vars.aimbot_hitboxes_head.value ) {
         hitboxes.push_back( hitbox_head );
@@ -377,9 +356,6 @@ void run_hitscan( thread_args *args ) {
             auto bullet_data = g_penetration.run( globals::local_player->get_shoot_position( ), p.first, player, record->bones );
 
             if ( bullet_data.did_hit ) {
-                //if ( hb == hitbox_head && bullet_data.out_hitgroup != hitgroup_head )
-                //    continue;
-
                 if ( bullet_data.out_damage >= best_damage ) {
                     best_damage = bullet_data.out_damage;
 
@@ -390,7 +366,6 @@ void run_hitscan( thread_args *args ) {
                     hitscan_info::best.damage = bullet_data.out_damage;
                     args->done = true;
                 }
-
                 if ( args->done && bullet_data.out_damage >= best_damage ) {
                     hitscan_info::best.hitbox = hb;
                     hitscan_info::best.best_point = p.first;
@@ -399,8 +374,8 @@ void run_hitscan( thread_args *args ) {
                 }
 
                 if ( p == args->points.front( ) && bullet_data.out_damage >= player->health( ) )
-                    break;    
-            }  
+                    break;
+            }
 
             if ( args->done ) {
                 g_ragebot.should_continue_thread = false;
@@ -414,6 +389,7 @@ void run_hitscan( thread_args *args ) {
 }
 
 void ragebot::generate_points( c_cs_player *player, lag_record *record ) {
+    // Implementation for generating points
 }
 
 bool ragebot::scan_target( c_cs_player *player, lag_record *record, aim_player &target ) {
@@ -426,9 +402,9 @@ bool ragebot::scan_target( c_cs_player *player, lag_record *record, aim_player &
     args.points = { };
     args.hb = hitbox_l_foot;
     should_continue_thread = true;
-    //run_hitscan( &args );
-    Threading::QueueJobRef( run_hitscan, ( void * )&args );
-    
+
+    Threading::QueueJobRef( run_hitscan, ( void * ) &args );
+
     best = hitscan_info::best;
 
     Threading::FinishQueue( true );
@@ -436,7 +412,7 @@ bool ragebot::scan_target( c_cs_player *player, lag_record *record, aim_player &
     return true;
 }
 
-void ragebot::adjust_speed( c_user_cmd *cmd ) { /* kinda shit. */
+void ragebot::adjust_speed( c_user_cmd *cmd ) {
     if ( !globals::local_player->alive( ) || !( globals::local_player->flags( ) & FL_ONGROUND ) || !globals::local_weapon || !globals::local_weapon_data )
         return;
 
@@ -451,7 +427,7 @@ void ragebot::adjust_speed( c_user_cmd *cmd ) { /* kinda shit. */
         cmd->side_move = ( target_vel.x - fwd.x * cmd->forward_move ) / right.x;
 
         cmd->forward_move = std::clamp< float >( cmd->forward_move, -globals::cvars::cl_forwardspeed->get_float( ), globals::cvars::cl_forwardspeed->get_float( ) );
-        cmd->side_move = std::clamp< float >( cmd->side_move, -globals::cvars::cl_forwardspeed->get_float( ), globals::cvars::cl_sidespeed->get_float( ) );
+        cmd->side_move = std::clamp< float >( cmd->side_move, -globals::cvars::cl_sidespeed->get_float( ), globals::cvars::cl_sidespeed->get_float( ) );
 
         cmd->buttons &= ~buttons::walk;
         cmd->buttons |= buttons::speed;
@@ -467,7 +443,6 @@ void ragebot::adjust_speed( c_user_cmd *cmd ) { /* kinda shit. */
     const auto pure_accurate_speed = max_speed * 0.34f;
     const auto accurate_speed = max_speed * 0.315f;
 
-    //    actually slowwalk
     if ( speed <= pure_accurate_speed ) {
         const auto cmd_speed = sqrt( cmd->forward_move * cmd->forward_move + cmd->side_move * cmd->side_move );
         const auto local_speed = std::max( math::length_2d( globals::local_player->velocity( ) ), 0.1f );
@@ -478,9 +453,7 @@ void ragebot::adjust_speed( c_user_cmd *cmd ) { /* kinda shit. */
 
         cmd->buttons &= ~buttons::walk;
         cmd->buttons |= buttons::speed;
-    }
-    //    we are fast
-    else {
+    } else {
         quick_stop( );
     }
 }
@@ -529,12 +502,7 @@ void ragebot::on_create_move( c_user_cmd *cmd ) {
         if ( !bot && front && g_animations.should_predict_lag( target, front, nullptr ) ) {
             if ( !scan_target( target.entity, front, target ) )
                 continue;
-        }
-
-        else {
-            //if ( target.delay_shot )
-            //    continue;
-
+        } else {
             auto ideal = g_resolver.find_ideal_record( target.entity );
 
             if ( !ideal )
@@ -558,9 +526,8 @@ void ragebot::on_create_move( c_user_cmd *cmd ) {
 
     adjust_speed( cmd );
 
-    bool should_target = ( g_vars.aimbot_automatic_shoot.value );
+    bool should_target = g_vars.aimbot_automatic_shoot.value;
 
-    /* restore player data */
     const auto backup_origin = best.target->origin( );
     const auto backup_mins = best.target->collideable( )->mins( );
     const auto backup_maxs = best.target->collideable( )->maxs( );

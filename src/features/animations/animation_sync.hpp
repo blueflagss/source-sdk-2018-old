@@ -7,6 +7,7 @@ enum class resolve_mode : int {
     moving,
     standing,
     lby_update,
+    adjust_stop,
     freestand,
     brute,
     air,
