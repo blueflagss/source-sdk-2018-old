@@ -10,6 +10,6 @@ void __fastcall hooks::do_procedural_footplant::hook( REGISTERS, matrix_3x4_alig
 }
 
 void hooks::do_procedural_footplant::init( ) {
-    original = safetyhook::create_inline( signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? F6 86 ? ? ? ? ? 0F 84" ) ).add( 0x1 ).rel32( ).get< void * >( ),
+    original = safetyhook::create_inline( signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? F6 86 ? ? ? ? ? 0F 84" ) ).add( 0x1 ).rel32( ).get< void * >( ),
                                           do_procedural_footplant::hook );
 }

@@ -1,6 +1,15 @@
 #include "packet_start.hpp"
 
 int __fastcall hooks::packet_start::hook( REGISTERS, int incoming_sequence, int outgoing_acknowledged ) {
+    if ( !g_interfaces.client_state || !g_interfaces.engine_client->is_connected( ) || !g_interfaces.engine_client->is_in_game( ) )
+        return original.fastcall< int >( ecx, edx, incoming_sequence, outgoing_acknowledged );
+
+    if ( !globals::local_player || !globals::local_player->alive( ) )
+        return original.fastcall< int >( ecx, edx, incoming_sequence, outgoing_acknowledged );
+
+    if ( !g_interfaces.engine_client->is_connected( ) || !g_interfaces.engine_client->is_in_game( ) )
+        return original.fastcall< int >( ecx, edx, incoming_sequence, outgoing_acknowledged );
+
     globals::sent_commands.erase( std::ranges::remove_if( globals::sent_commands, [ & ]( const uint32_t &cmd ) { return abs( static_cast< int32_t >( outgoing_acknowledged - cmd ) ) >= 90; } ).begin( ), globals::sent_commands.end( ) );
 
     auto target_acknowledged = outgoing_acknowledged;
@@ -10,7 +19,7 @@ int __fastcall hooks::packet_start::hook( REGISTERS, int incoming_sequence, int 
             target_acknowledged = cmd;
     }
 
-    return original.fastcall< int >( ecx, edx, incoming_sequence, outgoing_acknowledged );
+    return original.fastcall< int >( ecx, edx, incoming_sequence, target_acknowledged );
 }
 
 void hooks::packet_start::init( ) {

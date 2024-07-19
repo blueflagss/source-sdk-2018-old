@@ -1,14 +1,20 @@
 #pragma once
 
+#include <core/variables.hpp>
+#include <core/config.hpp>
 #include "ui/input/input.hpp"
 #include "ui/notifications/notifications.hpp"
 #include "ui/window_setup.hpp"
 #include "exploits/exploits.hpp"
-#include "engine_prediction/engine_prediction.hpp"
-#include "aimbot/aimbot.hpp"
+#include "ragebot/ragebot.hpp"
+#include "shot_manager/shot_manager.hpp"
+#include "event_handler/event_handler.hpp"
+#include "resolver/resolver.hpp"
+#include "sound_handler/sound_handler.hpp"
 #include "animations/animation_sync.hpp"
 #include "movement/movement.hpp"
 #include "miscellaneous/miscellaneous.hpp"
+#include "network_data/network_data.hpp"
 #include "visuals/visuals.hpp"
 #include "visuals/chams.hpp"
 #include "antiaim/antiaim.hpp"

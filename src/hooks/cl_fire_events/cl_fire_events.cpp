@@ -35,6 +35,6 @@ void __cdecl hooks::cl_fire_events::hook( ) {
 }
 
 void hooks::cl_fire_events::init( ) {
-    original = safetyhook::create_inline( signature::find( XOR( "engine.dll" ), XOR( "55 8B EC 83 EC 08 53 8B 1D ? ? ? ? 56 57 83 BB ? ? ? ? ? 74" ) ).get< void * >( ),
+    original = safetyhook::create_inline( signature::find( _xs( "engine.dll" ), _xs( "55 8B EC 83 EC 08 53 8B 1D ? ? ? ? 56 57 83 BB ? ? ? ? ? 74" ) ).get< void * >( ),
                                           cl_fire_events::hook );
 }

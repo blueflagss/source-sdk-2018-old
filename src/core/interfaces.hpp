@@ -37,6 +37,7 @@
 #include <sdk/interfaces/panel.hpp>
 #include <sdk/interfaces/event_manager.hpp>
 #include <sdk/interfaces/glow_object_manager.hpp>
+#include <sdk/interfaces/engine_sound_client.hpp>
 #include <sdk/hash/fnv1a.hpp>
 
 class interfaces {
@@ -74,6 +75,7 @@ public:
     i_cvar *cvar = nullptr;
     i_debug_overlay *debug_overlay = nullptr;
     c_render_view *render_view = nullptr;
+    c_engine_sound_client *engine_sound = nullptr;
     ISteamClient *steam_client = nullptr;
     ISteamFriends *steam_friends = nullptr;
     ISteamUtils *steam_utils = nullptr;
@@ -92,6 +94,8 @@ public:
     address get_shotgun_spread;
     address trace_to_studio_csgo_hitgroups_priority;
     address tier0_allocated_thread_ids;
+    address handle_taser_anim;
+    address process_movement;
     address update_animation_state;
 };
 

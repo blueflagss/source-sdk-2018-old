@@ -100,7 +100,8 @@ public:
     PAD( 8 );                    // 0x00FC
     float range;                 // 0x0104
     float range_modifier;        // 0x0108
-    PAD( 32 );                   // 0x010C
+    float throw_velocity;        // 0x010C
+    PAD( 28 );                   // 0x0110
     float max_speed;             // 0x012C
     float max_speed_alt;         // 0x0130
     float spread;                // 0x0134
@@ -120,16 +121,22 @@ public:
 
 class c_cs_weapon_base : public c_cs_player {
 public:
+    DATAMAP( next_burst_shot, float, this->get_pred_desc_map( ), "m_fNextBurstShot" );
+    NETVAR( last_shot_time, float, "DT_WeaponCSBase", "m_fLastShotTime" );
     NETVAR( weapon_world_model, uint32_t, "DT_WeaponCSBase", "m_hWeaponWorldModel" );
-    NETVAR( recoil_index, float, "DT_WeaponCSBase", "m_flRecoilIndex" );
-    NETVAR( item_definition_index, short, "DT_BaseAttributableItem", "iItemDefinitionIndex" );
+    NETVAR( recoil_index, float, "DT_WeaponNegev", "m_flRecoilIndex" );
+    NETVAR( activity, int, "DT_WeaponCSBase", "m_Activity" );
+    NETVAR( burst_shots_remaining, int, "DT_WeaponCSBase", "m_iBurstShotsRemaining" );
+    NETVAR( item_definition_index, int, "DT_BaseAttributableItem", "m_iItemDefinitionIndex" );
     NETVAR( accuracy_penalty, float, "DT_WeaponCSBase", "fAccuracyPenalty" );
     NETVAR( next_primary_attack, float, "DT_WeaponCSBase", "m_flNextPrimaryAttack" );
     NETVAR( clip_1, int, "DT_WeaponCSBase", "m_iClip1" );
     NETVAR( clip_2, int, "DT_WeaponCSBase", "m_iClip2" );
     NETVAR( zoom_level, float, "DT_WeaponCSBaseGun", "m_zoomLevel" );
+    NETVAR( primary_reserve_ammo_count, int, "DT_BaseCombatWeapon", "m_iPrimaryReserveAmmoCount" );
 
     float get_spread( );
+    bool is_base_combat_weapon( );
     float get_inaccuracy( );
     vector_3d calculate_spread( int seed, bool revolver2 = false );
     vector_3d calculate_spread( int seed, float inaccuracy, float spread, bool revolver2 = false );

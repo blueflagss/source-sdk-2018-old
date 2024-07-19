@@ -9,7 +9,7 @@ void dispatch_queue::spawn( ) {
     const auto slots = min( std::thread::hardware_concurrency( ) - 1, calculate_used_threads( ) );
 
     if ( slots < 1 ) {
-        MessageBoxA( nullptr, XOR( "unable to allocate threads" ), XOR( "fail" ),
+        MessageBoxA( nullptr, _xs( "unable to allocate threads" ), _xs( "fail" ),
                      MB_ICONERROR | MB_SETFOREGROUND );
         ExitProcess( 0 );
     }

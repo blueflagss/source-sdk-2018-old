@@ -1,7 +1,6 @@
 #include "hooks.hpp"
 
 #include <features/event_handler/event_handler.hpp>
-
 #include <hooks/create_move/create_move.hpp>
 #include <hooks/draw_model_execute/draw_model_execute.hpp>
 #include <hooks/end_scene/end_scene.hpp>
@@ -45,12 +44,28 @@
 #include <hooks/physics_simulate/physics_simulate.hpp>
 #include <hooks/packet_start/packet_start.hpp>
 #include <hooks/cl_fire_events/cl_fire_events.hpp>
+#include <hooks/game_animation_state/game_animation_state.hpp>
 #include <hooks/cl_move/cl_move.hpp>
 #include <hooks/get_eye_angles/get_eye_angles.hpp>
+#include <hooks/check_jump_button/check_jump_button.hpp>
+#include <hooks/lower_body_yaw_target_proxy/lower_body_yaw_target_proxy.hpp>
+#include <hooks/level_shutdown/level_shutdown.hpp>
+#include <hooks/paint_traverse/paint_traverse.hpp>
+#include <hooks/update_clientside_animations/update_clientside_animations.hpp>
+#include <hooks/is_paused/is_paused.hpp>
+#include <hooks/level_init_pre_entity/level_init_pre_entity.hpp>
 
 std::unique_ptr< event_handler > game_event_handler = nullptr;
 
-void hooks::impl::init( )  {
+void hooks::impl::init( ) {
+    level_init_pre_entity::init( );
+    is_paused::init( );
+    update_clientside_animations::init( );
+    paint_traverse::init( );
+    level_shutdown::init( );
+    lower_body_yaw_target_proxy::init( );
+    //check_jump_button::init( );
+    //anim_state::init( );
     get_eye_angles::init( );
     cl_move::init( );
     cl_fire_events::init( );
@@ -100,6 +115,14 @@ void hooks::impl::init( )  {
 }
 
 void hooks::impl::remove( ) {
+    is_paused::original = { };
+    update_clientside_animations::original = { };
+    paint_traverse::original = { };
+    level_shutdown::original = { };
+    check_jump_button::original = { };
+    setup_movement::original = { };
+    setup_alive_loop::original = { };
+    setup_velocity::original = { };
     get_eye_angles::original = { };
     cl_move::original = { };
     notify_on_layer_change_sequence::original = { };

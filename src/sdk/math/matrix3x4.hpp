@@ -76,9 +76,32 @@ public:
         return &mat[ 0 ][ 0 ];
     }
 
+     vector_3d operator*( const vector_3d &vec ) const;
+    matrix_3x4 operator+( const matrix_3x4 &other ) const;
+    matrix_3x4 operator*( const float &other ) const;
+    matrix_3x4 operator*( const matrix_3x4 &vm );
+
 public:
     float mat[ 3 ][ 4 ];
 };
+
+inline matrix_3x4 matrix_3x4::operator+( const matrix_3x4 &other ) const {
+    matrix_3x4 ret;
+    auto &m = mat;
+    for ( int i = 0; i < 12; i++ ) {
+        ( ( float * ) ret.mat )[ i ] = ( ( float * ) m )[ i ] + ( ( float * ) other.mat )[ i ];
+    }
+    return ret;
+}
+
+inline matrix_3x4 matrix_3x4::operator*( const float &other ) const {
+    matrix_3x4 ret;
+    auto &m = mat;
+    for ( int i = 0; i < 12; i++ ) {
+        ( ( float * ) ret.mat )[ i ] = ( ( float * ) m )[ i ] * other;
+    }
+    return ret;
+}
 
 class v_matrix {
 private:

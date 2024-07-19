@@ -4,28 +4,29 @@
 #include <sdk/interfaces/cvar.hpp>
 #include <sdk/interfaces/model_render.hpp>
 #include <features/renderer/renderer.hpp>
+#include <sdk/user_cmd.hpp>
 
 class c_cs_weapon_base;
-class c_user_cmd;
 class c_cs_player;
+class c_cs_weapon_info;
 
 namespace globals
 {
     inline std::array< const char *, 14 > sky_names = {
-            XOR( "cs_baggage_skybox_" ),
-            XOR( "cs_tibet" ),
-            XOR( "vietnam" ),
-            XOR( "sky_lunacy" ),
-            XOR( "embassy" ),
-            XOR( "italy" ),
-            XOR( "jungle" ),
-            XOR( "office" ),
-            XOR( "sky_cs15_daylight01_hdr" ),
-            XOR( "sky_cs15_daylight02_hdr" ),
-            XOR( "sky_day02_05" ),
-            XOR( "sky_csgo_cloudy01" ),
-            XOR( "sky_csgo_night02" ),
-            XOR( "sky_csgo_night02b" ),
+            _xs( "cs_baggage_skybox_" ),
+            _xs( "cs_tibet" ),
+            _xs( "vietnam" ),
+            _xs( "sky_lunacy" ),
+            _xs( "embassy" ),
+            _xs( "italy" ),
+            _xs( "jungle" ),
+            _xs( "office" ),
+            _xs( "sky_cs15_daylight01_hdr" ),
+            _xs( "sky_cs15_daylight02_hdr" ),
+            _xs( "sky_day02_05" ),
+            _xs( "sky_csgo_cloudy01" ),
+            _xs( "sky_csgo_night02" ),
+            _xs( "sky_csgo_night02b" ),
     };
 
     namespace ui
@@ -61,6 +62,7 @@ namespace globals
         inline convar *cl_csm_shadows{ nullptr };
         inline convar *name{ nullptr };
         inline convar *sv_maxusrcmdprocessticks{ nullptr };
+        inline convar *cl_cmdrate{ nullptr };
         inline convar *sv_gravity{ nullptr };
         inline convar *sv_jump_impulse{ nullptr };
         inline convar *weapon_accuracy_shotgun_spread_patterns{ nullptr };
@@ -74,6 +76,7 @@ namespace globals
         inline convar *ff_damage_reduction_bullets{ nullptr };
         inline convar *ff_damage_bullet_penetration{ nullptr };
         inline convar *sv_clip_penetration_traces_to_players{ nullptr };
+        inline convar *mat_fullbright{ nullptr };
 
         void init( );
     }// namespace cvars
@@ -82,11 +85,14 @@ namespace globals
     inline bool did_setup_datamap{ false };
     inline int target_index{ -1 };
     inline c_user_cmd *user_cmd{ nullptr };
+    inline c_user_cmd sent_user_cmd{ };
     inline int arrival_tick{ };
     inline int server_tick{ };
     inline int latency_ticks{ };
+    inline float latency{ };
     inline vector_3d view_angles{ };
     inline vector_3d sent_angles{ };
+    inline vector_3d local_shoot_pos{ };
     inline v_matrix view_matrix{ };
     inline bool lby_updating{ false };
     inline bool *packet{ nullptr };
@@ -95,6 +101,7 @@ namespace globals
     inline c_cs_player *local_player{ nullptr };
     inline vector_3d local_angles{ };
     inline c_cs_weapon_base *local_weapon{ nullptr };
+    inline c_cs_weapon_info *local_weapon_data{ nullptr };
     inline std::array< bool, 64 > allow_animations{ };
     inline std::array< bool, 65 > is_building_bones{ };
     inline float lerp_amount{ 0.0f };

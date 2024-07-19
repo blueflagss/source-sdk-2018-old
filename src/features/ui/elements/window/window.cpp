@@ -23,10 +23,7 @@ void penumbra::window::paint( ) {
 
     this->titlebar_size = glm::vec2{ this->size.x, 28.f };
 
-    render::scissor_rect( this->position.x - 2, this->position.y - 2, this->size.x + 4, this->size.y + 4, [ & ] {
-        bBlur->blur_background( render::draw_list, g_interfaces.device, 255 * globals::fade_opacity[ this->get_main_window( ) ] );
-    } );
-
+    render::blur( this->position.x - 2, this->position.y - 2, this->size.x + 4, this->size.y + 4, color( 0, 0, 0, 130 * globals::fade_opacity[ this->get_main_window( ) ] ) );
     render::filled_rect( this->position.x - 2, this->position.y - 2, this->size.x + 4, this->size.y + 4, this->flags == WINDOW_INDICATOR ? color{ 40, 40, 40, 230 * globals::fade_opacity[ this->get_main_window( ) ] } : color{ 24, 24, 24, ( this->is_transparent ? 170 : 230 ) * globals::fade_opacity[ this->get_main_window( ) ] }, 4.0f );
     render::filled_rect( this->position.x - 2, this->position.y - 2, this->size.x + 4, this->titlebar_size.y, color{ 22, 22, 22, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, 4.0f, ImDrawFlags_RoundCornersTopLeft | ImDrawFlags_RoundCornersTopRight );
     render::string( fonts::montserrat_semibold, this->position.x + 12, this->position.y - 1.5f + ( this->is_using_font ? 5.0f : 6.0f ), color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, this->name );

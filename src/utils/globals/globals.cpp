@@ -1,6 +1,9 @@
 #include "globals.hpp"
 
 void globals::cvars::init( ) {
+    mat_fullbright = g_interfaces.cvar->find_var( HASH_CT( "mat_fullbright" ) );
+    mat_fullbright->remove_callbacks( );
+
     cl_predict = g_interfaces.cvar->find_var( HASH_CT( "cl_predict" ) );
     cl_extrapolate = g_interfaces.cvar->find_var( HASH_CT( "cl_extrapolate" ) );
   
@@ -11,6 +14,7 @@ void globals::cvars::init( ) {
     cam_ideallag->remove_callbacks( );
     cam_ideallag->set_int( 0 );
 
+    cl_cmdrate = g_interfaces.cvar->find_var( HASH_CT( "cl_cmdrate" ) );
     sv_jump_impulse = g_interfaces.cvar->find_var( HASH_CT( "sv_jump_impulse" ) );
     sv_gravity = g_interfaces.cvar->find_var( HASH_CT( "sv_gravity" ) );
     cl_interp_ratio = g_interfaces.cvar->find_var( HASH_CT( "cl_interp_ratio" ) );

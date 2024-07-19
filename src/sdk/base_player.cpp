@@ -2,14 +2,28 @@
 #include <features/animations/animation_sync.hpp>
 
 bool c_base_player::get_screen_bounding_box( entity_box &box_dimensions ) {
-    if ( !this ) return false;
+    if ( !this )
+        return false;
 
-    if ( g_animations.player_log[ this->index( ) ].anim_records.empty( ) ) return false;
+    vector_3d mins, maxs;
 
-    auto &record = g_animations.player_log[ this->index( ) ].anim_records.front( );
+    if ( HASH( this->get_client_class( )->network_name ) == HASH_CT( "CCSPlayer" ) ) {
+        if ( g_animations.player_log[ this->index( ) ].anim_records.empty( ) ) 
+            return false;
 
-    const auto mins = record.mins;
-    const auto maxs = record.maxs;
+        auto &record = g_animations.player_log[ this->index( ) ].anim_records.front( );
+
+        mins = record.mins;
+        maxs = record.maxs;
+    }
+
+    else {
+        if ( !this->collideable( ) ) 
+            return false;
+
+        mins = this->collideable( )->mins( );
+        maxs = this->collideable( )->maxs( );
+    }
 
     std::array< vector_3d, 8 > points = {
             vector_3d( mins.x, mins.y, mins.z ),
@@ -22,7 +36,7 @@ bool c_base_player::get_screen_bounding_box( entity_box &box_dimensions ) {
             vector_3d( maxs.x, mins.y, maxs.z )
     };
 
-    const matrix_3x4 &trans = record.renderable_to_world_transform;
+    const matrix_3x4 &trans = this->rgfl_coordinate_frame( );
 
     auto left = std::numeric_limits< float >::max( );
     auto top = std::numeric_limits< float >::max( );

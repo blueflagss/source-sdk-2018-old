@@ -17,6 +17,6 @@ void __fastcall hooks::calc_viewmodel_view::hook( REGISTERS, c_base_player *owne
 }
 
 void hooks::calc_viewmodel_view::init( ) {
-    original = safetyhook::create_inline( signature::find( "client.dll", XOR( "55 8B EC 83 EC 64 56 57" ) ).get< void * >( ),
+    original = safetyhook::create_inline( signature::find( "client.dll", _xs( "55 8B EC 83 EC 64 56 57" ) ).get< void * >( ),
                                           calc_viewmodel_view::hook );
 }

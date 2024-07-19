@@ -15,6 +15,13 @@ typedef __declspec( align( 16 ) ) union {
     __m128 v;
 } m128;
 
+class matrix_3x4;
+class c_game_trace;
+
+inline __m128 sqrt_ps( const __m128 squared ) {
+    return _mm_sqrt_ps( squared );
+}
+
 namespace math
 {
     inline constexpr float deg_to_rad( float x ) {
@@ -49,6 +56,7 @@ namespace math
         return glm::length2( delta );
     }
 
+    void angle_normalize( float &angle );
     void rotate_point( int &x, int &y, float rotation );
     void rotate_point( glm::vec2 &point, float rotation );
     void random_seed( int seed );
@@ -57,6 +65,7 @@ namespace math
     void vector_transform( const vector_3d in1, const matrix_3x4 &in2, vector_3d &out );
     vector_3d vector_transform( const vector_3d in1, const matrix_3x4 &in2 );
     void angle_vectors( vector_3d angles, vector_3d *forward );
+    vector_3d angle_from_vectors( vector_3d a, vector_3d b );
     vector_3d angle_vectors( vector_3d angles );
     void sin_cos( float radians, float *sine, float *cosine );
     void angle_vectors( const vector_3d &angles, vector_3d *forward, vector_3d *right, vector_3d *up );
@@ -70,6 +79,13 @@ namespace math
     void matrix_position( const matrix_3x4 &matrix, vector_3d &position );
     void matrix_get_column( const matrix_3x4 &in, int column, vector_3d &out );
     void matrix_copy( const matrix_3x4 &in, matrix_3x4 &out );
+    void vector_rotate( const vector_3d &in1, matrix_3x4 in2, vector_3d &out );
+    vector_3d vector_rotate( const vector_3d &in1, const vector_3d &in2 );
+    bool intersect_ray_with_box( const vector_3d &rayStart, const vector_3d &rayDelta, const vector_3d &boxMins, const vector_3d &boxMaxs, float epsilon, c_game_trace *pTrace, float *pFractionLeftSolid );
+    bool intersect_bb( vector_3d &start, vector_3d &delta, vector_3d &min, vector_3d &max );
+    float segment_to_segment( const vector_3d s1, const vector_3d s2, const vector_3d k1, const vector_3d k2 );
+    bool intersect( vector_3d start, vector_3d end, vector_3d a, vector_3d b, float radius );
+    void vector_irotate( const vector_3d &in1, const matrix_3x4 &in2, vector_3d &out );
     void concat_transforms( const matrix_3x4 &in1, const matrix_3x4 &in2, matrix_3x4 &out );
     void angle_matrix( const vector_3d &angles, matrix_3x4 &matrix );
     float dist_segment_to_segment_sqr( const vector_3d &p1, const vector_3d &p2, const vector_3d &q1, const vector_3d &q2, float &invariant1, float &invariant2 );

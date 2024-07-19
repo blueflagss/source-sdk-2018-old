@@ -18,6 +18,11 @@ void animations::clear_map( ) {
     anim_map.clear( );
 }
 
+void animations::set_values( ) {
+    for ( auto &value : anim_map )
+        value.second.value = value.second.last_value;
+}
+
 void animations::lerp_to( const hash32_t &hash, float destination, float additive, float min_max_clamp ) {
     const auto map = get( hash );
     auto value = anim_map.find( map.item_hash );

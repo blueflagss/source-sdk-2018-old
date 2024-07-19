@@ -1,10 +1,9 @@
 #include "antiaim.hpp"
-
 #include "features/movement/movement.hpp"
-
+#include <features/animations/animation_sync.hpp>
 #include <random>
 
-std::mt19937 rng( time( NULL ) );
+std::mt19937 rng( std::time( NULL ) );
 
 void antiaim::handle_direction( c_user_cmd *cmd ) {
     switch ( g_vars.exploits_antiaim_dir_type.value ) {
@@ -66,6 +65,15 @@ void antiaim::handle_real( c_user_cmd *cmd ) {
             break;
     }
 
+    if ( g_vars.exploits_antiaim_lby_break.value ) {
+        const auto standing = glm::length( globals::local_player->velocity( ) ) < 1.0f;
+        const auto air = ( globals::local_player->flags( ) & player_flags::on_ground ) || globals::local_player->velocity( ).z > 1.0f;
+
+        if ( !g_interfaces.client_state->choked_commands( ) && g_interfaces.global_vars->curtime > g_animations.lower_body_realign_timer && ( standing || air ) ) {
+            cmd->view_angles.y += g_vars.exploits_antiaim_lby_break_delta.value;
+        }
+    }
+
     cmd->view_angles.y = math::normalize( cmd->view_angles.y );
     real.y = cmd->view_angles.y;
 }
@@ -108,10 +116,15 @@ void antiaim::on_create_move( c_user_cmd *cmd, vector_3d vangle ) {
     handle_direction( cmd );
 
     if ( g_vars.exploits_antiaim_fake.value ) {
+        g_vars.exploits_fakelag_limit.value = std::clamp< int >( g_vars.exploits_fakelag_limit.value, 2, 16 );
+
+        /* force ourselves to choke commands. */
+        g_vars.exploits_fakelag.value = true;
+
         if ( *globals::packet && globals::old_packet )
             *globals::packet = false;
 
-        if ( !*globals::packet )
+        if ( !*globals::packet || !globals::old_packet )
             handle_real( cmd );
         else
             handle_fake( cmd );

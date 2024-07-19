@@ -46,14 +46,15 @@ namespace config
         CONFIG_VARIABLE( ui_theme, color, color( 176, 115, 255 ) );
         CONFIG_VARIABLE( animation_speed, float, 1.0f );
 
-#pragma region aimbot
+#pragma region ragebot
         CONFIG_VARIABLE( aimbot_enable, bool, false );
         CONFIG_VARIABLE( aimbot_silent, bool, false );
         CONFIG_VARIABLE( aimbot_auto_stop, bool, true );
         CONFIG_VARIABLE( aimbot_sort_by, int, 0 );
         CONFIG_VARIABLE( aimbot_maximum_fov, int, 180 );
         CONFIG_VARIABLE( aimbot_automatic_shoot, bool, false );
-
+        CONFIG_VARIABLE( aimbot_resolver, bool, false );
+        CONFIG_VARIABLE( aimbot_resolver_override, bool, false );
         CONFIG_VARIABLE( aimbot_hitboxes_head, bool, false );
         CONFIG_VARIABLE( aimbot_hitboxes_chest, bool, false );
         CONFIG_VARIABLE( aimbot_hitboxes_stomach, bool, false );
@@ -67,6 +68,7 @@ namespace config
         CONFIG_VARIABLE( aimbot_multipoints_pelvis, bool, false );
         CONFIG_VARIABLE( aimbot_multipoints_arms, bool, false );
         CONFIG_VARIABLE( aimbot_multipoints_legs, bool, false );
+        CONFIG_VARIABLE( aimbot_multipoints_dynamic_scale, bool, false );
 
         CONFIG_VARIABLE( aimbot_multipoint_scale, int, 65 );
         CONFIG_VARIABLE( aimbot_min_damage, int, 32 );
@@ -80,6 +82,8 @@ namespace config
         CONFIG_VARIABLE( exploits_antiaim_dir_type, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_yaw_type, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_fake, bool, false );
+        CONFIG_VARIABLE( exploits_antiaim_lby_break, bool, false );
+        CONFIG_VARIABLE( exploits_antiaim_lby_break_delta, float, 0.f );
         CONFIG_VARIABLE( exploits_antiaim_fake_yaw_type, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_range, float, 0.f );
         CONFIG_VARIABLE( exploits_antiaim_spin_speed, float, 0.f );
@@ -102,6 +106,7 @@ namespace config
         CONFIG_VARIABLE( visuals_box_color, color, color( 128, 0, 255 ) );
         CONFIG_VARIABLE( visuals_name_color, color, color( 255, 255, 255 ) );
         CONFIG_VARIABLE( visuals_skeleton_color, color, color( 255, 255, 255 ) );
+        CONFIG_VARIABLE( visuals_lby_timer_color, color, color( 255, 77, 252 ) );
         CONFIG_VARIABLE( visuals_skeleton_history_color, color, color( 255, 255, 255 ) );
         CONFIG_VARIABLE( visuals_health_override_color, color, color( 255, 255, 255 ) );
         CONFIG_VARIABLE( visuals_highlight_target_color, color, color( 255, 153, 0 ) );
@@ -113,12 +118,14 @@ namespace config
         CONFIG_VARIABLE( visuals_player_name, bool, true );
         CONFIG_VARIABLE( visuals_player_distance, bool, true );
         CONFIG_VARIABLE( visuals_player_box, bool, true );
+        CONFIG_VARIABLE( visuals_player_lby_timer, bool, false );
         CONFIG_VARIABLE( visuals_player_highlight_target, bool, true );
         CONFIG_VARIABLE( visuals_player_highlight_steam_friend, bool, false );
         CONFIG_VARIABLE( visuals_player_health, bool, true );
         CONFIG_VARIABLE( visuals_player_skeleton, bool, false );
         CONFIG_VARIABLE( visuals_player_skeleton_history, bool, false );
-        CONFIG_VARIABLE( visuals_player_weapon, bool, false );
+        CONFIG_VARIABLE( visuals_player_weapon_text, bool, false );
+        CONFIG_VARIABLE( visuals_player_weapon_icon, bool, false );
         CONFIG_VARIABLE( visuals_player_health_override, bool, false );
         CONFIG_VARIABLE( visuals_player_filled_box_transparency, float, 60.0f );
         CONFIG_VARIABLE( visuals_render_if_dormant, bool, false );
@@ -134,7 +141,9 @@ namespace config
         CONFIG_VARIABLE( visuals_render_player_glow_color, color, color( 162, 56, 255, 180 ) );
         CONFIG_VARIABLE( visuals_other_modulate_world_color, color, color( 255, 255, 255, 255 ) );
         CONFIG_VARIABLE( visuals_other_skybox_changer, bool, false );
+        CONFIG_VARIABLE( visuals_other_fullbright, bool, false );
         CONFIG_VARIABLE( visuals_other_modulate_world, bool, false );
+        CONFIG_VARIABLE( visuals_other_penetration_crosshair, bool, false );
         CONFIG_VARIABLE( visuals_other_skybox_selection, int, 0 );
 
         CONFIG_VARIABLE( visuals_other_viewmodel_fov, float, 60.0f );
@@ -157,6 +166,8 @@ namespace config
         CONFIG_VARIABLE( visuals_other_oof_arrows_outline, bool, false );
         CONFIG_VARIABLE( visuals_other_oof_arrows_show_spy, bool, false );
         CONFIG_VARIABLE( visuals_other_thirdperson_enabled, bool, false );
+        CONFIG_VARIABLE( visuals_other_local_blend_while_scoped, bool, false );
+        CONFIG_VARIABLE( visuals_other_local_blend_transparency, float, 100.0f );
         CONFIG_VARIABLE( visuals_other_thirdperson_interpolate, bool, false );
         CONFIG_VARIABLE( visuals_other_thirdperson_bind, int, 0 );
         CONFIG_VARIABLE( visuals_other_thirdperson_toggle, int, 0 );
@@ -190,6 +201,7 @@ namespace config
         CONFIG_VARIABLE( misc_auto_strafe, bool, false );
         CONFIG_VARIABLE( misc_auto_strafe_type, int, strafe_type::movement_keys );
         CONFIG_VARIABLE( misc_hitmarker, bool, false );
+        CONFIG_VARIABLE( misc_debug_local_overlays, int, 0 ); // local layers, queued layers, animated layers
 #pragma endregion miscellaneous_features
     };
 }// namespace config

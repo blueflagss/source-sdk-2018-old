@@ -3,27 +3,6 @@
 #include <globals.hpp>
 #include <features/penetration/penetration.hpp>
 
-struct aim_player {
-    aim_player( c_cs_player *entity, float fov, float distance, int hitbox, lag_record *record, vector_3d pos, vector_3d center ) {
-        this->entity = entity;
-        this->fov = fov;
-        this->distance = distance;
-        this->record = record;
-        this->hitbox = hitbox;
-        this->positon = pos;
-        this->center = center;
-    }
-
-    c_cs_player *entity;
-    float fov;
-    float distance;
-    lag_record *record;
-    int hitbox;
-    vector_3d positon;
-    vector_3d center;
-    c_fire_bullet_data bullet_data;
-};
-
 struct target_info {
     target_info( ) {
         hitbox = 0;
@@ -41,6 +20,14 @@ struct target_info {
 };
 
 struct aim_point {
+    aim_point( ) {
+        pos = vector_3d{ };
+        center = false;
+        record = nullptr;
+        bullet_data = c_fire_bullet_data{ };
+        hb = -1;
+    }
+
     vector_3d pos;
     bool center;
     lag_record *record;
@@ -49,12 +36,33 @@ struct aim_point {
 };
 
 struct thread_args {
-    vector_3d eye_pos{ };
-    int hb{ };
     bool valid{ };
+    bool done{ };
+    int hb;
+    lag_record *record;
+    c_cs_player *target;
+    std::vector< std::pair< vector_3d, bool > > points;
 };
 
-class aimbot {
+class hitbox_data {
+public:
+    int hitbox_id = 0;
+    bool is_obb;
+    vector_3d mins;
+    vector_3d maxs;
+    vector_3d start_scaled;
+    float radius;
+    mstudiobbox_t *hitbox;
+    int bone;
+    int hitgroup;
+};
+
+namespace hitscan_info
+{
+    inline target_info best = { };
+}
+
+class ragebot {
 private:
     void search_player( c_cs_player *player );
     void search_targets( );
@@ -62,19 +70,25 @@ private:
     void generate_points( c_cs_player *player, lag_record* record );
     bool scan_target( c_cs_player *player, lag_record *record, aim_player &target );
     void adjust_speed( c_user_cmd *ucmd );
+    bool get_hitbox_data( vector_3d start, hitbox_data *rtn, c_cs_player *player, int hitbox, matrix_3x4 *matrix );
 
 public:
-    std::array< std::vector<aim_point>, 19> aim_points = { };
-    std::deque< int > hitboxes = { };
+    c_fire_bullet_data bullet_data;
+    bool found_point = false;
     std::deque< aim_player > targets = { };
-    std::unique_lock< std::mutex > gay;
-    target_info best = { };
+    std::array< aim_player, 64 > players;
     backup_record m_backup[ 64 ];
+    bool should_continue_thread;
+    target_info best = { };
 
+    std::vector< int > get_hitboxes( );
     void reset( );
-    bool hitchance( c_cs_player *player, const vector_3d &angle, lag_record *record );
+    bool can_hit_player( c_cs_player *player, vector_3d start, vector_3d end, lag_record *record, matrix_3x4 *matrix );
+    bool can_hit_player( c_cs_player *player, vector_3d start, vector_3d end, lag_record *record, int hitbox, matrix_3x4 *matrix );
+
+    bool should_hit( c_cs_player *player, const vector_3d &angle, lag_record *record );
     void on_create_move( c_user_cmd *cmd );
     bool get_hitbox_position( c_cs_player *player, matrix_3x4 *bones, int hitbox, vector_3d &position );
 };
 
-inline aimbot g_aimbot = { };
+inline ragebot g_ragebot = { };

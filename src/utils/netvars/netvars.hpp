@@ -31,6 +31,8 @@ public:
     void init( );
     void store_table( const char *name, c_recv_table *table, std::size_t offset = 0ul );
     std::size_t get_offset( const hash32_t &table_name, const hash32_t &prop_name );
+    void set_proxy( const hash32_t &table_name, const hash32_t &prop_name, void *proxy, recv_var_proxy_fn &original );
+
 
 protected:
     std::unordered_map< hash32_t, std::unordered_map< hash32_t, netvar_data > > netvar_map = { };

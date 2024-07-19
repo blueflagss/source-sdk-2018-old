@@ -231,9 +231,10 @@ public:
 #include <core/variables.hpp>
 #include <sdk/interfaces/handle_entity.hpp>
 #include <sdk/math/aligned_vector.hpp>
-#include <sdk/math/matrix3x4.hpp>
 #include <sdk/math/ray.hpp>
+#include <utils/math/math.hpp>
 #include <sdk/other/net_msg_type.hpp>
+#include <sdk/math/matrix3x4.hpp>
 #include <sdk/other/networkable.hpp>
 #include <sdk/other/renderable.hpp>
 #include <sdk/other/thinkable.hpp>
@@ -244,7 +245,7 @@ public:
 #include <sdk/cs_base_weapon.hpp>
 #include <sdk/player_animstate.hpp>
 #include <sdk/user_cmd.hpp>
-#include <utils/math/math.hpp>
 #include <utils/netvars/netvars.hpp>
 #include <utils/datamaps/datamaps.hpp>
 #include <utils/utils.hpp>
+#include <utils/ray_tracer/ray_tracer.hpp>

@@ -5,6 +5,6 @@ void __fastcall hooks::check_for_sequence_change::hook( REGISTERS, void *hdr, in
 }
 
 void hooks::check_for_sequence_change::init( ) {
-    original = safetyhook::create_inline( signature::find( XOR( "client.dll" ), XOR( "55 8B EC 51 53 8B 5D 08 56 8B F1 57 85" ) ).get< void * >( ),
+    original = safetyhook::create_inline( signature::find( _xs( "client.dll" ), _xs( "55 8B EC 51 53 8B 5D 08 56 8B F1 57 85" ) ).get< void * >( ),
                                           check_for_sequence_change::hook );
 }

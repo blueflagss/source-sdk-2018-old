@@ -178,6 +178,7 @@ public:
     NETVAR( model_scale, float, "DT_BaseAnimating", "m_flModelScale" );
     OFFSET( bone_count, int, 0x2908 );
     OFFSET( bone_cache, matrix_3x4 *, 0x28FC );
+    OFFSET( old_origin, vector_3d, 0x3A8 );
 
     bool is_player( ) {
         return utils::get_method< bool( __thiscall * )( void * ) >( this, 152 )( this );

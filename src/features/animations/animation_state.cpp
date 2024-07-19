@@ -35,8 +35,8 @@ enum animtag_indices {
 };
 
 void c_animation_state_rebuilt::try_initiate_animation( c_cs_player *player, int layer, int activity, c_utl_vector< uint16_t > modifiers ) {
-    static const auto find_mapping = signature::find( XOR( "server.dll" ), XOR( "55 8B EC 83 E4 ? 81 EC ? ? ? ? 53 56 57 8B F9 8B 17" ) ).get< void *( __thiscall * ) ( void * ) >( );
-    static const auto select_weighted_sequence_from_modifiers = signature::find( XOR( "server.dll" ), XOR( "55 8B EC 83 EC 2C 53 56 8B 75 08 8B D9" ) ).get< int32_t( __thiscall * )( void *, void *, int32_t, const void *, int32_t ) >( );
+    static const auto find_mapping = signature::find( _xs( "server.dll" ), _xs( "55 8B EC 83 E4 ? 81 EC ? ? ? ? 53 56 57 8B F9 8B 17" ) ).get< void *( __thiscall * ) ( void * ) >( );
+    static const auto select_weighted_sequence_from_modifiers = signature::find( _xs( "server.dll" ), _xs( "55 8B EC 83 EC 2C 53 56 8B 75 08 8B D9" ) ).get< int32_t( __thiscall * )( void *, void *, int32_t, const void *, int32_t ) >( );
 
     const auto mapping = find_mapping( player->cstudio_hdr( ) );
     const auto sequence = select_weighted_sequence_from_modifiers( mapping, player->cstudio_hdr( ), activity, &modifiers[ 0 ], modifiers.Count( ) );
@@ -90,7 +90,7 @@ void c_animation_state_rebuilt::set_sequence( c_csgo_player_animstate *state, in
     if ( !player || !state )
         return;
 
-    static auto update_layer_order_preset = signature::find( XOR( "client.dll" ), XOR( "55 8B EC 51 53 56 57 8B F9 83 7F 60 00 0F 84 ? ? ? ? 83" ) ).get< void( __thiscall * )( c_csgo_player_animstate *, int, int ) >( );
+    static auto update_layer_order_preset = signature::find( _xs( "client.dll" ), _xs( "55 8B EC 51 53 56 57 8B F9 83 7F 60 00 0F 84 ? ? ? ? 83" ) ).get< void( __thiscall * )( c_csgo_player_animstate *, int, int ) >( );
 
     if ( sequence > 1 ) {
         g_interfaces.model_cache->begin_lock( );
@@ -195,18 +195,6 @@ void c_animation_state_rebuilt::set_cycle( c_csgo_player_animstate *state, int l
     layer->cycle = clamped_cycle;
 }
 
-const float CS_PLAYER_SPEED_RUN = 260.0f;
-const float CS_PLAYER_SPEED_VIP = 227.0f;
-const float CS_PLAYER_SPEED_SHIELD = 160.0f;
-const float CS_PLAYER_SPEED_HAS_HOSTAGE = 200.0f;
-const float CS_PLAYER_SPEED_STOPPED = 1.0f;
-const float CS_PLAYER_SPEED_OBSERVER = 900.0f;
-const float CS_PLAYER_SPEED_DUCK_MODIFIER = 0.34f;
-const float CS_PLAYER_SPEED_WALK_MODIFIER = 0.52f;
-const float CS_PLAYER_SPEED_CLIMB_MODIFIER = 0.34f;
-const float CS_PLAYER_HEAVYARMOR_FLINCH_MODIFIER = 0.5f;
-const float CS_PLAYER_DUCK_SPEED_IDEAL = 8.0f;
-
 void c_animation_state_rebuilt::set_weight_delta_rate( c_csgo_player_animstate *state, int layer_idx, float old_weight ) {
     if ( state->m_flLastUpdateIncrement != 0.0f ) {
         const auto layer = state->m_pPlayer->anim_overlays( ) + layer_idx;
@@ -226,13 +214,16 @@ void c_animation_state_rebuilt::increment_layer_cycle_weight_rate_generic( c_csg
 }
 
 void c_animation_state_rebuilt::handle_animation_events( c_cs_player *player, c_csgo_player_animstate *animstate ) {
+}
+
+void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate *animstate, const vector_3d &angles, int tick, bool handle_events ) {
     const auto backup_cur_time = g_interfaces.global_vars->curtime;
     const auto backup_frametime = g_interfaces.global_vars->frametime;
     const auto backup_framecount = g_interfaces.global_vars->framecount;
 
-    animstate->m_flLastUpdateTime = game::time_to_ticks( player->simtime( ) ) - game::ticks_to_time( 1 );
+    animstate->m_flLastUpdateTime = game::time_to_ticks( animstate->m_pPlayer->simtime( ) ) - game::ticks_to_time( 1 );
 
-    g_interfaces.global_vars->curtime = static_cast< float >( player->tick_base( ) ) * g_interfaces.global_vars->interval_per_tick;
+    g_interfaces.global_vars->curtime = static_cast< float >( animstate->m_pPlayer->tick_base( ) ) * g_interfaces.global_vars->interval_per_tick;
     g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
     g_interfaces.global_vars->framecount = tick;
 
@@ -317,7 +308,6 @@ void c_animation_state_rebuilt::handle_animation_events( c_cs_player *player, c_
 
         *reinterpret_cast< bool * >( reinterpret_cast< uintptr_t >( animstate->m_pPlayer ) + 0x39E0 ) = ( strafe_right || strafe_left || strafe_forward || strafe_back );
 
-
         if ( ( animstate->m_flLadderWeight > 0.0f || on_ladder ) && started_laddering_this_frame )
             set_sequence( animstate, ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB, select_weighted_sequence( animstate, 987 ) );
 
@@ -358,7 +348,6 @@ void c_animation_state_rebuilt::handle_animation_events( c_cs_player *player, c_
                     //play_animation ( animstate, ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL, 986 );
                     set_sequence( animstate, ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL, select_weighted_sequence( animstate, ACT_CSGO_FALL ) );
                 }
-
             }
             //#ifndef CLIENT_DLL
             //		Msg( "%f\n", m_flDurationInAir );
@@ -368,24 +357,7 @@ void c_animation_state_rebuilt::handle_animation_events( c_cs_player *player, c_
         }
     }
 
-    *player->anim_state( ) = backup_animstate;
-    /* restore client vars */
-    g_interfaces.global_vars->curtime = backup_cur_time;
-    g_interfaces.global_vars->frametime = backup_frametime;
-    g_interfaces.global_vars->framecount = backup_framecount;
-}
-
-void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate *animstate, const vector_3d &angles, int tick, bool handle_events ) {
-    const auto backup_cur_time = g_interfaces.global_vars->curtime;
-    const auto backup_frametime = g_interfaces.global_vars->frametime;
-    const auto backup_framecount = g_interfaces.global_vars->framecount;
-
-    g_interfaces.global_vars->curtime = static_cast< float >( tick ) * g_interfaces.global_vars->interval_per_tick;
-    g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
-    g_interfaces.global_vars->framecount = tick;
-
     std::array< c_animation_layer, 13 > backup_layers;
-    const c_csgo_player_animstate backup_animstate = *animstate;
 
     /* update animation */
     animstate->update( angles );
@@ -403,7 +375,7 @@ void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate 
     }
 
     *animstate = backup_animstate;
-    
+
     /* restore client vars */
     g_interfaces.global_vars->curtime = backup_cur_time;
     g_interfaces.global_vars->frametime = backup_frametime;
@@ -423,7 +395,7 @@ void c_animation_state_rebuilt::set_weight( c_csgo_player_animstate *state, int 
 }
 
 float c_animation_state_rebuilt::get_layer_ideal_weight_from_sequence_cycle( c_csgo_player_animstate *state, int layer_idx ) {
-    static auto get_layer_ideal_weight_from_sequence_cycle = signature::find( XOR( "client.dll" ), XOR( "55 8B EC 83 EC 08 53 56 8B 35 ? ? ? ? 57 8B F9 8B CE 8B 06 FF 90" ) ).get< float( __thiscall * )( c_csgo_player_animstate *, int ) >( );
+    static auto get_layer_ideal_weight_from_sequence_cycle = signature::find( _xs( "client.dll" ), _xs( "55 8B EC 83 EC 08 53 56 8B 35 ? ? ? ? 57 8B F9 8B CE 8B 06 FF 90" ) ).get< float( __thiscall * )( c_csgo_player_animstate *, int ) >( );
 
     return get_layer_ideal_weight_from_sequence_cycle( state, layer_idx );
 }
@@ -457,7 +429,7 @@ void c_animation_state_rebuilt::increment_layer_cycle( c_csgo_player_animstate *
 }
 
 int c_animation_state_rebuilt::get_layer_activity( c_csgo_player_animstate *state, AnimationLayer_t layer_idx ) {
-    static auto get_layer_activity = signature::find( XOR( "client.dll" ), XOR( "51 53 56 8B 35 ? ? ? ? 57 8B F9 8B CE 8B 06 FF 90 ? ? ? ? 8B 7F 60 83 BF" ) ).get< int( __thiscall * )( c_csgo_player_animstate *, int ) >( );
+    static auto get_layer_activity = signature::find( _xs( "client.dll" ), _xs( "51 53 56 8B 35 ? ? ? ? 57 8B F9 8B CE 8B 06 FF 90 ? ? ? ? 8B 7F 60 83 BF" ) ).get< int( __thiscall * )( c_csgo_player_animstate *, int ) >( );
 
     return get_layer_activity( state, layer_idx );
 }

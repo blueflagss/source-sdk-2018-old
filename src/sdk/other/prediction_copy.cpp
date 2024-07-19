@@ -14,13 +14,13 @@ c_prediction_copy::c_prediction_copy( int type, char *dest, bool dest_packed, co
 }
 
 int c_prediction_copy::transfer_data( const char *operation, int idx, datamap_t *dmap ) {
-    static auto transfer_data = signature::find( XOR( "client.dll" ), XOR( "55 8B EC 8B 45 10 53 56 8B F1 57 8B 7D 0C 89 7E 1C 85" ) ).get< int( __thiscall * )( c_prediction_copy *, const char *, int, datamap_t * ) >( );
+    static auto transfer_data = signature::find( _xs( "client.dll" ), _xs( "55 8B EC 8B 45 10 53 56 8B F1 57 8B 7D 0C 89 7E 1C 85" ) ).get< int( __thiscall * )( c_prediction_copy *, const char *, int, datamap_t * ) >( );
 
     return transfer_data( this, operation, idx, dmap );
 }
 
 typedescription_t *c_prediction_copy::find_flat_field_by_name( const char *field_name, const datamap_t *datamap ) {
-    static auto find_flat_field_by_name = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 8B CF 8B 40 34 03 45 08 F3 0F 7E 00" ) ).add( 0x1 ).rel32( ).get< typedescription_t *( __fastcall * ) ( const char *, const datamap_t * ) >( );
+    static auto find_flat_field_by_name = signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? 8B CF 8B 40 34 03 45 08 F3 0F 7E 00" ) ).add( 0x1 ).rel32( ).get< typedescription_t *( __fastcall * ) ( const char *, const datamap_t * ) >( );
 
     return find_flat_field_by_name( field_name, datamap );
 }

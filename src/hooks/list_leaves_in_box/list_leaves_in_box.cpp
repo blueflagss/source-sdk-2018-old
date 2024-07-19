@@ -27,7 +27,7 @@ int __fastcall hooks::list_leaves_in_box::hook( REGISTERS, const vector_3d &mins
     if ( !g_vars.visuals_other_disable_model_occlusion.value )
         return original( REGISTERS_OUT, mins, maxs, list, list_max );
 
-    static auto insert_into_tree = signature::find( "client.dll", XOR( "8B 7D 08 8B 74 24 10 89" ) ).get< void * >( );
+    static auto insert_into_tree = signature::find( "client.dll", _xs( "8B 7D 08 8B 74 24 10 89" ) ).get< void * >( );
 
     if ( _ReturnAddress( ) != insert_into_tree )
         return original( REGISTERS_OUT, mins, maxs, list, list_max );

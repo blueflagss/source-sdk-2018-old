@@ -1,12 +1,12 @@
 #include "post_network_data_received.hpp"
-#include <features/engine_prediction/netvar_compression.hpp>
 #include <sdk/other/prediction_copy.hpp>
+#include <features/network_data/network_data.hpp>
 #include <features/animations/animation_sync.hpp>
 
 void __fastcall hooks::post_network_data_received::hook( REGISTERS, int commands_acknowledged ) {
     globals::local_player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( g_interfaces.engine_client->get_local_player( ) );
 
-    static auto build_flattened_chains = signature::find( XOR( "client.dll" ), XOR( "55 8B EC 83 EC 18 57 8B F9 89 7D F4 83 7F 14 00 0F 85 ? ? ? ?" ) ).get< void( __thiscall * )( datamap_t * ) >( );
+    static auto build_flattened_chains = signature::find( _xs( "client.dll" ), _xs( "55 8B EC 83 EC 18 57 8B F9 89 7D F4 83 7F 14 00 0F 85 ? ? ? ?" ) ).get< void( __thiscall * )( datamap_t * ) >( );
 
     if ( globals::local_player ) {
         const auto map = globals::local_player->get_pred_desc_map( );
@@ -29,7 +29,7 @@ void __fastcall hooks::post_network_data_received::hook( REGISTERS, int commands
                 typedescription_t type_description;
 
                 type_description.field_type = FIELD_FLOAT;
-                type_description.field_name = "m_flVelocityModifier";
+                type_description.field_name = _xs( "m_flVelocityModifier" );
                 type_description.field_offset = velocity_modifier_offset;
                 type_description.field_size = 1;
                 type_description.flags = 0x100;
@@ -50,7 +50,7 @@ void __fastcall hooks::post_network_data_received::hook( REGISTERS, int commands
                 build_flattened_chains( map );
 
                 // init pred vars
-                g_netvar_compression.init( globals::local_player );
+                g_network_data.init( globals::local_player );
 
                 globals::did_setup_datamap = true;
             }
@@ -58,7 +58,7 @@ void __fastcall hooks::post_network_data_received::hook( REGISTERS, int commands
 
         if ( globals::local_player->alive( ) && commands_acknowledged > 0 ) {
             //memcpy( g_animations.tranny_code_premium_layers.data( ), globals::local_player->anim_overlays( ), g_animations.tranny_code_premium_layers.size( ) );
-            g_netvar_compression.post_update( globals::local_player );
+            g_network_data.post_update( globals::local_player );
         }
     }
 

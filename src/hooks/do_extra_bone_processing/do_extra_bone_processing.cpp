@@ -19,6 +19,6 @@ void __fastcall hooks::do_extra_bone_processing::hook( REGISTERS, c_studio_hdr *
 }
 
 void hooks::do_extra_bone_processing::init( ) {
-    original = safetyhook::create_inline( signature::find( XOR( "client.dll" ), XOR( "57 8B F9 8B 07 8B ? ? ? ? ? FF D0 84 C0 75 02" ) ).get< void * >( ),
+    original = safetyhook::create_inline( signature::find( _xs( "client.dll" ), _xs( "57 8B F9 8B 07 8B ? ? ? ? ? FF D0 84 C0 75 02" ) ).get< void * >( ),
                                           do_extra_bone_processing::hook );
 }

@@ -294,13 +294,13 @@
     <ClInclude Include="hooks\wnd_proc\wnd_proc.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="features\aimbot\aimbot.hpp">
+    <ClInclude Include="features\ragebot\ragebot.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="features\antiaim\antiaim.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="features\engine_prediction\engine_prediction.hpp">
+    <ClInclude Include="features\prediction_manager\prediction_manager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="features\exploits\exploits.hpp">
@@ -975,7 +975,7 @@
     <ClInclude Include="sdk\datamap.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="features\engine_prediction\netvar_compression.hpp">
+    <ClInclude Include="features\network_data\network_data.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hooks\lock_cursor\lock_cursor.hpp">
@@ -1104,9 +1104,6 @@
     <ClInclude Include="sdk\other\prediction_copy.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="features\animations\animation_state.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="hooks\notify_on_layer_change_cycle\notify_on_layer_change_cycle.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1138,6 +1135,54 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hooks\notify_on_layer_change_sequence\notify_on_layer_change_sequence.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\game_animation_state\game_animation_state.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\check_jump_button\check_jump_button.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="features\sound_handler\sound_handler.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\interfaces\engine_sound_client.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\lower_body_yaw_target_proxy\lower_body_yaw_target_proxy.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="features\shot_manager\shot_manager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\ray_tracer\ray_tracer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\level_shutdown\level_shutdown.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\paint_traverse\paint_traverse.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\update_clientside_animations\update_clientside_animations.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resources\04b03.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resources\csgo_hud_icons.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\is_paused\is_paused.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="features\grenade_prediction\grenade_prediction.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="features\animations\animation_state.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\level_init_pre_entity\level_init_pre_entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1178,13 +1223,13 @@
     <ClCompile Include="hooks\wnd_proc\wnd_proc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="features\aimbot\aimbot.cpp">
+    <ClCompile Include="features\ragebot\ragebot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="features\antiaim\antiaim.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="features\engine_prediction\engine_prediction.cpp">
+    <ClCompile Include="features\prediction_manager\prediction_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="features\exploits\exploits.cpp">
@@ -1373,7 +1418,7 @@
     <ClCompile Include="sdk\interfaces\prediction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="features\engine_prediction\netvar_compression.cpp">
+    <ClCompile Include="features\network_data\network_data.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks\lock_cursor\lock_cursor.cpp">
@@ -1481,9 +1526,6 @@
     <ClCompile Include="sdk\other\prediction_copy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="features\animations\animation_state.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="hooks\notify_on_layer_change_cycle\notify_on_layer_change_cycle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1515,6 +1557,48 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks\notify_on_layer_change_sequence\notify_on_layer_change_sequence.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\game_animation_state\game_animation_state.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\check_jump_button\check_jump_button.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\sound_handler\sound_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\lower_body_yaw_target_proxy\lower_body_yaw_target_proxy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\shot_manager\shot_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\ray_tracer\ray_tracer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sdk\math\matrix3x4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\level_shutdown\level_shutdown.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\paint_traverse\paint_traverse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\update_clientside_animations\update_clientside_animations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\is_paused\is_paused.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\grenade_prediction\grenade_prediction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\animations\animation_state.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\level_init_pre_entity\level_init_pre_entity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

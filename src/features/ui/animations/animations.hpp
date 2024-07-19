@@ -20,6 +20,7 @@ public:
 namespace animations {
     animation_context get( const hash32_t &hash, float default_value = 0.f );
     void clear_map( );
+    void set_values( );
     void lerp_to( const hash32_t &hash, float destination, float additive = 0.5f, float min_max_clamp = 1000.f );
     void set_to( const hash32_t &hash, float wanted_value );
 }// namespace animations

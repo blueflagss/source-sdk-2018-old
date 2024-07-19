@@ -208,7 +208,7 @@ public:
     virtual int get_point_contents( const vector_3d &origin, int mask, c_base_entity **ent = nullptr ) = 0;
     virtual int get_point_contents_world_only( const vector_3d &origin, int mask ) = 0;
     virtual void *pad002( ) = 0;
-    virtual void clip_ray_to_entity( const ray_t &_ray, unsigned mask, void *ent, c_game_trace *trace ) = 0;
+    virtual void clip_ray_to_entity( const ray_t &ray, uint32_t mask, void *entity, c_game_trace *trace ) = 0;
     virtual void clip_ray_to_collideable( const ray_t &ray, unsigned int mask, void *collide, c_game_trace *trace ) = 0;
     virtual void trace_ray( const ray_t &ray, unsigned int mask, c_trace_filter *filter, c_game_trace *trace ) = 0;
 };

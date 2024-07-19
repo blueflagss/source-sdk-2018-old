@@ -81,7 +81,7 @@ public:
     }
 
 public:
-    NETVAR( rgfl_coordinate_frame, matrix_3x4, "DT_BaseEntity", "m_vecOrigin", -0x30 );
+    OFFSET( rgfl_coordinate_frame, matrix_3x4, 0x440 );
 
     DATAMAP( current_command, c_user_cmd *, this->get_pred_desc_map( ), "m_nButtons", +0x4 );
     DATAMAP( eflags, int, this->get_pred_desc_map( ), "m_iEFlags" );
@@ -94,9 +94,11 @@ public:
     NETVAR( sequence, int, "DT_BasePlayer", "m_nSequence" );
     NETVAR( flags, int, "DT_BasePlayer", "m_fFlags" );
     NETVAR( velocity, vector_3d, "DT_CSPlayer", "m_vecVelocity[0]" );
+    NETVAR( walking, bool, "DT_CSPlayer", "m_bIsWalking" );
     NETVAR( fall_velocity, float, "DT_BasePlayer", "m_flFallVelocity" );
     NETVAR( life_state, char, "DT_BasePlayer", "m_lifeState" );
     NETVAR( tick_base, int, "DT_BasePlayer", "m_nTickBase" );
+    NETVAR( ladder_normal, vector_3d, "DT_BasePlayer", "m_vecLadderNormal" );
     OFFSET( final_predicted_tick, int, 0x1258 );
     NETVAR( ground_entity, int, "DT_BasePlayer", "m_hGroundEntity" );
     NETVAR( base_velocity, vector_3d, "DT_BasePlayer", "m_vecBaseVelocity" );

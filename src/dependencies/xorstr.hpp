@@ -32,11 +32,11 @@
 
 #define xorstr(str) ::jm::xor_string([]() { return str; }, std::integral_constant<std::size_t, sizeof(str) / sizeof(*str)>{}, std::make_index_sequence<::jm::detail::_buffer_size<sizeof(str)>()>{})
 
-#ifndef _DEBUG
-#define XOR(str) xorstr(str).crypt_get()
-#else
-#define XOR(str) str
-#endif
+//#ifndef _DEBUG
+//#define _xs(str) xorstr(str).crypt_get()
+//#else
+#define _xs(str) str
+//#endif
 
 #ifdef _MSC_VER
 #define XORSTR_FORCEINLINE __forceinline

@@ -43,6 +43,28 @@ enum effects : int {
     parent_animates = 0x200
 };
 
+enum pose_param : int {
+    strafe_yaw = 0,
+    stand,
+    lean_yaw,
+    _speed,
+    ladder_yaw,
+    ladder_speed,
+    jump_fall,
+    move_yaw,
+    move_blend_crouch,
+    move_blend_walk,
+    move_blend_run,
+    body_yaw,
+    body_pitch,
+    aim_blend_stand_idle,
+    aim_blend_stand_walk,
+    aim_blend_stand_run,
+    aim_blend_courch_idle,
+    aim_blend_crouch_walk,
+    death_yaw
+};
+
 class c_cs_player : public c_base_entity {
 public:
     OFFSET( button_forced, int, 0x3310 );
@@ -50,6 +72,7 @@ public:
     OFFSET( button_pressed, int, 0x31E0 );
     OFFSET( is_jiggle_bones_enabled, int, 0x291C );
     OFFSET( button_last, int, 0x31DC );
+    OFFSET( move_state, int, 0x38D0 );
     OFFSET( anim_state, c_csgo_player_animstate *, 0x3874 );
     OFFSET( button_released, int, 0x31E4 );
     OFFSET( button_disabled, int, 0x3340 );
@@ -65,6 +88,7 @@ public:
     NETVAR( velocity_modifier, float, "DT_CSPlayer", "m_flVelocityModifier" );
     NETVAR( heavy_armor, bool, "DT_CSPlayer", "m_bHasHeavyArmor" );
     NETVAR( client_side_animation, bool, "DT_BaseAnimating", "m_bClientSideAnimation" );
+    NETVAR( strafing, bool, "DT_CSPlayer", "m_bStrafing" );
     NETVAR( flash_duration, float, "DT_CSPlayer", "m_flFlashDuration" );
     NETVAR( eye_angles, vector_3d, "DT_CSPlayer", "m_angEyeAngles[0]" );
     NETVAR( lower_body_yaw_target, float, "DT_CSPlayer", "m_flLowerBodyYawTarget" );
@@ -77,6 +101,11 @@ public:
     OFFSET( cstudio_hdr, c_studio_hdr *, 0x293C );
     NETVAR( immunity, bool, "DT_CSPlayer", "m_bGunGameImmunity" );
     NETVAR( duck_amount, float, "DT_CSPlayer", "m_flDuckAmount" );
+    NETVAR( ducked, bool, "DT_CSPlayer", "m_bDucked" );
+    NETVAR( ducking, bool, "DT_CSPlayer", "m_bDucking" );
+    NETVAR( in_duck_jump, bool, "DT_CSPlayer", "m_bInDuckJump" );
+    NETVAR( max_speed, float, "DT_CSPlayer", "m_flMaxspeed" );
+    NETVAR( owner, uint32_t, "DT_CSPlayer", "m_hOwnerEntity" );
 
     void *get_view_model( ) {
         return g_interfaces.entity_list->get_client_entity_from_handle< void * >( this->viewmodel_handle( ) );
@@ -89,6 +118,9 @@ public:
     }
 
     studiohdr_t *get_model_ptr( );
+    float get_first_sequence_anim_tag( int sequence, int desired_tag, float start, float end );
+    void get_sequence_linear_motion( void *hdr, int seq, const float poses[], vector_3d *vec );
+    float get_sequence_move_dist( void *hdr, int seq );
     int lookup_pose_parameter( const char *name );
     float set_pose_parameter( int index, float value );
     float sequence_duration( int sequence );
@@ -102,6 +134,15 @@ public:
     void invalidate_bone_cache( );
     bool can_attack( );
     bool get_aim_matrix( vector_3d angle, matrix_3x4 *bones );
+    void update_collision_bounds( );
     vector_3d get_shoot_position( );
-    vector_3d get_eye_position( );
+};
+
+class c_base_cs_grenade : public c_cs_player {
+public:
+NETVAR( redraw, bool, "DT_BaseCSGrenade", "m_bRedraw" );
+    NETVAR( is_held_by_player, bool, "DT_BaseCSGrenade", "m_bIsHeldByPlayer" );
+    NETVAR( pin_pulled, bool, "DT_BaseCSGrenade", "m_bPinPulled" );
+    NETVAR( throw_time, float, "DT_BaseCSGrenade", "m_fThrowTime" );
+    NETVAR( throw_strength, float, "DT_BaseCSGrenade", "m_flThrowStrength" );
 };

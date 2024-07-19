@@ -1,10 +1,11 @@
 #include "interfaces.hpp"
 
 void interfaces::init( ) {
-    g_addresses.update_animation_state = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 0F 57 C0 0F 11 86" ) ).add( 0x1 ).rel32( );
-    g_addresses.get_shotgun_spread = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? EB 38 83 EC 08" ) ).add( 0x1 ).rel32( );
-    g_addresses.trace_to_studio_csgo_hitgroups_priority = signature::find( XOR( "client.dll" ), XOR( "55 8B EC 83 E4 ? 81 EC ? ? ? ? 8B C2" ) );
-    g_addresses.md5_pseudorandom = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 25 ? ? ? ? B9" ) ).add( 0x1 ).rel32( );
+    g_addresses.handle_taser_anim = signature::find( _xs( "client.dll" ), _xs( "E8 ?? ?? ?? ?? 8B 06 8B CE 8B 80 ?? ?? ?? ?? FF D0 84 C0 0F 84" ) ).add( 0x1 ).rel32( );
+    g_addresses.update_animation_state = signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? 0F 57 C0 0F 11 86" ) ).add( 0x1 ).rel32( );
+    g_addresses.get_shotgun_spread = signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? EB 38 83 EC 08" ) ).add( 0x1 ).rel32( );
+    g_addresses.trace_to_studio_csgo_hitgroups_priority = signature::find( _xs( "client.dll" ), _xs( "55 8B EC 83 E4 ? 81 EC ? ? ? ? 8B C2" ) );
+    g_addresses.md5_pseudorandom = signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? 25 ? ? ? ? B9" ) ).add( 0x1 ).rel32( );
     g_addresses.tier0_allocated_thread_ids = address( reinterpret_cast<uint8_t*>(reinterpret_cast< uintptr_t >( GetModuleHandleA( "tier0.dll" ) ) + 0x51AA0) );
 
     engine_client = create_interface< c_engine_client * >( "engine.dll", HASH_CT( "VEngineClient014" ) );
@@ -23,13 +24,13 @@ void interfaces::init( ) {
     material_system = create_interface< i_material_system * >( "materialsystem.dll", HASH_CT( "VMaterialSystem080" ) );
     physics_props = create_interface< c_physics_props * >( "vphysics.dll", HASH_CT( "VPhysicsSurfaceProps001" ) );
     cvar = create_interface< i_cvar * >( "vstdlib.dll", HASH_CT( "VEngineCvar007" ) );
+    engine_sound = create_interface< c_engine_sound_client * >( "engine.dll", HASH_CT( "IEngineSoundClient003" ) );
     prediction = create_interface< c_prediction * >( "client.dll", HASH_CT( "VClientPrediction001" ) );
     model_info = create_interface< c_model_info * >( "engine.dll", HASH_CT( "VModelInfoClient004" ) );
     debug_overlay = create_interface< i_debug_overlay * >( "engine.dll", HASH_CT( "VDebugOverlay004" ) );
     mem_alloc = *reinterpret_cast< c_mem_alloc ** >( GetProcAddress( GetModuleHandleA( "tier0.dll" ), "g_pMemAlloc" ) );
     localize = create_interface< c_localize * >( "localize.dll", HASH_CT( "Localize_001" ) );
     studio_render = create_interface< c_studio_render * >( "engine.dll", HASH_CT( "VStudioRender026" ) );
-
     client_mode = **reinterpret_cast< c_client_mode *** >( utils::get_method< std::uintptr_t >( client, 10 ) + 0x5 );
     global_vars = signature::find( "client.dll", "A1 ? ? ? ? FF 70 04 68 ? ? ? ? 56 E8 ? ? ? ? 8B 06" ).add( 0x1 ).deref( ).deref( ).get< c_global_vars_base * >( );
     glow_object_manager = signature::find( "client.dll", "0F 11 05 ?? ?? ?? ?? 83 C8 01 C7 05" ).add( 0x3 ).deref( ).get< c_glow_object_mgr * >( );
@@ -52,8 +53,6 @@ void interfaces::init( ) {
 
     if ( !window_handle )
         window_handle = FindWindowA( nullptr, "Counter-Strike: Global Offensive" );
-
-    g_interfaces.engine_client->client_cmd_unrestricted( "rate 786432" );
 }
 
 template< typename T >

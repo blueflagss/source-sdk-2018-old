@@ -9,6 +9,10 @@ void netvars::init( ) {
     int node_count = 0;
 
     while ( client_class && client_class->next ) {
+#ifdef _DEBUG
+        spdlog::info( "{}", client_class->network_name );
+    #endif
+
         ++node_count;
 
         store_table( client_class->recv_table->net_table_name, client_class->recv_table );
@@ -36,6 +40,14 @@ void netvars::init( ) {
     file.close( );
 #endif
 #endif
+}
+
+void netvars::set_proxy( const hash32_t &table_name, const hash32_t &prop_name, void *proxy, recv_var_proxy_fn &original ) {
+    auto netvar_entry = netvar_map[ table_name ][ prop_name ];
+
+    original = netvar_entry.prop_ptr->proxy_fn;
+
+    netvar_entry.prop_ptr->proxy_fn = ( recv_var_proxy_fn ) proxy;
 }
 
 void netvars::store_table( const char *name, c_recv_table *table, std::size_t offset ) {

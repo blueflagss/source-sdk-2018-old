@@ -1,6 +1,6 @@
 #pragma once
-
 #include "other/crc32.h"
+#include <utils/padding.hpp>
 
 enum buttons : int {
     attack = ( 1 << 0 ),
@@ -15,7 +15,7 @@ enum buttons : int {
     move_left = ( 1 << 9 ),
     move_right = ( 1 << 10 ),
     attack2 = ( 1 << 11 ),
-    run = ( 1 << 12 ),
+    on_create_move = ( 1 << 12 ),
     reload = ( 1 << 13 ),
     alt1 = ( 1 << 14 ),
     alt2 = ( 1 << 15 ),
@@ -30,6 +30,8 @@ enum buttons : int {
 
 class c_user_cmd {
 public:
+    c_user_cmd( ) = default;
+
     PAD( 0x4 );
 
     inline uint32_t get_checksum( void ) const {

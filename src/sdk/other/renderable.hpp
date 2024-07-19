@@ -10,6 +10,12 @@ class i_client_unknown;
 class i_pvs_notify;
 class model_t;
 
+struct renderable_instance_t {
+    uint8_t alpha;
+
+    __forceinline renderable_instance_t( ) : alpha{ 255ui8 } {}
+};
+
 class i_client_renderable {
 public:
     virtual i_client_unknown *get_client_unknown( ) = 0;
@@ -21,7 +27,7 @@ public:
     virtual client_shadow_handle_t get_shadow_handle( ) const = 0;
     virtual client_render_handle_t &render_handle( ) = 0;
     virtual const model_t *get_model( ) const = 0;
-    virtual int draw_model( int flags ) = 0;
+    virtual int draw_model( int flags, const renderable_instance_t &instance = { } ) = 0;
     virtual int get_body( ) = 0;
     virtual void get_color_modulation( float *color ) = 0;
     virtual bool lod_test( ) = 0;

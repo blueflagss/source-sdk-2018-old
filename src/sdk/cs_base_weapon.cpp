@@ -3,9 +3,7 @@
 vector_3d c_cs_weapon_base::calculate_spread( int seed, float inaccuracy, float spread, bool revolver2 ) {
     float r1, r2, r3, r4, s1, c1, s2, c2;
 
-    auto wep_info = get_weapon_data( );
-
-    if ( !wep_info || !wep_info->bullets )
+    if ( !globals::local_weapon_data || !globals::local_weapon_data->bullets )
         return { };
 
     auto item_def_index = item_definition_index( );
@@ -17,7 +15,7 @@ vector_3d c_cs_weapon_base::calculate_spread( int seed, float inaccuracy, float 
     r2 = math::random_float( 0.0f, glm::pi< float >( ) );
 
     if ( globals::cvars::weapon_accuracy_shotgun_spread_patterns->get_int( ) > 0 )
-        g_addresses.get_shotgun_spread.get< void( __stdcall * )( int, int, int, float *, float * ) >( )( item_def_index, 0, 0 + wep_info->bullets * wpn_recoil_index, &r4, &r3 );
+        g_addresses.get_shotgun_spread.get< void( __stdcall * )( int, int, int, float *, float * ) >( )( item_def_index, 0, globals::local_weapon_data->bullets * wpn_recoil_index, &r4, &r3 );
 
     else {
         r3 = math::random_float( 0.0f, 1.0f );
@@ -63,12 +61,10 @@ c_cs_weapon_info *c_cs_weapon_base::get_weapon_data( ) {
 }
 
 bool c_cs_weapon_base::is_grenade( ) {
-    auto weapon_data = get_weapon_data( );
-
-    if ( !weapon_data )
+    if ( !globals::local_weapon_data )
         return false;
 
-    return weapon_data->weapon_type == weapon_type::WEAPONTYPE_GRENADE;
+    return globals::local_weapon_data->weapon_type == weapon_type::WEAPONTYPE_GRENADE;
 }
 
 wchar_t *c_cs_weapon_base::get_name( ) {
@@ -92,6 +88,10 @@ float c_cs_weapon_base::get_spread( ) {
     return utils::get_method< float( __thiscall * )( void * ) >( this, 439 )( this );
 }
 
+bool c_cs_weapon_base::is_base_combat_weapon( ) {
+    return utils::get_method< bool( __thiscall * )( void * ) >( this, 160 )( this );
+}
+
 bool c_cs_weapon_base::scoped_weapon( ) {
     return item_definition_index( ) == weapons::g3sg1 ||
            item_definition_index( ) == weapons::scar20 ||
@@ -105,7 +105,7 @@ float c_cs_weapon_base::get_lowest_accuracy( ) {
     const auto info = get_weapon_data( );
 
     // todo: add option for auto scope
-    if ( globals::local_player->flags( ) & ducking )
+    if ( globals::local_player->flags( ) & player_flags::ducking )
         return ( scoped_weapon( ) && zoom_level( ) != 0 ) ? info->inaccuracy_crouch_alt : info->inaccuracy_crouch;
 
     return ( scoped_weapon( ) && zoom_level( ) != 0 ) ? info->inaccuracy_stand_alt : info->inaccuracy_stand;

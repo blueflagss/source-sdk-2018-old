@@ -10,6 +10,156 @@ void math::matrix_copy( const matrix_3x4 &in, matrix_3x4 &out ) {
     std::memcpy( out.base( ), in.base( ), sizeof( matrix_3x4 ) );
 }
 
+void math::vector_rotate( const vector_3d &in1, matrix_3x4 in2, vector_3d &out ) {
+    out.x = glm::dot( in1, (vector_3d)*in2[ 0 ] );
+    out.y = glm::dot( in1, (vector_3d)*in2[ 1 ] );
+    out.z = glm::dot( in1, (vector_3d)*in2[ 2 ] );
+}
+
+vector_3d math::vector_rotate( const vector_3d &in1, const vector_3d &in2 ) {
+    matrix_3x4 matrix;
+    angle_matrix( in2, matrix );
+
+    vector_3d out;
+    vector_rotate( in1, matrix, out );
+
+    return out;
+}
+
+bool math::intersect_ray_with_box( const vector_3d &rayStart, const vector_3d &rayDelta, const vector_3d &boxMins, const vector_3d &boxMaxs, float epsilon, c_game_trace *pTrace, float *pFractionLeftSolid ) {
+    static auto fn = signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? 83 C4 14 84 C0 74 3F" ) ).add( 0x1 ).rel32( ).get< bool( __fastcall * )( const vector_3d &, const vector_3d &, const vector_3d &, const vector_3d &, float, c_game_trace *, float * ) >( );
+    return fn( rayStart, rayDelta, boxMins, boxMaxs, epsilon, pTrace, pFractionLeftSolid );
+}
+
+bool math::intersect_bb( vector_3d &start, vector_3d &delta, vector_3d &min, vector_3d &max ) {
+    float d1, d2, f;
+    bool start_solid = true;
+    float t1 = -1.0f, t2 = 1.0f;
+
+    const float _start[ 3 ] = { start.x, start.y, start.z };
+    const float _delta[ 3 ] = { delta.x, delta.y, delta.z };
+    const float mins[ 3 ] = { min.x, min.y, min.z };
+    const float maxs[ 3 ] = { max.x, max.y, max.z };
+
+    for ( auto i = 0; i < 6; ++i ) {
+        if ( i >= 3 ) {
+            const auto j = ( i - 3 );
+
+            d1 = _start[ j ] - maxs[ j ];
+            d2 = d1 + _delta[ j ];
+        } else {
+            d1 = -_start[ i ] + mins[ i ];
+            d2 = d1 - _delta[ i ];
+        }
+
+        if ( d1 > 0 && d2 > 0 ) {
+            start_solid = false;
+            return false;
+        }
+
+        if ( d1 <= 0 && d2 <= 0 )
+            continue;
+
+        if ( d1 > 0 )
+            start_solid = false;
+
+        if ( d1 > d2 ) {
+            f = d1;
+            if ( f < 0 )
+                f = 0;
+
+            f /= d1 - d2;
+            if ( f > t1 )
+                t1 = f;
+        } else {
+            f = d1 / ( d1 - d2 );
+            if ( f < t2 )
+                t2 = f;
+        }
+    }
+
+    return start_solid || ( t1 < t2 && t1 >= 0.0f );
+}
+float math::segment_to_segment( const vector_3d s1, const vector_3d s2, const vector_3d k1, const vector_3d k2 ) {
+    static auto constexpr epsilon = 0.00000001;
+
+    auto u = s2 - s1;
+    auto v = k2 - k1;
+    const auto w = s1 - k1;
+
+    const auto a = glm::dot( u, u );
+    const auto b = glm::dot( u, v );
+    const auto c = glm::dot( v, v );
+    const auto d = glm::dot( u, w );
+    const auto e = glm::dot( v, w );
+    const auto D = a * c - b * b;
+    float sn, sd = D;
+    float tn, td = D;
+
+    if ( D < epsilon ) {
+        sn = 0.0;
+        sd = 1.0;
+        tn = e;
+        td = c;
+    } else {
+        sn = b * e - c * d;
+        tn = a * e - b * d;
+
+        if ( sn < 0.0 ) {
+            sn = 0.0;
+            tn = e;
+            td = c;
+        } else if ( sn > sd ) {
+            sn = sd;
+            tn = e + b;
+            td = c;
+        }
+    }
+
+    if ( tn < 0.0 ) {
+        tn = 0.0;
+
+        if ( -d < 0.0 )
+            sn = 0.0;
+        else if ( -d > a )
+            sn = sd;
+        else {
+            sn = -d;
+            sd = a;
+        }
+    } else if ( tn > td ) {
+        tn = td;
+
+        if ( -d + b < 0.0 )
+            sn = 0;
+        else if ( -d + b > a )
+            sn = sd;
+        else {
+            sn = -d + b;
+            sd = a;
+        }
+    }
+
+    const float sc = abs( sn ) < epsilon ? 0.0f : sn / sd;
+    const float tc = abs( tn ) < epsilon ? 0.0f : tn / td;
+
+    m128 n;
+    auto dp = w + u * sc - v * tc;
+    n.f[ 0 ] = glm::dot( dp, dp );
+    const auto calc = sqrt_ps( n.v );
+    return reinterpret_cast< const m128 * >( &calc )->f[ 0 ];
+}
+bool math::intersect( vector_3d start, vector_3d end, vector_3d a, vector_3d b, float radius ) {
+    const auto dist = segment_to_segment( start, end, a, b );
+    return ( dist < radius );
+}
+
+void math::vector_irotate( const vector_3d &in1, const matrix_3x4 &in2, vector_3d &out ) {
+    out.x = in1.x * in2[ 0 ][ 0 ] + in1.y * in2[ 1 ][ 0 ] + in1.z * in2[ 2 ][ 0 ];
+    out.y = in1.x * in2[ 0 ][ 1 ] + in1.y * in2[ 1 ][ 1 ] + in1.z * in2[ 2 ][ 1 ];
+    out.z = in1.x * in2[ 0 ][ 2 ] + in1.y * in2[ 1 ][ 2 ] + in1.z * in2[ 2 ][ 2 ];
+}
+
 void math::concat_transforms( const matrix_3x4& in1, const matrix_3x4& in2, matrix_3x4& out ) {
     if ( &in1 == &out ) {
         matrix_3x4 in1b;
@@ -215,6 +365,23 @@ void math::angle_vectors( vector_3d angles, vector_3d *forward ) {
     forward->z = -sp;
 }
 
+vector_3d math::angle_from_vectors( vector_3d a, vector_3d b ) {
+    vector_3d angles{ };
+
+    vector_3d delta = a - b;
+    float hyp = glm::length( delta );
+
+    // 57.295f - pi in degrees
+    angles.y = std::atan( delta.y / delta.x ) * 57.2957795131f;
+    angles.x = std::atan( -delta.z / hyp ) * -57.2957795131f;
+    angles.z = 0.0f;
+
+    if ( delta.x >= 0.0f )
+        angles.y += 180.0f;
+
+    return angles;
+}
+
 vector_3d math::angle_vectors( vector_3d angles ) {
     vector_3d forward;
 
@@ -279,19 +446,39 @@ void math::rotate_point( glm::vec2 &point, float rotation ) {
 }
 
 void math::random_seed( int seed ) {
-    static auto random_seed = reinterpret_cast< void( __cdecl * )( int ) >( GetProcAddress( GetModuleHandleA( XOR( "vstdlib.dll" ) ), XOR( "RandomSeed" ) ) );
+    static auto random_seed = reinterpret_cast< void( __cdecl * )( int ) >( GetProcAddress( GetModuleHandleA( _xs( "vstdlib.dll" ) ), _xs( "RandomSeed" ) ) );
 
     random_seed( seed );
 }
 
 float math::random_float( float min_val, float max_value ) {
-    static auto random_float = reinterpret_cast< float( __cdecl * )( float, float ) >( GetProcAddress( GetModuleHandleA( XOR( "vstdlib.dll" ) ), XOR( "RandomFloat" ) ) );
+    static auto random_float = reinterpret_cast< float( __cdecl * )( float, float ) >( GetProcAddress( GetModuleHandleA( _xs( "vstdlib.dll" ) ), _xs( "RandomFloat" ) ) );
 
     return random_float( min_val, max_value );
 }
 
+void math::angle_normalize( float &angle ) {
+    float rot;
+
+    // bad number.
+    if ( !std::isfinite( angle ) ) {
+        angle = 0.f;
+        return;
+    }
+
+    // no need to normalize this angle.
+    if ( angle >= -180.f && angle <= 180.f )
+        return;
+
+    // get amount of rotations needed.
+    rot = std::round( std::abs( angle / 360.f ) );
+
+    // normalize.
+    angle = ( angle < 0.f ) ? angle + ( 360.f * rot ) : angle - ( 360.f * rot );
+}
+
 vector_3d math::normalize_angle( vector_3d angle ) {
-    auto vec = glm::length( angle );
+    auto vec = std::sqrt( length_sqr( angle ) );
 
     angle /= ( vec + std::numeric_limits< float >::epsilon( ) );
 
@@ -367,11 +554,9 @@ vector_3d math::calculate_angle( const vector_3d &source, const vector_3d &desti
 }
 
 void math::angle_vectors( const vector_3d &angles, vector_3d *forward, vector_3d *right, vector_3d *up ) {
-    float sr, sp, sy, cr, cp, cy;
-
-    sin_cos( deg_to_rad( angles[ 1 ] ), &sy, &cy );
-    sin_cos( deg_to_rad( angles[ 0 ] ), &sp, &cp );
-    sin_cos( deg_to_rad( angles[ 2 ] ), &sr, &cr );
+    float cp = std::cos( deg_to_rad( angles.x ) ), sp = std::sin( deg_to_rad( angles.x ) );
+    float cy = std::cos( deg_to_rad( angles.y ) ), sy = std::sin( deg_to_rad( angles.y ) );
+    float cr = std::cos( deg_to_rad( angles.z ) ), sr = std::sin( deg_to_rad( angles.z ) );
 
     if ( forward ) {
         forward->x = cp * cy;

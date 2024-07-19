@@ -45,11 +45,11 @@ namespace animation
 }// namespace animation
 
 void notifications::render( ) {
-    auto size = vector_2d( 400, 25 );
-    auto position = vector_2d( -( size.x * 2 ), 0.0f );
+    auto size = vector_2d( 490.f, 25.f );
+    auto position = vector_2d( -( size.x * 2 ), 0.f );
 
     for ( size_t i = 0; i < active_notifications.size( ); ++i ) {
-        auto notify = active_notifications[ i ];
+        auto &notify = active_notifications[ i ];
 
         notify->time -= ImGui::GetIO( ).DeltaTime;
 
@@ -65,22 +65,19 @@ void notifications::render( ) {
     if ( active_notifications.empty( ) )
         return;
 
-    for ( auto &notification : active_notifications ) {
-        auto left = notification->time;
+    for ( auto &notify : active_notifications ) {
+        auto left = notify->time;
         bool expired = left <= 0.4f;
 
-        animation::lerp_to( notification, !expired, 0.13f, 1000.f );
+        animation::lerp_to( notify, !expired, 0.13f, 1000.f );
 
-        auto fraction = animation::get( notification, 0.0f );
+        auto fraction = animation::get( notify, 0.0f );
         auto pos = vector_2d( position.x + ( ( size.x * 2 ) * fraction.value ), position.y );
 
-        /* back-ground */
         render::gradient_rect( pos, size, color{ 0, 0, 0, 0 * fraction.value }, color{ 30, 30, 30, 100 * fraction.value }, false );
         render::filled_rect( pos, size, color{ 30, 30, 30, 80 * fraction.value }, 3.0f );
         render::filled_rect( pos.x + size.x - 3.0f, pos.y, 3.0f, size.y, color{ g_vars.ui_theme.value, 255 * fraction.value }, 3.0f );
-
-        /* text */
-        render::string( fonts::montserrat_semibold, ( pos.x + 7 ), pos.y + 4, color{ 200, 200, 200, 255 * fraction.value }, notification->text );
+        render::string( fonts::montserrat_semibold, ( pos.x + 7 ), pos.y + 4, color{ 200, 200, 200, 255 * fraction.value }, notify->text );
 
         position.y += size.y;
     }

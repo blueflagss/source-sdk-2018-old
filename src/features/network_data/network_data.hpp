@@ -10,7 +10,7 @@
 
 extern float assign_range_multiplier( int bits, double range );
 
-class netvar_compression {
+class network_data {
 private:
     inline float get_new( float old_val, float new_val, float tolerance ) {
         const float delta = new_val - old_val;
@@ -20,7 +20,8 @@ private:
     inline vector_3d get_new( vector_3d old_val, vector_3d new_val, float tolerance ) {
         return { get_new( old_val.x, new_val.x, tolerance ),
                  get_new( old_val.y, new_val.y, tolerance ),
-                 get_new( old_val.z, new_val.z, tolerance ) };
+                 get_new( old_val.z, new_val.z, tolerance ) 
+        };
     }
 
     template< typename T >
@@ -43,4 +44,4 @@ protected:
     std::vector< compressed_netvar< float > > float_vars;
 };
 
-inline netvar_compression g_netvar_compression = { };
+inline network_data g_network_data = { };

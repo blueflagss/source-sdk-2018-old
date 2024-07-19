@@ -1,13 +1,14 @@
 #include "frame_stage_notify.hpp"
-#include <features/animations/animation_sync.hpp>
-#include <features/engine_prediction/engine_prediction.hpp>
-#include <features/visuals/visuals.hpp>
+#include <features/features.hpp>
+#include <features/prediction_manager/prediction_manager.hpp>
 
 void __fastcall hooks::frame_stage_notify::hook( REGISTERS, client_frame_stage stage ) {
+    globals::local_player = ( !g_interfaces.engine_client->is_in_game() || !g_interfaces.engine_client->is_connected()) ? nullptr : g_interfaces.entity_list->get_client_entity< c_cs_player * >( g_interfaces.engine_client->get_local_player( ) );
+
     if ( !globals::local_player )
         return original.fastcall< void >( REGISTERS_OUT, stage );
 
-    static auto override_post_processing_disable = signature::find( XOR( "client.dll" ), XOR( "80 3D ? ? ? ? ? 53 56 57 0F 85" ) ).add( 0x2 ).deref( ).get< bool * >( );
+    static auto override_post_processing_disable = signature::find( _xs( "client.dll" ), _xs( "80 3D ? ? ? ? ? 53 56 57 0F 85" ) ).add( 0x2 ).deref( ).get< bool * >( );
 
     if ( override_post_processing_disable )
         *override_post_processing_disable = g_vars.visuals_other_remove_post_processing.value;
@@ -18,6 +19,7 @@ void __fastcall hooks::frame_stage_notify::hook( REGISTERS, client_frame_stage s
     g_animations.on_pre_frame_stage_notify( stage );
 
     if ( stage == frame_render_start ) {
+        g_shot_manager.process_shots( );
         g_visuals.world_modulation( );
 
         if ( g_vars.visuals_other_remove_flash_overlay.value ) {
@@ -36,14 +38,11 @@ void __fastcall hooks::frame_stage_notify::hook( REGISTERS, client_frame_stage s
         if ( globals::local_player && globals::local_player->alive( ) ) {
             const auto view_model = g_interfaces.entity_list->get_client_entity_from_handle< c_view_model * >( globals::local_player->viewmodel_handle( ) );
 
-            /* restore viewmodel when model renders a scene */
             if ( view_model && globals::local_player->viewmodel_handle( ) != 0xFFFFFFF ) {
-                view_model->cycle( ) = g_prediction.weapon_cycle;
-                view_model->sequence( ) = g_prediction.weapon_sequence;
-                view_model->animtime( ) = g_prediction.weapon_animtime;
+                view_model->cycle( ) = g_prediction_context.weapon_cycle;
+                view_model->sequence( ) = g_prediction_context.weapon_sequence;
+                view_model->animtime( ) = g_prediction_context.weapon_animtime;
             }
-
-            g_animations.maintain_local_animations( );
         }
     }
 

@@ -75,7 +75,7 @@ public:
     }
 
     void get_matrices_for_view( const c_view_setup &view, v_matrix *world_to_view, v_matrix *view_to_projection, v_matrix *world_to_projection, v_matrix *world_to_pixels ) {
-        return utils::get_method< void( __thiscall * )( void *, const c_view_setup &, v_matrix *, v_matrix *, v_matrix *, v_matrix * ) >( this, 50 )( this, view, world_to_view, view_to_projection, world_to_projection, world_to_pixels );
+        return utils::get_method< void( __thiscall * )( void *, const c_view_setup &, v_matrix *, v_matrix *, v_matrix *, v_matrix * ) >( this, 56 )( this, view, world_to_view, view_to_projection, world_to_projection, world_to_pixels );
     }
 
 private:

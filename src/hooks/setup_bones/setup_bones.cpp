@@ -7,13 +7,13 @@ bool __fastcall hooks::setup_bones::hook( REGISTERS, matrix_3x4 *out, int bones,
     if ( !base_entity || !base_entity->alive( ) )
         return original.fastcall< bool >( REGISTERS_OUT, out, out, mask, curtime );
 
-    static auto &g_model_bone_counter = *signature::find( XOR( "client.dll" ), XOR( "3B 05 ? ? ? ? 0F 84 ? ? ? ? 8B 47" ) ).add( 2 ).deref( ).get< int * >( );
+    static auto &g_model_bone_counter = *signature::find( _xs( "client.dll" ), _xs( "3B 05 ? ? ? ? 0F 84 ? ? ? ? 8B 47" ) ).add( 2 ).deref( ).get< int * >( );
  
     auto owner = base_entity->get_root_move_parent( );
     auto main_entity = owner ? owner : base_entity;
 
     if ( main_entity->is_player( ) && !globals::is_building_bones[ base_entity->index( ) ] ) {
-        static auto attachment_helper = signature::find( XOR( "client.dll" ), XOR( "55 8B EC 83 EC 48 53 8B 5D 08 89 4D F4 56 57 85 DB 0F 84" ) ).get< void( __thiscall * )( void *, void * ) >( );
+        static auto attachment_helper = signature::find( _xs( "client.dll" ), _xs( "55 8B EC 83 EC 48 53 8B 5D 08 89 4D F4 56 57 85 DB 0F 84" ) ).get< void( __thiscall * )( void *, void * ) >( );
 
         auto base_animating = reinterpret_cast< c_base_entity * >( ecx );
 
@@ -44,6 +44,6 @@ bool __fastcall hooks::setup_bones::hook( REGISTERS, matrix_3x4 *out, int bones,
 }
 
 void hooks::setup_bones::init( ) {
-    original = safetyhook::create_inline( signature::find( XOR( "client.dll" ), XOR( "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? 56 57 8B F9 8B 0D" ) ).get< void * >( ),
+    original = safetyhook::create_inline( signature::find( _xs( "client.dll" ), _xs( "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? 56 57 8B F9 8B 0D" ) ).get< void * >( ),
                                           setup_bones::hook );
 }

@@ -1,5 +1,5 @@
 #include "movement.hpp"
-#include <features/engine_prediction/engine_prediction.hpp>
+#include <features/prediction_manager/prediction_manager.hpp>
 
 void movement::on_create_move( c_user_cmd *cmd, const vector_3d &old_angles ) {
     if ( !globals::local_player )
@@ -26,7 +26,7 @@ void movement::on_create_move( c_user_cmd *cmd, const vector_3d &old_angles ) {
         if ( g_vars.misc_bunny_hop.value )
             cmd->buttons &= ~buttons::jump;
 
-        if ( math::length_2d( g_prediction.predicted_velocity ) >= 30.0f ) {
+        if ( math::length_2d( g_prediction_context.velocity ) >= 30.0f ) {
             switch ( g_vars.misc_auto_strafe_type.value ) {
                 case strafe_type::view_angles: {
                     if ( std::abs( cmd->mousedx ) > 2 ) {

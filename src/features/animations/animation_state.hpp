@@ -1,6 +1,18 @@
 #pragma once
 #include <globals.hpp>
 
+const float CS_PLAYER_SPEED_RUN = 260.0f;
+const float CS_PLAYER_SPEED_VIP = 227.0f;
+const float CS_PLAYER_SPEED_SHIELD = 160.0f;
+const float CS_PLAYER_SPEED_HAS_HOSTAGE = 200.0f;
+const float CS_PLAYER_SPEED_STOPPED = 1.0f;
+const float CS_PLAYER_SPEED_OBSERVER = 900.0f;
+
+const float CS_PLAYER_SPEED_DUCK_MODIFIER = 0.34f;
+const float CS_PLAYER_SPEED_WALK_MODIFIER = 0.52f;
+const float CS_PLAYER_SPEED_CLIMB_MODIFIER = 0.34f;
+const float CS_PLAYER_HEAVYARMOR_FLINCH_MODIFIER = 0.5f;
+
 typedef enum {
     ACT_INVALID = -1,
     ACT_RESET = 0,
@@ -1157,6 +1169,11 @@ enum PoseParam_t {
 
 namespace valve_math
 {
+    template< class T >
+    FORCEINLINE T Lerp( float flPercent, T const &A, T const &B ) {
+        return A + ( B - A ) * flPercent;
+    }
+
     __forceinline vector_3d approach( vector_3d target, vector_3d value, float speed ) {
         vector_3d diff = ( target - value );
 
@@ -1303,7 +1320,7 @@ namespace valve_math
 class activity_modifiers_wrapper {
 private:
     void add_activity_modifier( const char *name ) {
-        static auto add_activity_modifier = signature::find( XOR( "server.dll" ), XOR( "E8 ? ? ? ? 8B 43 50" ) ).add( 0x1 ).rel32( ).get< void( __thiscall * )( void *, const char * ) >( );
+        static auto add_activity_modifier = signature::find( _xs( "server.dll" ), _xs( "E8 ? ? ? ? 8B 43 50" ) ).add( 0x1 ).rel32( ).get< void( __thiscall * )( void *, const char * ) >( );
 
         return add_activity_modifier( this, name );
     }
@@ -1331,6 +1348,31 @@ public:
     }
 };
 
+enum animstate_pose_param_idx_t {
+    PLAYER_POSE_PARAM_FIRST = 0,
+    PLAYER_POSE_PARAM_LEAN_YAW = PLAYER_POSE_PARAM_FIRST,
+    PLAYER_POSE_PARAM_SPEED,
+    PLAYER_POSE_PARAM_LADDER_SPEED,
+    PLAYER_POSE_PARAM_LADDER_YAW,
+    PLAYER_POSE_PARAM_MOVE_YAW,
+    PLAYER_POSE_PARAM_RUN,
+    PLAYER_POSE_PARAM_BODY_YAW,
+    PLAYER_POSE_PARAM_BODY_PITCH,
+    PLAYER_POSE_PARAM_DEATH_YAW,
+    PLAYER_POSE_PARAM_STAND,
+    PLAYER_POSE_PARAM_JUMP_FALL,
+    PLAYER_POSE_PARAM_AIM_BLEND_STAND_IDLE,
+    PLAYER_POSE_PARAM_AIM_BLEND_CROUCH_IDLE,
+    PLAYER_POSE_PARAM_STRAFE_DIR,
+    PLAYER_POSE_PARAM_AIM_BLEND_STAND_WALK,
+    PLAYER_POSE_PARAM_AIM_BLEND_STAND_RUN,
+    PLAYER_POSE_PARAM_AIM_BLEND_CROUCH_WALK,
+    PLAYER_POSE_PARAM_MOVE_BLEND_WALK,
+    PLAYER_POSE_PARAM_MOVE_BLEND_RUN,
+    PLAYER_POSE_PARAM_MOVE_BLEND_CROUCH_WALK,
+    //PLAYER_POSE_PARAM_STRAFE_CROSS,
+    PLAYER_POSE_PARAM_COUNT,
+};
 class c_animation_state_rebuilt {
 public:
     void try_initiate_animation( c_cs_player *player, int layer, int activity, c_utl_vector< uint16_t > modifiers );
@@ -1346,10 +1388,12 @@ public:
     void update_animation_state( c_csgo_player_animstate *animstate, const vector_3d &angles, int tick, bool handle_events = false );
     void set_weight( c_csgo_player_animstate *state, int layer_idx, float weight );
     float get_layer_ideal_weight_from_sequence_cycle( c_csgo_player_animstate *state, int layer_idx );
+    void update_anim_layer( c_csgo_player_animstate *state, int layer_idx, int seq, float playback_rate, float weight, float cycle );
     bool is_layer_sequence_completed( c_csgo_player_animstate *state, int layer_idx );
     void increment_layer_cycle( c_csgo_player_animstate *state, int layer_idx, bool allow_loop );
     int get_layer_activity( c_csgo_player_animstate *state, AnimationLayer_t layer_idx );
 
+    bool m_bJumping = false;
     float adjust_weight = 0.0f;
 };
 

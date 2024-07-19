@@ -8,6 +8,6 @@ float __fastcall hooks::calc_viewmodel_bob::hook( REGISTERS ) {
 }
 
 void hooks::calc_viewmodel_bob::init( ) {
-    original = safetyhook::create_inline( signature::find( "client.dll", XOR( "55 8B EC A1 ? ? ? ? 83 EC 10 8B 40 34" ) ).get< void * >( ),
+    original = safetyhook::create_inline( signature::find( "client.dll", _xs( "55 8B EC A1 ? ? ? ? 83 EC 10 8B 40 34" ) ).get< void * >( ),
                                           calc_viewmodel_bob::hook );
 }

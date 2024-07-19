@@ -12,13 +12,13 @@ public:
     vector_3d abs_view_angles;
     int buttons;
     int old_buttons;
-    float forwardmove;
-    float sidemove;
+    float forward_move;
+    float side_move;
     float upmove;
     float max_speed;
     float client_max_speed;
-    vector_3d vel;
-    vector_3d trailing_vel;
+    vector_3d velocity;
+    vector_3d trailing_velocity;
     float trailing_vel_time;
     vector_3d ang;
     vector_3d old_ang;

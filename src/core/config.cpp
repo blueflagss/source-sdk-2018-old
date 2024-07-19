@@ -12,16 +12,16 @@ void config::impl::init( ) {
     char file_path[ MAX_PATH ];
 
     if ( SUCCEEDED( SHGetFolderPathA( NULL, CSIDL_APPDATA, NULL, 0, file_path ) ) ) {
-        this->folder_path = std::string( file_path ) + "\\hypnotic\\";
+        this->folder_path = std::string( file_path ) + "\\geekbar\\";
 
         if ( !std::filesystem::exists( this->folder_path ) )
             std::filesystem::create_directory( this->folder_path );
     }
 
-    std::string default_name = this->folder_path + "Default";
+    std::string default_name = this->folder_path + _xs( "Default" );
 
     if ( !std::filesystem::exists( default_name ) ) {
-        if ( !g_config.save( "Default" ) )
+        if ( !g_config.save( _xs( "Default" ) ) )
             return;
     }
 }
@@ -52,7 +52,7 @@ bool config::impl::get_hotkey( const config_int &virtual_key, int key_type ) {
 bool config::impl::save( const std::string &name ) {
     nlohmann::json j;
 
-    std::ofstream file{ this->folder_path + name + ".json" };
+    std::ofstream file{ this->folder_path + name + _xs( ".json" ) };
 
     if ( !file.is_open( ) )
         return false;
@@ -109,7 +109,9 @@ bool config::impl::save( const std::string &name ) {
                 j[ option->name ][ 2 ] = option->value.z;
             } break;
             default: {
+                #ifdef _DEBUG
                 spdlog::error( "Found config value with unknown type" );
+                #endif
                 return false;
             } break;
         }
@@ -118,21 +120,21 @@ bool config::impl::save( const std::string &name ) {
     file << std::setw( 4 ) << j << std::endl;
     file.close( );
 
-    g_notify.add( fmt::format( "Saved config \"{}\"", name ) );
+    g_notify.add( notify_type::none, false, fmt::format( _xs( "Saved config \"{}\"" ), name ) );
 
     return true;
 }
 
 bool config::impl::remove( const std::string &name ) {
-    std::remove( std::string( this->folder_path + name + ".json" ).c_str( ) );
+    std::remove( std::string( this->folder_path + name + _xs( ".json" ) ).c_str( ) );
 
-    g_notify.add( fmt::format( "Removed config \"{}\"", name ) );
+    g_notify.add( notify_type::none, false, fmt::format( _xs( "Removed config \"{}\"" ), name ) );
 
     return true;
 }
 
 bool config::impl::load( const std::string &name ) {
-    std::ifstream file{ this->folder_path + name + ".json" };
+    std::ifstream file{ this->folder_path + name + _xs( ".json" ) };
 
     if ( !file.is_open( ) )
         return false;
@@ -193,7 +195,9 @@ bool config::impl::load( const std::string &name ) {
                 option->value.z = j[ option->name ][ 2 ];
             } break;
             default: {
+#ifdef _DEBUG
                 spdlog::error( "Found config value with unknown type" );
+#endif
                 return false;
             } break;
         }
@@ -201,7 +205,7 @@ bool config::impl::load( const std::string &name ) {
 
     file.close( );
 
-    g_notify.add( fmt::format( "Loaded config \"{}\"", name ) );
+    g_notify.add( notify_type::none, false, fmt::format( _xs( "Loaded config \"{}\"" ), name ) );
 
     return true;
 }

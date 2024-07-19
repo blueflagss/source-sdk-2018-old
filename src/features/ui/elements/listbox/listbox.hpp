@@ -16,7 +16,7 @@ namespace penumbra
             this->items = items;
 
             if ( filter_items ) {
-                this->text_box = this->add_object< penumbra::textbox >( name + XOR( "__textbox" ), &this->filter_text, 50 );
+                this->text_box = this->add_object< penumbra::textbox >( name + _xs( "__textbox" ), &this->filter_text, 50 );
                 this->text_box->is_in_object = true;
             }                
         }

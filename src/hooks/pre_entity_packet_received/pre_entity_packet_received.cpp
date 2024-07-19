@@ -1,6 +1,5 @@
 #include "pre_entity_packet_received.hpp"
-#include <features/engine_prediction/netvar_compression.hpp>
-#include <features/animations/animation_sync.hpp>
+#include <features/features.hpp>
 
 void __fastcall hooks::pre_entity_packet_received::hook( REGISTERS, int commands_acknowledged, int current_world_update_packet, int server_ticks_elapsed ) {
     globals::local_player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( g_interfaces.engine_client->get_local_player( ) );
@@ -12,7 +11,7 @@ void __fastcall hooks::pre_entity_packet_received::hook( REGISTERS, int commands
         //    copy_helper.transfer_data( "PreEntityPacketReceived", globals::local_player->index( ), globals::local_player->get_pred_desc_map( ) );
         //}
         //memcpy( g_animations.tranny_code_premium_layers.data( ), globals::local_player->anim_overlays( ), g_animations.tranny_code_premium_layers.size( ) );
-        g_netvar_compression.pre_update( globals::local_player );
+        g_network_data.pre_update( globals::local_player );
     }
 
     return original.fastcall< void >( REGISTERS_OUT, commands_acknowledged, current_world_update_packet, server_ticks_elapsed );

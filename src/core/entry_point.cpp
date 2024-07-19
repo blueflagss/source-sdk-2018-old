@@ -47,8 +47,8 @@ int __stdcall cheat_main( void *loader_data ) {
     while ( !GetModuleHandleA( "serverbrowser.dll" ) )
         std::this_thread::sleep_for( std::chrono::milliseconds( 400 ) );
 
-    AllocateThreadID = ( ThreadIDFn ) ( GetProcAddress( GetModuleHandleA( XOR( "tier0.dll" ) ), XOR( "AllocateThreadID" ) ) );
-    FreeThreadID = ( ThreadIDFn ) ( GetProcAddress( GetModuleHandleA( XOR( "tier0.dll" ) ), XOR( "FreeThreadID" ) ) );
+    AllocateThreadID = ( ThreadIDFn ) ( GetProcAddress( GetModuleHandleA( _xs( "tier0.dll" ) ), _xs( "AllocateThreadID" ) ) );
+    FreeThreadID = ( ThreadIDFn ) ( GetProcAddress( GetModuleHandleA( _xs( "tier0.dll" ) ), _xs( "FreeThreadID" ) ) );
 
     g_logging.init( );
 
@@ -64,8 +64,7 @@ int __stdcall cheat_main( void *loader_data ) {
 
     globals::ui::screen_size = {
             static_cast< float >( width ),
-            static_cast< float >( height )
-    };
+            static_cast< float >( height ) };
 
     Threading::InitThreads( );
 
@@ -80,7 +79,7 @@ int __stdcall cheat_main( void *loader_data ) {
     g_menu.init( );
     g_hooks.init( );
     g_misc.unlock_hidden_cvars( );
-    g_notify.add( "Loaded successfully" );
+    g_notify.add( notify_type::none, false, "Loaded successfully" );
 
 #ifdef _DEBUG
     spdlog::info( "cheat: initialized in {}ms.", duration );

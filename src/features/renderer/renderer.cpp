@@ -1,34 +1,39 @@
 #include "renderer.hpp"
-#include <resources/small_font_recreate.hpp>
+#include <resources/04b03.hpp>
 #include <resources/montserrat.hpp>
-#include <resources/montserrat_semibold.hpp>
+#include <resources/csgo_hud_icons.hpp>
 #include <resources/font_awesome.hpp>
 #include <icons_fa.hpp>
 #include <globals.hpp>
 #include <imgui/imgui_internal.h>
 
 void render::init( HWND hwnd, IDirect3DDevice9 *device ) {
+    device_ptr = device;
+
     ImGui::CreateContext( );
     ImGui_ImplWin32_Init( hwnd );
     ImGui_ImplDX9_Init( device );
 
     auto &io = ImGui::GetIO( );
 
-    fonts::visuals_indicators = create_from_system( "C:\\Windows\\Fonts\\verdanab.ttf", 27.5f, 0, io.Fonts->GetGlyphRangesCyrillic( ) );
-    fonts::visuals_04b03 = create_from_system( small_font_data, 8.0f, sizeof( small_font_data ), ImGuiFreeTypeBuilderFlags_LightHinting, io.Fonts->GetGlyphRangesCyrillic( ) );
-    fonts::visuals_segoe_ui = create_from_system( "C:\\Windows\\Fonts\\seguisb.ttf", 16.0f, ImGuiFreeTypeBuilderFlags_LightHinting, io.Fonts->GetGlyphRangesCyrillic( ) );
-    fonts::montserrat_semibold = create_from_system( montserrat_semibold_data, 16.0f, sizeof( montserrat_semibold_data ), 0, io.Fonts->GetGlyphRangesCyrillic( ) );
-    fonts::montserrat = create_from_system( montserrat_data, 15.5f, sizeof( montserrat_data ), 0, nullptr );
+    static const ImWchar csgo_icons_ranges[] = { 0xE001, 0xE205, 0 };
+
+    fonts::csgo_icons = create_from_system( csgo_icons_compressed_data, 14.0f, 0, csgo_icons_ranges );
+    fonts::visuals_indicators = create_from_system( _xs( "C:\\Windows\\Fonts\\verdanab.ttf" ), 27.5f, 0, io.Fonts->GetGlyphRangesCyrillic( ) );
+    fonts::visuals_04b03 = create_from_system( small_compressed_data, 8.0f, ImGuiFreeTypeBuilderFlags_LightHinting, io.Fonts->GetGlyphRangesCyrillic( ) );
+    fonts::visuals_segoe_ui = create_from_system( _xs( "C:\\Windows\\Fonts\\seguisb.ttf" ), 16.0f, ImGuiFreeTypeBuilderFlags_LightHinting, io.Fonts->GetGlyphRangesCyrillic( ) );
+    fonts::montserrat_semibold = create_from_system( montserrat_semibold_compressed_data, 16.0f, 0, io.Fonts->GetGlyphRangesCyrillic( ) );
+    fonts::montserrat = create_from_system( montserrat_semibold_compressed_data, 15.5f, 0, nullptr );
 
     ImFontConfig cfg;
 
     cfg.MergeMode = true;
     cfg.GlyphMinAdvanceX = 12.0f;
 
-    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+    static const ImWchar fa_icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 
-    fonts::montserrat_main = create_from_system( montserrat_data, 13.0f, sizeof( montserrat_data ), 0, io.Fonts->GetGlyphRangesCyrillic( ), &cfg );
-    fonts::font_awesome = create_from_system( font_awesome_data, 14.0f, sizeof( font_awesome_data ), 0, icons_ranges, &cfg );
+    fonts::montserrat_main = create_from_system( montserrat_compressed_data, 13.0f, 0, io.Fonts->GetGlyphRangesCyrillic( ), &cfg );
+    fonts::font_awesome = create_from_system( fontawesome_compressed_data, 14.0f, 0, fa_icons_ranges, &cfg );
 
     io.Fonts->Build( );
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
@@ -78,8 +83,7 @@ void render::finish_draw_states( IDirect3DDevice9 *device ) {
 }
 
 bool render::world_to_screen( const glm::vec3 &point, glm::vec2 &screen ) {
-    static auto view_matrix = signature::find( "client.dll", "0F 10 05 ? ? ? ? 8D 85 ? ? ? ? B9" ).add( 3 ).deref( ).add( 176 ).get< std::uintptr_t >( );
-    const auto &world_matrix = *reinterpret_cast< matrix_3x4 * >( view_matrix );
+    const auto &world_matrix = globals::view_matrix.as_3x4( );
 
     screen.x = world_matrix[ 0 ][ 0 ] * point.x + world_matrix[ 0 ][ 1 ] * point.y + world_matrix[ 0 ][ 2 ] * point.z + world_matrix[ 0 ][ 3 ];
     screen.y = world_matrix[ 1 ][ 0 ] * point.x + world_matrix[ 1 ][ 1 ] * point.y + world_matrix[ 1 ][ 2 ] * point.z + world_matrix[ 1 ][ 3 ];
@@ -100,7 +104,6 @@ bool render::world_to_screen( const glm::vec3 &point, glm::vec2 &screen ) {
 
     return true;
 }
-
 
 glm::vec2 render::get_text_size( ImFont *font, const std::string &text ) {
     ImGui::PushFont( font );
@@ -156,16 +159,20 @@ ImFont *render::create_from_system( const std::string &font_path, float font_siz
     return ImGui::GetIO( ).Fonts->AddFontFromFileTTF( font_path.c_str( ), font_size, &cfg, glyph_ranges );
 }
 
-ImFont *render::create_from_system( std::uint8_t *data, float font_size, size_t data_size, const int flags,
-                                    const ImWchar *glyph_ranges ) {
+ImFont *render::create_from_system( std::span< uint32_t > data, float font_size, const int flags, const ImWchar *glyph_ranges ) {
     ImFontConfig cfg = { };
     cfg.FontBuilderFlags |= flags;
-    return ImGui::GetIO( ).Fonts->AddFontFromMemoryTTF( data, data_size, font_size, &cfg, glyph_ranges );
+
+    auto &io = ImGui::GetIO( );
+
+    return io.Fonts->AddFontFromMemoryCompressedTTF( data.data( ), data.size_bytes( ), font_size, &cfg, glyph_ranges ? glyph_ranges : io.Fonts->GetGlyphRangesCyrillic( ) );
 }
 
-ImFont *render::create_from_system( std::uint8_t *data, float font_size, size_t data_size, const int flags, const ImWchar *glyph_ranges, ImFontConfig *cfg ) {
+ImFont *render::create_from_system( std::span< uint32_t > data, float font_size, const int flags, const ImWchar *glyph_ranges, ImFontConfig *cfg ) {
     cfg->FontBuilderFlags |= flags;
-    return ImGui::GetIO( ).Fonts->AddFontFromMemoryTTF( data, data_size, font_size, cfg, glyph_ranges );
+    auto &io = ImGui::GetIO( );
+
+    return io.Fonts->AddFontFromMemoryCompressedTTF( data.data( ), data.size_bytes( ), font_size, cfg, glyph_ranges ? glyph_ranges : io.Fonts->GetGlyphRangesCyrillic( ) );
 }
 
 void render::filled_rect( int x, int y, int w, int h, color col, float rounding, int corner_flags ) {
@@ -254,6 +261,24 @@ void render::rect( glm::vec2 pos, glm::vec2 size, color col, float rounding, int
 void render::show_objects( ) {
     ImGui::Render( );
     ImGui_ImplDX9_RenderDrawData( ImGui::GetDrawData( ) );
+}
+
+void render::blur( int x, int y, int w, int h, color col, float rounding ) {
+    draw_list->AddCallback( blur_utils::BeginBlur, nullptr );
+
+    for ( int i = 0; i < 8; ++i ) {
+        draw_list->AddCallback( blur_utils::FirstBlurPass, nullptr );
+        draw_list->AddImage( blur_utils::blurTexture, { -1.0f, -1.0f }, { 1.0f, 1.0f } );
+        draw_list->AddCallback( blur_utils::SecondBlurPass, nullptr );
+        draw_list->AddImage( blur_utils::blurTexture, { -1.0f, -1.0f }, { 1.0f, 1.0f } );
+    }
+
+    draw_list->AddCallback( blur_utils::EndBlur, nullptr );
+    draw_list->AddImageRounded( blur_utils::blurTexture, { ImFloor( x ), ImFloor( y ) }, { ImFloor( x + w ), ImFloor( y + h ) }, { ImFloor( x ) / blur_utils::backbufferWidth, ImFloor( y ) / blur_utils::backbufferHeight }, { ImFloor( x + w ) / blur_utils::backbufferWidth, ImFloor( y + h ) / blur_utils::backbufferHeight }, IM_COL32( col.r, col.g, col.b, col.a ), 7.f );
+}
+
+void render::blur( glm::vec2 pos, glm::vec2 size, color col, float rounding ) {
+    blur( pos.x, pos.y, size.x, size.y, col, rounding );
 }
 
 void render::start( ) {

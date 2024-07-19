@@ -140,6 +140,6 @@ public:
     }
 
     __inline bool get_player_view( c_view_setup &setup ) {
-        return utils::get_method< bool( __thiscall * )( void *, c_view_setup & ) >( this, 59 )( this, setup );
+        return utils::get_method< bool( __thiscall * )( void *, c_view_setup & ) >( this, 69 )( this, setup );
     }
 };

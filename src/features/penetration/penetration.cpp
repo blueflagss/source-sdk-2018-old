@@ -38,7 +38,7 @@ c_fire_bullet_data penetration_system::run( const vector_3d src, const vector_3d
     if ( !globals::local_weapon )
         return { };
 
-    const auto data = info_override == nullptr ? globals::local_weapon->get_weapon_data( ) : info_override;
+    const auto data = info_override == nullptr ? globals::local_weapon_data : info_override;
 
     if ( !data )
         return { };
@@ -77,7 +77,7 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
     for ( int i = 0; i < bones.size( ); i++ )
         temp_mat[ i ] = const_cast< matrix_3x4 * >( &bones[ i ] );
 
-    const auto ret = proxy_trace_to_studio_csgo_hitgroups_priority( ent, mask_shot_hull | contents_hitbox, &ent->origin( ), &tr, &r, temp_mat );
+    const auto ret = proxy_trace_to_studio_csgo_hitgroups_priority( ent, mask_shot | contents_hitbox, &ent->origin( ), &tr, &r, temp_mat );
 
     fire_info.did_hit = ret;
 
@@ -100,7 +100,7 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
         g_interfaces.engine_trace->trace_ray( r, mask_shot, &filter, &enter_trace );
 
         if ( !fire_info.did_hit ) {
-            const auto dist = glm::length( src - ent->get_abs_origin( ) );
+            const auto dist = glm::length( src - ent->origin( ) );
             const auto behind = glm::length( src - enter_trace.end_pos ) > dist;
 
             if ( behind || enter_trace.fraction == 1.f ) {
@@ -156,7 +156,7 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
 }
 
 bool penetration_system::is_breakable_entity( c_cs_player *ent ) {
-    static auto _is_breakable = signature::find( XOR( "client.dll" ), XOR( "E8 ? ? ? ? 84 C0 75 A1" ) ).add( 0x1 ).rel32( );
+    static auto _is_breakable = signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? 84 C0 75 A1" ) ).add( 0x1 ).rel32( );
     static auto takedamage_offset = _is_breakable.add( 38 ).deref( ).get< std::uint32_t >( );
 
     if ( !ent || !ent->index( ) )
@@ -415,7 +415,7 @@ bool penetration_system::proxy_trace_to_studio_csgo_hitgroups_priority( c_cs_pla
     const auto mat_ = uintptr_t( mat );
     const auto set_ = uintptr_t( studio_model->hitbox_set( ent->hitbox_set( ) ) );
     const auto fn_ = g_addresses.trace_to_studio_csgo_hitgroups_priority.get< uintptr_t >( );
-    const auto chdr_ = uintptr_t( ent->cstudio_hdr( ) );
+    const auto chdr_ = uintptr_t( ent->get_model_ptr( ) );
 
     auto rval = false;
     __asm

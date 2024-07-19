@@ -1,6 +1,6 @@
-#include "netvar_compression.hpp"
+#include "network_data.hpp"
 
-void netvar_compression::init( c_cs_player *player ) {
+void network_data::init( c_cs_player *player ) {
     if ( initialized )
         return;
 
@@ -17,7 +17,7 @@ void netvar_compression::init( c_cs_player *player ) {
     initialized = true;
 }
 
-void netvar_compression::pre_update( c_cs_player *player ) {
+void network_data::pre_update( c_cs_player *player ) {
     written_pre_vars = true;
 
     auto player_addr = reinterpret_cast< size_t >( player );
@@ -29,7 +29,7 @@ void netvar_compression::pre_update( c_cs_player *player ) {
         var.last_value = *reinterpret_cast< float * >( player_addr + var.offset );
 }
 
-void netvar_compression::post_update( c_cs_player *player ) {
+void network_data::post_update( c_cs_player *player ) {
     // make sure we atleast have 1 record before current command
     if ( !written_pre_vars )
         return;
