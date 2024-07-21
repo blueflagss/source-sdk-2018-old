@@ -32,9 +32,9 @@ namespace penumbra
         std::string *value = nullptr;
         int max_length;
         glm::vec2 line_position, line_size;
-        bool _is_focused = false;
+        bool is_focused = false;
         bool hold_state = false;
         bool select_state = false;
-        bool _hovered_in_dropdown = false;
+        bool hovered_in_dropdown = false;
     };
 }// namespace penumbra

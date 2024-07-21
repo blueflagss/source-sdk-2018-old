@@ -23,9 +23,6 @@ void penumbra::colorpicker::paint( ) {
     this->animate( );
 
     auto draw_color_rectangle_squares = [ & ]( glm::vec2 pos, glm::vec2 size, bool vertical_squares = false ) {
-        if ( globals::fade_opacity[ this->get_main_window( ) ] < 0.95f )
-            return;
-
         const auto square_side_len = vertical_squares ? size.x * 0.5f : size.y * 0.5f;
         auto alpha_color_flip = false;
         const auto remaining_len = vertical_squares ? std::fmodf( size.y, square_side_len ) : std::fmodf( size.x, square_side_len );
@@ -53,11 +50,13 @@ void penumbra::colorpicker::paint( ) {
 
     auto active_fraction = std::clamp< float >( animation_active.value, 0.0f, 1.0f );
 
-    render::circle_filled( this->position.x - 4.0f, this->position.y + 5, 8.f, 30, color{ *this->value, this->value->a * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ *this->value, 200 * globals::fade_opacity[ this->get_main_window( ) ] }, this->fade_fraction ) );
-    render::circle( this->position.x - 4.0f, this->position.y + 5, 8.f, 60, color{ *this->value, 200 * globals::fade_opacity[ this->get_main_window( ) ] }, 1.5f );
+    render::filled_rect( this->position, this->size, color{ 47, 47, 47, 200 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 65, 65, 65, 200 * globals::fade_opacity[ this->get_main_window( ) ] }, this->fade_fraction ), 3.0f );
+    draw_color_rectangle_squares( { this->position.x + 1, this->position.y + 1 }, { this->size.x - 2, this->size.y - 2 } );
+    render::filled_rect( this->position, this->size, color{ *this->value, this->value->a * globals::fade_opacity[ this->get_main_window( ) ] }, 3.0f );
+    render::rect( this->position, this->size, color{ 9, 9, 9, 120 * globals::fade_opacity[ this->get_main_window( ) ] }, 2.0f );
 
-    this->rectangle_pos = glm::vec2{ this->position.x - 10, this->position.y - 2 };
-    this->rectangle_dimensions = glm::vec2{ 165.f * animation_active2.value, this->use_opacity ? 153.f * animation_active2.value : 140.f * animation_active2.value };
+    this->rectangle_pos = glm::vec2{ this->position.x, this->position.y };
+    this->rectangle_dimensions = glm::vec2{ 165.f * animation_active2.value, ( this->use_opacity ? 153.f : 140.f ) * animation_active2.value };
 
     if ( !this->is_opened && get_focused< object >( ) == this && animation_active2.value < 0.10f ) {
         remove_object_focus( );
@@ -129,7 +128,7 @@ void penumbra::colorpicker::input( ) {
     auto parent_object = this->get_parent( );
 
     this->_hovered_in_colorpicker_box = input::in_region( this->rectangle_pos, this->rectangle_dimensions );
-    this->is_hovered = input::in_region( this->position.x - this->size.x + 2, this->position.y - 6, 17, 19 );
+    this->is_hovered = input::in_region( this->position, this->size );
 
     if ( ( !get_focused< object >( ) && !parent_object->blocked( ) ) && this->is_hovered && input::key_pressed( VK_LBUTTON ) ) {
         this->is_opened = true;
@@ -140,10 +139,10 @@ void penumbra::colorpicker::input( ) {
 
     this->opacity_mouse_position = glm::vec2{ this->rectangle_opacity_pos.x + int( std::roundf( this->value->a / 255.f * this->rectangle_opacity_dimensions.x ) ), this->rectangle_opacity_pos.y / 2 };
 
-    if ( !this->is_opened && animation_active2.value < 0.80f )
+    if ( !this->is_opened )
         return;
 
-    if ( input::key_pressed( VK_LBUTTON ) ) {
+    if ( input::key_pressed( VK_LBUTTON ) && animation_active2.value > 0.90f ) {
         if ( input::in_region( this->rectangle_picker_pos, this->rectangle_picker_dimensions ) )
             this->focused_type = FOCUS_BOX;
 
@@ -174,8 +173,8 @@ void penumbra::colorpicker::input( ) {
             case FOCUS_BOX: {
                 auto mouse_delta = glm::vec2{ input::mouse_position.x - this->rectangle_picker_pos.x, mouse_position.y - this->rectangle_picker_pos.y };
 
-                this->color_hsv.s = 100 * std::clamp< float >( mouse_delta.x / rectangle_picker_dimensions.x, 0.f, 1.f );
-                this->color_hsv.v = 100 * ( 1.0f - std::clamp< float >( mouse_delta.y / rectangle_picker_dimensions.y, 0.f, 1.f ) );
+                this->color_hsv.s = 100 * std::clamp< float >( mouse_delta.x / rectangle_picker_dimensions.x, 0.01f, 1.f );
+                this->color_hsv.v = 100 * ( 1.0f - std::clamp< float >( mouse_delta.y / rectangle_picker_dimensions.y, 0.01f, 1.f ) );
             } break;
         }
     }

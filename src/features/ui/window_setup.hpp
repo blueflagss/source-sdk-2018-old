@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-#include <elements.hpp>
+#include <features\ui\elements\elements.hpp>
 #include <globals.hpp>
 #include <memory>
 #include <shared_mutex>
@@ -31,10 +31,10 @@ public:
     bool is_initialized = false;
     bool is_opened( );
 
-    std::shared_ptr< penumbra::listbox > config_list = nullptr; // g_vars.exploits_double_tap_limit.value
+    std::shared_ptr< penumbra::combobox > config_list = nullptr; // g_vars.exploits_double_tap_limit.value
     std::shared_ptr< penumbra::indicator< int > > shift_indicator = nullptr;
 
-    vector_2d main_window_dimensions{ 770.0f, 598.0f };
+    vector_2d main_window_dimensions{ 630.0f, 428.0f };
     vector_2d color_window_dimensions{ 364.0f, 440.0f };
 
     std::mutex mutex{ };

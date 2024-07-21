@@ -24,9 +24,14 @@ namespace penumbra
         bool opened = false;
     private:
         std::deque< std::pair< std::string, bool * > > items = { };
-
+        float list_item_height = 17.0f;
+        float scroll_offset = 0.f;
+        float scroll_fraction = 0.f;
+        float dropdown_height = 0.0f;
+        bool should_scroll = false;
+        float offset = 0.0f;
         bool show_fade = false;
-        bool _is_focused = false;
-        bool _hovered_in_dropdown = false;
+        bool is_focused = false;
+        bool hovered_in_dropdown = false;
     };
 }// namespace xpui

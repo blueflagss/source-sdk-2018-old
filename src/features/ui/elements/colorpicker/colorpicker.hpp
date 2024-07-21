@@ -15,7 +15,7 @@ namespace penumbra
         colorpicker( const std::string &name, color *value, bool use_opacity = true ) {
             this->element_type = TYPE_COLORPICKER;
             this->name = name;
-            this->size = glm::vec2{ 16.f, 9.f };
+            this->size = glm::vec2{ 14.0f, 14.0f };
 
             this->use_opacity = use_opacity;
             this->value = value;

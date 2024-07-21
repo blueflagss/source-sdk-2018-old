@@ -1,5 +1,6 @@
 #pragma once
 #include <features/ui/input/input.hpp>
+#include <features/ui/animations/animations.hpp>
 #include <fmt/format.h>
 
 namespace penumbra
@@ -43,17 +44,16 @@ namespace penumbra
 
             std::string percentage_format = fmt::format( "{}{}", static_cast< int >( *this->value ), this->precision );
 
-            render::filled_rect( this->position + SLIDER_OFFSET, this->size, color{ 24, 24, 24, 255 *  globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 32, 32, 32, 200 *  globals::fade_opacity[ this->get_main_window( ) ] }, this->fade_fraction ), 3.0f );
-            render::filled_rect( this->position.x, this->position.y + SLIDER_OFFSET.y, animation_lerp.value, this->size.y, color{ globals::theme_accent, 255 *  globals::fade_opacity[ this->get_main_window( ) ] }, 3.0f );
-
-            render::circle_filled( this->position.x + animation_lerp.value - 2.0f, this->position.y + SLIDER_OFFSET.y + 2.0f, 5.0f, 50.0f, color{ 255, 255, 255, 255 *  globals::fade_opacity[ this->get_main_window( ) ] } );
-            render::circle_filled( this->position.x + animation_lerp.value - 2.0f, this->position.y + SLIDER_OFFSET.y + 2.0f, 3.0f, 50.0f, color{ 180, 180, 180, 255 *  globals::fade_opacity[ this->get_main_window( ) ] } );
+            render::filled_rect( this->position + SLIDER_OFFSET, this->size, color{ 47, 47, 47, 200 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 65, 65, 65, 200 * globals::fade_opacity[ this->get_main_window( ) ] }, this->fade_fraction ), 3.0f );
+            
+            if ( animation_lerp.value > 1.f )
+                render::filled_rect( this->position.x, this->position.y + SLIDER_OFFSET.y, animation_lerp.value, this->size.y, color{ globals::theme_accent, 255 *  globals::fade_opacity[ this->get_main_window( ) ] }, 3.0f );
 
             auto percentage_dimensions = render::get_text_size( fonts::montserrat, percentage_format );
             auto center_object = glm::vec2{ this->position.x + ( this->size.x / 2 ) - percentage_dimensions.x / 2, this->position.y + SLIDER_OFFSET.y + ( this->size.y / 2 ) - percentage_dimensions.y / 2 };
 
-            render::string( fonts::montserrat, this->position.x + this->size.x - percentage_dimensions.x, this->position.y - 4.5f, color{ 200, 200, 200, 255 *  globals::fade_opacity[ this->get_main_window( ) ] }, percentage_format );
-            render::string( fonts::montserrat, this->position.x - 1.0f, this->position.y - 4.5f, color{ 200, 200, 200, 255 *  globals::fade_opacity[ this->get_main_window( ) ] }, this->name );
+            render::string( fonts::visuals_segoe_ui, this->position.x + this->size.x - percentage_dimensions.x + 1.5f, this->position.y - 4.5f, color{ 200, 200, 200, 255 *  globals::fade_opacity[ this->get_main_window( ) ] }, percentage_format );
+            render::string( fonts::visuals_segoe_ui, this->position.x - 1.0f, this->position.y - 4.5f, color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, this->name );
         }
 
         void input( ) override {

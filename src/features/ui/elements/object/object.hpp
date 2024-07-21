@@ -78,9 +78,10 @@ namespace penumbra
             return reinterpret_cast< T * >( this->parent );
         }
 
+        /* really unsafe way to get our parent window. */
         template< typename T = window >
-        inline T *get_main_window( ) { /* kinda shitty. */
-            auto current_parent = get_parent< object >( );
+        inline T *get_main_window( ) { 
+            const auto current_parent = get_parent< object >( );
 
             if ( this->element_type == TYPE_CHILD )
                 return current_parent->get_parent< T >( );
@@ -97,6 +98,7 @@ namespace penumbra
                     case TYPE_TAB: {
                         return reinterpret_cast< T * >( current_parent );
                     } break;
+                    case TYPE_COLORPICKER:
                     case TYPE_CHECKBOX:
                     case TYPE_LISTBOX:
                     case TYPE_LABEL: {
@@ -115,6 +117,8 @@ namespace penumbra
                     } break;
                 }
             }
+
+            return nullptr;
         }
 
         inline void remove_object_focus( ) {
@@ -163,9 +167,12 @@ namespace penumbra
     {
         inline bool window_opened = false;
         inline bool settings_opened = false;
+        inline bool should_scroll_window = false;
         inline double scroll_delta = 0.0;
         inline color theme_accent = color{ 203, 135, 212 };
+        inline color copied_color = color{ };
         inline std::map< object *, float > fade_opacity;
+        inline object *tooltip;
     }// namespace globals
 
     template< typename T >

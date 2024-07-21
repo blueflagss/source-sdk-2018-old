@@ -1,14 +1,11 @@
 #pragma once
 
-#include <globals.hpp>
-#include <features/renderer/renderer.hpp>
-#include <features/ui/animations/animations.hpp>
-
 // UI Elements
 #include <object\object.hpp>
 #include <checkbox\checkbox.hpp>
 #include <label\label.hpp>
 #include <slider\slider.hpp>
+#include <tooltip/tooltip.hpp>
 #include <combobox\combobox.hpp>
 #include <multi_combobox\multi_combobox.hpp>
 #include <button\button.hpp>

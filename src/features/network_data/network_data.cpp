@@ -4,13 +4,13 @@ void network_data::init( c_cs_player *player ) {
     if ( initialized )
         return;
 
-    ADD_NETVAR( float_vars, "DT_BasePlayer", "m_flFallVelocity", 1.f / assign_range_multiplier( 17, 4096.f - ( -4096.f ) ) );
+    //ADD_NETVAR( float_vars, "DT_BasePlayer", "m_flFallVelocity", 1.f / assign_range_multiplier( 17, 4096.f - ( -4096.f ) ) );
     ADD_DATAMAP_VAR( float_vars, player->get_pred_desc_map( ), "m_flMaxspeed", 1.f / assign_range_multiplier( 12, 2048.0f ) );
     ADD_NETVAR( float_vars, "DT_BasePlayer", "m_vecViewOffset[0]", 1.f / assign_range_multiplier( 8, 32.0f - ( -32.0f ) ) );
     ADD_NETVAR( float_vars, "DT_BasePlayer", "m_vecViewOffset[1]", 1.f / assign_range_multiplier( 8, 32.0f - ( -32.0f ) ) );
     ADD_NETVAR( float_vars, "DT_BasePlayer", "m_vecViewOffset[2]", 1.f / assign_range_multiplier( 10, 128.f ) );
-    ADD_NETVAR( vec3d_vars, "DT_BasePlayer", "m_vecBaseVelocity", 1.f / assign_range_multiplier( 20, 2000.f ) );
-    ADD_NETVAR( vec3d_vars, "DT_BasePlayer", "m_vecVelocity[0]", 0.031250f );
+    //ADD_NETVAR( vec3d_vars, "DT_BasePlayer", "m_vecBaseVelocity", 1.f / assign_range_multiplier( 20, 2000.f ) );
+    //ADD_NETVAR( vec3d_vars, "DT_BasePlayer", "m_vecVelocity[0]", 0.031250f );
     ADD_NETVAR( vec3d_vars, "DT_BasePlayer", "m_aimPunchAngle", 0.031250f );
     ADD_NETVAR( float_vars, "DT_CSPlayer", "m_flVelocityModifier", ( 1.f / assign_range_multiplier( 8.f, 1.f ) ) );
 

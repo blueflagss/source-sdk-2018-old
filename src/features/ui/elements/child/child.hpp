@@ -28,7 +28,7 @@ namespace penumbra
 
         float total_child_height = 0.0f;
         float window_height = 0.0f;
-
+        float padding = 0.0f;
         bool is_collapsed = false;
         bool in_collapse_region = false;
 

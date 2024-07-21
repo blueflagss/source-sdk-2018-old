@@ -1,5 +1,4 @@
 #include "animations.hpp"
-#include <core/variables.hpp>
 
 std::unordered_map< hash32_t, animation_context > anim_map;
 

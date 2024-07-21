@@ -109,7 +109,7 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
 
     backup_players( false );
 
-    if ( g_interfaces.client_state->delta_tick( ) > 0 ) {
+    if ( g_interfaces.client_state->delta_tick( ) < 0 ) {
         g_interfaces.prediction->update(
                 g_interfaces.client_state->delta_tick( ),
                 g_interfaces.client_state->delta_tick( ) > 0,

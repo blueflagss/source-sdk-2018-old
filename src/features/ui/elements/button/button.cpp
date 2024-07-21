@@ -13,9 +13,9 @@ void penumbra::button::paint( ) {
 
     this->fade_fraction = std::clamp< float >( animation.value, 0.0f, 1.0f );
 
-    render::filled_rect( this->position, this->size, color{ 24, 24, 24, 255 *  globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 32, 32, 32, 200 *  globals::fade_opacity[ this->get_main_window( ) ] }, this->fade_fraction ), 2.0f );
-    render::rect( this->position, this->size, color{ 9, 9, 9, 120 *  globals::fade_opacity[ this->get_main_window( ) ] }, 2.0f );
-    render::string( fonts::montserrat_semibold, this->position.x + ( this->size.x / 2 ) - text_dimensions.x / 2, this->position.y + 3.5f, color{ 150, 150, 150, 255 *  globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 255, 255, 255, 200 *  globals::fade_opacity[ this->get_main_window( ) ] }, this->fade_fraction ), this->name );
+    render::filled_rect( this->position, this->size, color{ 32, 32, 32, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 24, 24, 24, 200 * globals::fade_opacity[ this->get_main_window( ) ] }, this->fade_fraction ), 2.0f );
+    render::string( fonts::visuals_segoe_ui, this->position.x + ( this->size.x / 2 ) - text_dimensions.x / 2, this->position.y, color{ 190, 190, 190, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 255, 255, 255, 200 * globals::fade_opacity[ this->get_main_window( ) ] }, this->fade_fraction ), this->name );
+    render::rect( this->position, this->size, color{ 60, 60, 60, 100 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 50, 50, 50, 100 * globals::fade_opacity[ this->get_main_window( ) ] }, this->fade_fraction ), 2.0f );
 }
 
 void penumbra::button::input( ) {

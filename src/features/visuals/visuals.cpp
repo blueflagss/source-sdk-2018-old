@@ -456,7 +456,7 @@ void visuals::render_offscreen( c_cs_player *player ) const {
     vector_3d forward;
     vector_3d origin, local_origin;
 
-    origin = player->get_render_origin( ), local_origin = globals::local_player->get_shoot_position( );
+    origin = player->get_render_origin( ), local_origin = globals::local_shoot_pos;
 
     math::angle_vectors( globals::view_angles, &forward );
 

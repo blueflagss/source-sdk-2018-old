@@ -159,7 +159,7 @@ bool c_cs_player::can_attack( ) {
         return false;
 
     const auto next_primary_attack = weapon->next_primary_attack( );
-    const auto time = game::ticks_to_time(globals::local_player->tick_base());
+    const auto time = g_interfaces.global_vars->curtime;
     const auto weapon_definition_idx = weapon->item_definition_index( );
 
     if ( weapon->clip_1( ) == 0 )

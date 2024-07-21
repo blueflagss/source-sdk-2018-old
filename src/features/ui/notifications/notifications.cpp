@@ -45,8 +45,6 @@ namespace animation
 }// namespace animation
 
 void notifications::render( ) {
-    auto size = vector_2d( 490.f, 25.f );
-    auto position = vector_2d( -( size.x * 2 ), 0.f );
 
     for ( size_t i = 0; i < active_notifications.size( ); ++i ) {
         auto &notify = active_notifications[ i ];
@@ -65,20 +63,27 @@ void notifications::render( ) {
     if ( active_notifications.empty( ) )
         return;
 
-    for ( auto &notify : active_notifications ) {
+    for ( int i = 0; i < active_notifications.size( ); i++ ) {
+        auto &notify = active_notifications[ i ];
+
+        if ( !notify )
+            continue;
+
         auto left = notify->time;
         bool expired = left <= 0.4f;
 
         animation::lerp_to( notify, !expired, 0.13f, 1000.f );
 
         auto fraction = animation::get( notify, 0.0f );
-        auto pos = vector_2d( position.x + ( ( size.x * 2 ) * fraction.value ), position.y );
+
+        auto text_dimensions = render::get_text_size( fonts::visuals_segoe_ui, notify->text );
+        auto size = vector_2d( text_dimensions.x + 15, 20.f );
+        auto position = vector_2d( -( size.x * 2 ), 0.f );
+        auto pos = vector_2d( position.x + ( ( size.x * 2 ) * fraction.value ), position.y + ( i * size.y ) );
 
         render::gradient_rect( pos, size, color{ 0, 0, 0, 0 * fraction.value }, color{ 30, 30, 30, 100 * fraction.value }, false );
         render::filled_rect( pos, size, color{ 30, 30, 30, 80 * fraction.value }, 3.0f );
-        render::filled_rect( pos.x + size.x - 3.0f, pos.y, 3.0f, size.y, color{ g_vars.ui_theme.value, 255 * fraction.value }, 3.0f );
-        render::string( fonts::montserrat_semibold, ( pos.x + 7 ), pos.y + 4, color{ 200, 200, 200, 255 * fraction.value }, notify->text );
-
-        position.y += size.y;
+        render::filled_rect( pos.x + size.x - 2.0f, pos.y, 3.0f, size.y, color{ g_vars.ui_theme.value, 255 * fraction.value } );
+        render::string( fonts::visuals_segoe_ui, ( pos.x + 7 ), pos.y + 1, color{ 200, 200, 200, 255 * fraction.value }, notify->text );
     }
 }

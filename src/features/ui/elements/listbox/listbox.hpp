@@ -51,6 +51,7 @@ namespace penumbra
         int offset = 0;
         bool should_scroll = false;
 
+        float list_item_height = 17.0f;
         float scroll_offset = 0.f;
         float scroll_fraction = 0.f;
 

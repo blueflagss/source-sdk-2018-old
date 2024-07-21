@@ -47,15 +47,15 @@ void penumbra::textbox::paint( ) {
     this->fade_fraction = std::clamp< float >( animation.value, 0.0f, 1.0f );
 
     render::filled_rect( this->position + TEXTBOX_OFFSET, this->size, color{ 24, 24, 24, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 32, 32, 32, 200 * globals::fade_opacity[ this->get_main_window( ) ] }, this->fade_fraction ), 2.0f );
-    render::rect( this->position + TEXTBOX_OFFSET, this->size, color{ 9, 9, 9, 120 * globals::fade_opacity[ this->get_main_window( ) ] }, 2.0f );
+    render::rect( this->position + TEXTBOX_OFFSET, this->size, color{ 46, 46, 46, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, 2.0f );
 
-    auto item_dimensions = render::get_text_size( fonts::montserrat, *this->value );
+    auto item_dimensions = render::get_text_size( fonts::visuals_segoe_ui, *this->value );
 
-    render::filled_rect( animation_lerp.value, this->position.y + 8.0f + TEXTBOX_OFFSET.y - 3.f, animation_line_lerp.value, item_dimensions.y, color{ 0, 0, 0, 0 }.lerp( color{ 100, 100, 100, 255 * animation_active.value * globals::fade_opacity[ this->get_main_window( ) ] }, animation_active.value ) );
-    render::string( fonts::montserrat, this->position.x + 8.0f, this->position.y + 8.0f + TEXTBOX_OFFSET.y - 4.f, color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 255, 255, 255, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_active.value ), *this->value );
+    render::filled_rect( animation_lerp.value, this->position.y + 8.0f + TEXTBOX_OFFSET.y - 5.f, animation_line_lerp.value, 10.0f, color{ 0, 0, 0, 0 }.lerp( color{ globals::theme_accent, 100 * animation_active.value * globals::fade_opacity[ this->get_main_window( ) ] }, animation_active.value ) );
+    render::string( fonts::visuals_segoe_ui, this->position.x + 8.0f, this->position.y + 3.0f + TEXTBOX_OFFSET.y - 4.f, color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 255, 255, 255, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_active.value ), *this->value );
 
     if ( !this->is_in_object )
-        render::string( fonts::montserrat, this->position.x - 0.5f, this->position.y - 4.5f, color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, this->name );
+        render::string( fonts::visuals_segoe_ui, this->position.x - 0.5f, this->position.y - 3.5f, color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, this->name );
 }
 
 void penumbra::textbox::input( ) {
@@ -132,16 +132,17 @@ void penumbra::textbox::input( ) {
                 }
             }
 
-            auto item_dimensions = render::get_text_size( fonts::montserrat, *this->value );
+            auto item_dimensions = render::get_text_size( fonts::visuals_segoe_ui, *this->value );
 
             if ( !this->is_selected ) {
                 this->line_position = glm::vec2{
-                        this->position.x + 8.0f + item_dimensions.x + 3.0f,
-                        this->position.y + 8.0f + TEXTBOX_OFFSET.y - 3.0f };
+                        this->position.x + 6.0f + item_dimensions.x + 3.0f,
+                        this->position.y + 8.0f + TEXTBOX_OFFSET.y - 3.0f
+                };
 
                 this->line_size = {
-                        3.0f,
-                        item_dimensions.y,
+                        2.0f,
+                        5.0f,
                 };
             } else {
                 this->line_position = glm::vec2{
@@ -150,7 +151,7 @@ void penumbra::textbox::input( ) {
 
                 this->line_size = {
                         item_dimensions.x + 2.0f,
-                        item_dimensions.y,
+                        10.0f,
                 };
             }
         }

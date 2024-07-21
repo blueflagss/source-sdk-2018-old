@@ -356,25 +356,22 @@ void run_hitscan( thread_args *args ) {
             auto bullet_data = g_penetration.run( globals::local_player->get_shoot_position( ), p.first, player, record->bones );
 
             if ( bullet_data.did_hit ) {
-                if ( bullet_data.out_damage >= best_damage ) {
-                    best_damage = bullet_data.out_damage;
-
+                if ( bullet_data.out_damage >= hitscan_info::best.damage ) {
+                    hitscan_info::best.damage = bullet_data.out_damage;
                     hitscan_info::best.hitbox = hb;
                     hitscan_info::best.best_point = p.first;
                     hitscan_info::best.record = record;
                     hitscan_info::best.target = player;
-                    hitscan_info::best.damage = bullet_data.out_damage;
+
                     args->done = true;
                 }
-                if ( args->done && bullet_data.out_damage >= best_damage ) {
+
+                if ( args->done && bullet_data.out_damage >= hitscan_info::best.damage ) {
                     hitscan_info::best.hitbox = hb;
                     hitscan_info::best.best_point = p.first;
                     hitscan_info::best.damage = bullet_data.out_damage;
                     break;
                 }
-
-                if ( p == args->points.front( ) && bullet_data.out_damage >= player->health( ) )
-                    break;
             }
 
             if ( args->done ) {
@@ -405,9 +402,10 @@ bool ragebot::scan_target( c_cs_player *player, lag_record *record, aim_player &
 
     Threading::QueueJobRef( run_hitscan, ( void * ) &args );
 
+    Threading::FinishQueue( true );
+    //run_hitscan( &args );
     best = hitscan_info::best;
 
-    Threading::FinishQueue( true );
 
     return true;
 }
@@ -503,6 +501,9 @@ void ragebot::on_create_move( c_user_cmd *cmd ) {
             if ( !scan_target( target.entity, front, target ) )
                 continue;
         } else {
+            //if ( target.delay_shot )
+            //    continue;
+
             auto ideal = g_resolver.find_ideal_record( target.entity );
 
             if ( !ideal )
@@ -521,10 +522,11 @@ void ragebot::on_create_move( c_user_cmd *cmd ) {
         }
     }
 
-    if ( !best.record || !best.target || best.damage <= 0 )
-        return;
+    if ( best.damage )
+        adjust_speed( cmd );
 
-    adjust_speed( cmd );
+    if ( !best.record || !best.target || !best.damage )
+        return;
 
     bool should_target = g_vars.aimbot_automatic_shoot.value;
 

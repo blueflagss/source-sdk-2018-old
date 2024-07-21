@@ -74,17 +74,17 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
     tr.start_pos = r.start + r.start_offset;
     tr.end_pos = tr.start_pos + r.delta;
 
-    for ( int i = 0; i < bones.size( ); i++ )
-        temp_mat[ i ] = const_cast< matrix_3x4 * >( &bones[ i ] );
+    //for ( int i = 0; i < bones.size( ); i++ )
+    //    temp_mat[ i ] = const_cast< matrix_3x4 * >( &bones[ i ] );
 
-    const auto ret = proxy_trace_to_studio_csgo_hitgroups_priority( ent, mask_shot | contents_hitbox, &ent->origin( ), &tr, &r, temp_mat );
+    //const auto ret = proxy_trace_to_studio_csgo_hitgroups_priority( ent, mask_shot | contents_hitbox, &ent->origin( ), &tr, &r, temp_mat );
 
-    fire_info.did_hit = ret;
+    //fire_info.did_hit = ret;
 
-    final_trace = tr;
+    //final_trace = tr;
 
-    if ( !fire_info.did_hit )
-        return false;
+    //if ( !fire_info.did_hit )
+    //    return false;
 
     fire_info.did_hit = false;
 

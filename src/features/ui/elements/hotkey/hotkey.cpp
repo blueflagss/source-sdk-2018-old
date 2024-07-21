@@ -30,12 +30,12 @@ void penumbra::hotkey::paint( ) {
         char output[ 16 ] = { };
 
         switch ( virtual_key ) {
-            case VK_LBUTTON:  return "Left Mouse";
-            case VK_RBUTTON:  return "Right Mouse";
-            case VK_MBUTTON:  return "Middle Mouse";
-            case VK_XBUTTON1: return "Mouse 4";
-            case VK_XBUTTON2: return "Mouse 5";
-            case 0:           return "None";
+            case VK_LBUTTON:  return "LMOUSE";
+            case VK_RBUTTON:  return "RMOUSE";
+            case VK_MBUTTON:  return "MOUSE3";
+            case VK_XBUTTON1: return "MOUSE4";
+            case VK_XBUTTON2: return "MOUSE5";
+            case 0:           return "NONE";
             default:          break;
         }
 
@@ -46,26 +46,28 @@ void penumbra::hotkey::paint( ) {
 
     this->_hotkey_text = get_key_name( *this->_bind );
 
-    auto hotkey_dimensions = render::get_text_size( fonts::montserrat, this->_hotkey_text );
+    auto hotkey_dimensions = render::get_text_size( fonts::visuals_segoe_ui, this->_hotkey_text );
 
     const auto animation_lerp = animations::get( HASH_CT( "hotkey__lerp__" ) + HASH( this->name.c_str( ) ), hotkey_dimensions.x );
     const auto animation_open_lerp = animations::get( HASH_CT( "selection__open__lerp__" ) + HASH( this->name.c_str( ) ), 0.0f );
 
     auto hotkey_rectangle_position = glm::vec2{ this->position.x - 11.0f - animation_lerp.value, this->position.y - 2.0f };
-    auto hotkey_rectangle_dimensions = glm::vec2{ std::clamp< float >( animation_lerp.value - 5.0f + 15.0f, 60.0f, 100.0f ), hotkey_dimensions.y + 3.0f };
+    auto hotkey_rectangle_dimensions = glm::vec2{ animation_lerp.value, hotkey_dimensions.y + 3.0f };
 
-    render::filled_rect( hotkey_rectangle_position.x, hotkey_rectangle_position.y, animation_lerp.value, hotkey_rectangle_dimensions.y, color{ 24, 24, 24, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, 3.0f );
+    render::filled_rect( hotkey_rectangle_position.x, hotkey_rectangle_position.y, animation_lerp.value, hotkey_rectangle_dimensions.y, color{ 32, 32, 32, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 24, 24, 24, 200 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), 3.0f );
+    render::rect( hotkey_rectangle_position.x, hotkey_rectangle_position.y, animation_lerp.value, hotkey_rectangle_dimensions.y, color{ 60, 60, 60, 100 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 50, 50, 50, 100 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), 2.0f );
 
     render::scissor_rect( hotkey_rectangle_position.x, hotkey_rectangle_position.y, animation_lerp.value, hotkey_rectangle_dimensions.y, [ & ] {
-        render::string( fonts::montserrat, hotkey_rectangle_position.x + ( animation_lerp.value / 2 ) - hotkey_dimensions.x / 2, this->position.y - 1.0f, color{ 120, 120, 120, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ globals::theme_accent, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), this->_hotkey_text );
+        render::string( fonts::visuals_segoe_ui, hotkey_rectangle_position.x + ( animation_lerp.value / 2 ) - hotkey_dimensions.x / 2, this->position.y - 2.0f, color{ 120, 120, 120, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ globals::theme_accent, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), this->_hotkey_text );
     } );
 
     if ( this->focused_type == keybind_focus_type::FOCUS_SELECTION && animation_open_lerp.value > 0.08f ) {
-        auto selection_rectangle_dimension = glm::vec2{ 80.0f, 100.0f };
+        auto selection_rectangle_dimension = glm::vec2{ 80.0f, 107.0f };
 
-        render::filled_rect( hotkey_rectangle_position.x, this->position.y - 2.0f, hotkey_rectangle_dimensions.x, ( toggle_list.size( ) * 20.0f ) * animation_open_lerp.value, color{ 24, 24, 24, 255 * animation_open_lerp.value * globals::fade_opacity[ this->get_main_window( ) ] }, 3.0f );
-
-        render::scissor_rect( hotkey_rectangle_position.x, this->position.y - 2.0f, hotkey_rectangle_dimensions.x, ( toggle_list.size( ) * 20.0f ) * animation_open_lerp.value, [ & ] {
+        render::filled_rect( hotkey_rectangle_position.x, this->position.y - 2.0f, hotkey_rectangle_dimensions.x, 5 + ( toggle_list.size( ) * 20.0f ) * animation_open_lerp.value, color{ 24, 24, 24, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, 3.0f );
+        render::rect( hotkey_rectangle_position.x, this->position.y - 2.0f, hotkey_rectangle_dimensions.x, 5 + ( toggle_list.size( ) * 20.0f ) * animation_open_lerp.value, color{ 60, 60, 60, 100 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 50, 50, 50, 100 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), 2.0f );
+        
+        render::scissor_rect( hotkey_rectangle_position.x, this->position.y - 2.0f, hotkey_rectangle_dimensions.x, 5 + ( toggle_list.size( ) * 20.0f ) * animation_open_lerp.value, [ & ] {
             for ( int i = 0; i < toggle_list.size( ); i++ ) {
                 auto hovered_over_item = input::in_region( this->position.x - 23.0f - hotkey_dimensions.x, this->position.y - 2.0f + ( i * 20.0f ), selection_rectangle_dimension.x, 20.0f );
 
@@ -73,7 +75,7 @@ void penumbra::hotkey::paint( ) {
 
                 animations::lerp_to( HASH_CT( "selection__fade__" ) + HASH( toggle_list[ i ].c_str( ) ), hovered_over_item, 0.2f );
 
-                render::string( fonts::montserrat, this->position.x - 17 - hotkey_dimensions.x, this->position.y + ( i * 20.0f ), color{ 200, 200, 200, 255 * animation_open_lerp.value * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ globals::theme_accent, 255 * animation_open_lerp.value * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), toggle_list[ i ] );
+                render::string( fonts::visuals_segoe_ui, this->position.x - 19 - hotkey_dimensions.x, this->position.y + ( i * 20.0f ), color{ 200, 200, 200, 255 * animation_open_lerp.value * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ globals::theme_accent, 255 * animation_open_lerp.value * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), toggle_list[ i ] );
             }
         } );
     }
@@ -81,19 +83,19 @@ void penumbra::hotkey::paint( ) {
 
 void penumbra::hotkey::input( ) {
     auto parent = this->get_parent< checkbox >( );
-    auto hotkey_dimensions = render::get_text_size( fonts::montserrat, this->_hotkey_text );
+    auto hotkey_dimensions = render::get_text_size( fonts::visuals_segoe_ui, this->_hotkey_text );
 
     const auto animation_lerp = animations::get( HASH_CT( "hotkey__lerp__" ) + HASH( this->name.c_str( ) ), hotkey_dimensions.x );
 
     auto hotkey_rectangle_position = glm::vec2{ this->position.x - 9.0f - animation_lerp.value, this->position.y - 2.0f };
-    auto hotkey_rectangle_dimensions = glm::vec2{ std::clamp< float >( animation_lerp.value - 5.0f + 15.0f, 60.0f, 100.0f ), hotkey_dimensions.y + 3.0f };
+    auto hotkey_rectangle_dimensions = glm::vec2{ std::clamp< float >( animation_lerp.value - 5.0f + 15.0f, 60.0f, 100.0f ), hotkey_dimensions.y + 5.0f };
 
     this->is_hovered = input::in_region( hotkey_rectangle_position.x, hotkey_rectangle_position.y, animation_lerp.value, hotkey_rectangle_dimensions.y );
 
     if ( !parent->blocked( ) ) {
         const auto is_focused = get_focused< object >( ) == this;
 
-        if ( !is_focused && ( this->is_hovered && input::key_pressed( VK_RBUTTON ) ) ) {
+        if ( ( this->is_hovered && input::key_pressed( VK_RBUTTON ) ) ) {
             add_object_to_focus( this );
 
             this->focused_type = keybind_focus_type::FOCUS_SELECTION;
@@ -112,7 +114,7 @@ void penumbra::hotkey::input( ) {
 
     const auto animation_open_lerp = animations::get( HASH_CT( "selection__open__lerp__" ) + HASH( this->name.c_str( ) ), 0.0f );
 
-    if ( !this->toggle_opened && this->focused_type == keybind_focus_type::FOCUS_SELECTION && get_focused< object >( ) == this && animation_open_lerp.value < 0.09f ) {
+    if ( !this->toggle_opened && this->focused_type == keybind_focus_type::FOCUS_SELECTION && get_focused< object >( ) == this && animation_open_lerp.value < 0.12f ) {
         this->focused_type = keybind_focus_type::NONE;
         this->toggle_opened = false;
         remove_object_focus( );
