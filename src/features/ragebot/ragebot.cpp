@@ -9,9 +9,9 @@
 void ragebot::reset( ) {
     globals::target_index = -1;
     globals::is_targetting = false;
-    hitscan_info::best = { };
     best = { };
     targets.clear( );
+    hitscan_info::best = { };
 }
 
 bool ragebot::can_hit_player( c_cs_player *player, vector_3d start, vector_3d end, lag_record *record, matrix_3x4 *matrix ) {
@@ -116,14 +116,14 @@ bool ragebot::should_hit( c_cs_player *player, const vector_3d &angle, lag_recor
 
     auto inaccuracy = globals::local_weapon->get_inaccuracy( );
     auto spread = globals::local_weapon->get_spread( );
-
+    auto start = globals::local_player->get_shoot_position( );
     for ( int i = 0; i <= 255; ++i ) {
         auto spread_direction = globals::local_weapon->calculate_spread( i, inaccuracy, spread );
         auto dir = math::normalize_angle( fwd + ( right * spread_direction.x ) + ( up * spread_direction.y ) );
-        auto end = globals::local_player->get_shoot_position( ) + ( dir * globals::local_weapon_data->range );
+        auto end = start + ( dir * globals::local_weapon_data->range );
 
         ray_t ray;
-        ray.init( globals::local_player->get_shoot_position( ), end );
+        ray.init( start, end );
 
         c_game_trace tr;
         g_interfaces.engine_trace->clip_ray_to_entity( ray, mask_shot, player, &tr );
@@ -234,7 +234,7 @@ std::vector< int > ragebot::get_hitboxes( ) {
     return hitboxes;
 }
 
-void run_hitscan( thread_args *args ) {
+static void run_hitscan( thread_args *args ) {
     if ( !args || !args->valid || reinterpret_cast< uintptr_t >( args->target ) == 0xCCCCCCCC || args->hb > hitbox_max )
         return;
 
@@ -242,7 +242,6 @@ void run_hitscan( thread_args *args ) {
     const auto player = args->target;
 
     if ( !g_ragebot.should_continue_thread ) {
-        args->done = false;
         return;
     }
 
@@ -271,6 +270,8 @@ void run_hitscan( thread_args *args ) {
 
     record->cache( );
 
+    const auto start = globals::local_player->get_shoot_position( );
+
     for ( auto &hb : g_ragebot.get_hitboxes( ) ) {
         args->points.clear( );
 
@@ -281,7 +282,7 @@ void run_hitscan( thread_args *args ) {
 
         const auto limb = hb >= csgo_hitbox::hitbox_r_thigh;
 
-        if ( limb && math::length_2d( record->velocity ) > 1.0f )
+        if ( limb && math::length_2d( record->anim_velocity ) > 1.0f )
             continue;
 
         const auto center = ( bbox->max + bbox->min ) * 0.5f;
@@ -353,23 +354,26 @@ void run_hitscan( thread_args *args ) {
             continue;
 
         for ( auto &p : args->points ) {
-            auto bullet_data = g_penetration.run( globals::local_player->get_shoot_position( ), p.first, player, record->bones );
+            auto bullet_data = g_penetration.run( start, p.first, player, record->bones );
 
             if ( bullet_data.did_hit ) {
-                if ( bullet_data.out_damage >= hitscan_info::best.damage ) {
+                if ( bullet_data.out_damage > hitscan_info::best.damage ) {
                     hitscan_info::best.damage = bullet_data.out_damage;
                     hitscan_info::best.hitbox = hb;
                     hitscan_info::best.best_point = p.first;
                     hitscan_info::best.record = record;
                     hitscan_info::best.target = player;
-
+                    g_ragebot.best = hitscan_info::best;
                     args->done = true;
                 }
 
                 if ( args->done && bullet_data.out_damage >= hitscan_info::best.damage ) {
                     hitscan_info::best.hitbox = hb;
-                    hitscan_info::best.best_point = p.first;
                     hitscan_info::best.damage = bullet_data.out_damage;
+                    hitscan_info::best.record = record;
+                    hitscan_info::best.target = player;
+                    g_ragebot.best = hitscan_info::best;
+                    args->done = true;
                     break;
                 }
             }
@@ -398,12 +402,14 @@ bool ragebot::scan_target( c_cs_player *player, lag_record *record, aim_player &
     args.valid = true;
     args.points = { };
     args.hb = hitbox_l_foot;
+
     should_continue_thread = true;
+    best.target = player;
+    best.record = record;
 
     Threading::QueueJobRef( run_hitscan, ( void * ) &args );
-
-    Threading::FinishQueue( true );
     //run_hitscan( &args );
+    Threading::FinishQueue( true );
     best = hitscan_info::best;
 
 
@@ -480,6 +486,9 @@ void ragebot::on_create_move( c_user_cmd *cmd ) {
     if ( !globals::local_player->can_attack( ) )
         return;
 
+    if ( cmd->buttons & buttons::attack )
+        return;
+
     search_targets( );
 
     if ( targets.empty( ) )
@@ -497,36 +506,34 @@ void ragebot::on_create_move( c_user_cmd *cmd ) {
         const auto front = &g_animations.player_log[ target.entity->index( ) ].anim_records.front( );
         const auto bot = info.player_info.fake_player;
 
-        if ( !bot && front && g_animations.should_predict_lag( target, front, nullptr ) ) {
-            if ( !scan_target( target.entity, front, target ) )
-                continue;
-        } else {
-            //if ( target.delay_shot )
-            //    continue;
+        if ( front ) {
+            if ( !bot && g_animations.should_predict_lag( target, front, nullptr ) ) {
+                if ( !scan_target( target.entity, front, target ) )
+                    continue;
+            }
 
-            auto ideal = g_resolver.find_ideal_record( target.entity );
+            else {
+                if ( target.delay_shot && g_vars.aimbot_delay_shot.value )
+                    continue;
 
-            if ( !ideal )
-                continue;
+                if ( !scan_target( target.entity, front, target ) )
+                    continue;
 
-            if ( !scan_target( target.entity, ideal, target ) )
-                continue;
+                auto last_record = g_resolver.find_last_record( target.entity );
 
-            auto last_record = g_resolver.find_last_record( target.entity );
+                if ( !last_record )
+                    continue;
 
-            if ( !last_record )
-                continue;
-
-            if ( !scan_target( target.entity, last_record, target ) )
-                continue;
+                if ( !scan_target( target.entity, last_record, target ) )
+                    continue;
+            }
         }
     }
 
-    if ( best.damage )
-        adjust_speed( cmd );
-
     if ( !best.record || !best.target || !best.damage )
         return;
+
+    adjust_speed( cmd );
 
     bool should_target = g_vars.aimbot_automatic_shoot.value;
 

@@ -25,11 +25,13 @@ void globals::cvars::init( ) {
     sv_client_min_interp_ratio = g_interfaces.cvar->find_var( HASH_CT( "sv_client_min_interp_ratio" ) );
     sv_client_max_interp_ratio = g_interfaces.cvar->find_var( HASH_CT( "sv_client_max_interp_ratio" ) );
     cl_sidespeed = g_interfaces.cvar->find_var( HASH_CT( "cl_sidespeed" ) );
+    sv_friction = g_interfaces.cvar->find_var( HASH_CT( "sv_friction" ) );
     weapon_recoil_scale = g_interfaces.cvar->find_var( HASH_CT( "weapon_recoil_scale" ) );
     cl_forwardspeed = g_interfaces.cvar->find_var( HASH_CT( "cl_forwardspeed" ) );
     cl_upspeed = g_interfaces.cvar->find_var( HASH_CT( "cl_upspeed" ) );
     sv_maxunlag = g_interfaces.cvar->find_var( HASH_CT( "sv_maxunlag" ) );
     cl_lagcompensation = g_interfaces.cvar->find_var( HASH_CT( "cl_lagcompensation" ) );
+    sv_stopspeed = g_interfaces.cvar->find_var( HASH_CT( "sv_stopspeed" ) );
     cl_interp = g_interfaces.cvar->find_var( HASH_CT( "cl_interp" ) );
     sv_maxusrcmdprocessticks = g_interfaces.cvar->find_var( HASH_CT( "sv_maxusrcmdprocessticks" ) );
     mp_damage_scale_ct_body = g_interfaces.cvar->find_var( HASH_CT( "mp_damage_scale_ct_body" ) );
@@ -40,6 +42,7 @@ void globals::cvars::init( ) {
     ff_damage_reduction_bullets = g_interfaces.cvar->find_var( HASH_CT( "ff_damage_reduction_bullets" ) );
     ff_damage_bullet_penetration = g_interfaces.cvar->find_var( HASH_CT( "ff_damage_bullet_penetration" ) );
     sv_clip_penetration_traces_to_players = g_interfaces.cvar->find_var( HASH_CT( "sv_clip_penetration_traces_to_players" ) );
+    sv_accelerate = g_interfaces.cvar->find_var( HASH_CT( "sv_accelerate" ) );
 
     cl_csm_shadows = g_interfaces.cvar->find_var( HASH_CT( "cl_csm_shadows" ) );
     cl_csm_shadows->remove_callbacks( );

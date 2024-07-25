@@ -36,7 +36,7 @@ void __fastcall hooks::frame_stage_notify::hook( REGISTERS, client_frame_stage s
 
     if ( stage == frame_net_update_end ) {
         if ( globals::local_player && globals::local_player->alive( ) ) {
-            if ( !g_interfaces.client_state->choked_commands( ) ) {
+            if ( g_interfaces.client_state->choked_commands( ) ) {
                 const auto view_model = g_interfaces.entity_list->get_client_entity_from_handle< c_view_model * >( globals::local_player->viewmodel_handle( ) );
 
                 if ( view_model && globals::local_player->viewmodel_handle( ) != 0xFFFFFFF ) {

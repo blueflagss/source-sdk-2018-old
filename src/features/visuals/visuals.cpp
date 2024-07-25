@@ -27,6 +27,9 @@ void visuals::render( ) {
 
                 update_configuration( player );
 
+                           if ( !player->alive( ) )
+                    break;
+
                 if ( !g_vars.visual_players_toggled.value )
                     break;
 

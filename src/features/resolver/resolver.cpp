@@ -339,18 +339,15 @@ lag_record *resolver::find_ideal_record( c_cs_player *player ) {
     if ( !weapon )
         return nullptr;
 
-    const auto player_log = &g_animations.player_log[ player->index( ) ];
-
-    if ( !player_log )
-        return nullptr;
+    auto &player_log = g_animations.player_log[ player->index( ) ];
 
     lag_record *first_valid = nullptr;
     lag_record *current = nullptr;
 
-    if ( player_log->lag_records.empty( ) )
+    if ( player_log.lag_records.empty( ) )
         return nullptr;
 
-    for ( auto &it : player_log->lag_records ) {
+    for ( auto &it : player_log.lag_records ) {
         if ( !it || it->dormant || !it->is_valid( ) )
             continue;
 

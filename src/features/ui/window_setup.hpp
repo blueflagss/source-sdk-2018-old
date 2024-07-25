@@ -34,7 +34,7 @@ public:
     std::shared_ptr< penumbra::combobox > config_list = nullptr; // g_vars.exploits_double_tap_limit.value
     std::shared_ptr< penumbra::indicator< int > > shift_indicator = nullptr;
 
-    vector_2d main_window_dimensions{ 630.0f, 428.0f };
+    vector_2d main_window_dimensions{ 640.0f, 415.0f };
     vector_2d color_window_dimensions{ 364.0f, 440.0f };
 
     std::mutex mutex{ };

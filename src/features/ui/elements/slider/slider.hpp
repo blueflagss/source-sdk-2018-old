@@ -52,7 +52,7 @@ namespace penumbra
             auto percentage_dimensions = render::get_text_size( fonts::montserrat, percentage_format );
             auto center_object = glm::vec2{ this->position.x + ( this->size.x / 2 ) - percentage_dimensions.x / 2, this->position.y + SLIDER_OFFSET.y + ( this->size.y / 2 ) - percentage_dimensions.y / 2 };
 
-            render::string( fonts::visuals_segoe_ui, this->position.x + this->size.x - percentage_dimensions.x + 1.5f, this->position.y - 4.5f, color{ 200, 200, 200, 255 *  globals::fade_opacity[ this->get_main_window( ) ] }, percentage_format );
+            render::string( fonts::visuals_segoe_ui, this->position.x + this->size.x - percentage_dimensions.x, this->position.y - 4.5f, color{ 200, 200, 200, 255 *  globals::fade_opacity[ this->get_main_window( ) ] }, percentage_format );
             render::string( fonts::visuals_segoe_ui, this->position.x - 1.0f, this->position.y - 4.5f, color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, this->name );
         }
 

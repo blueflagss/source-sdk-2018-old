@@ -10,7 +10,7 @@ vector_3d &__fastcall hooks::get_eye_angles::hook( REGISTERS ) {
     static auto ret_to_thirdperson_yaw = signature::find( _xs( "client.dll" ), _xs( "F3 0F 10 55 ? 51 8B 8E" ) ).get< void * >( );
 
     if ( _ReturnAddress( ) == ret_to_thirdperson_pitch || _ReturnAddress( ) == ret_to_thirdperson_yaw )
-        return globals::lby_updating ? globals::sent_angles : globals::local_angles;
+        return globals::lby_updating ? globals::sent_user_cmd.view_angles : globals::angles;
 
     return original( REGISTERS_OUT );
 }

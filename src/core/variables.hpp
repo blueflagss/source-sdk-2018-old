@@ -48,6 +48,8 @@ namespace config
 
 #pragma region ragebot
         CONFIG_VARIABLE( aimbot_enable, bool, false );
+        CONFIG_VARIABLE( aimbot_fix_fakelag, bool, false );
+        CONFIG_VARIABLE( aimbot_delay_shot, bool, false );
         CONFIG_VARIABLE( aimbot_silent, bool, false );
         CONFIG_VARIABLE( aimbot_auto_stop, bool, true );
         CONFIG_VARIABLE( aimbot_sort_by, int, 0 );
@@ -77,12 +79,17 @@ namespace config
 
 #pragma region exploits
         CONFIG_VARIABLE( exploits_antiaim, bool, false );
+
+        CONFIG_VARIABLE( exploits_antiaim_distortion, bool, false );
+        CONFIG_VARIABLE( exploits_antiaim_distortion_speed, float, 0.0f ); 
+        CONFIG_VARIABLE( exploits_antiaim_distortion_range, float, 0.0f );
         CONFIG_VARIABLE( exploits_antiaim_leg_movement, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_pitch_type, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_dir_type, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_yaw_type, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_fake, bool, false );
         CONFIG_VARIABLE( exploits_antiaim_lby_break, bool, false );
+        CONFIG_VARIABLE( exploits_antiaim_yaw_offset, float, 0.f );
         CONFIG_VARIABLE( exploits_antiaim_lby_break_delta, float, 0.f );
         CONFIG_VARIABLE( exploits_antiaim_fake_yaw_type, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_range, float, 0.f );
@@ -194,6 +201,11 @@ namespace config
         CONFIG_VARIABLE( misc_events_log_buy, bool, false );
         CONFIG_VARIABLE( misc_events_log_bomb, bool, false );
         CONFIG_VARIABLE( misc_bunny_hop, bool, false );
+        CONFIG_VARIABLE( misc_fast_stop, bool, false );
+        CONFIG_VARIABLE( misc_fake_walk, bool, false );
+        CONFIG_VARIABLE( misc_fake_walk_key, int, 0 );
+        CONFIG_VARIABLE( misc_fake_walk_key_toggle, int, 0 );
+        CONFIG_VARIABLE( misc_fake_walk_value, int, 16 );
         CONFIG_VARIABLE( misc_fake_latency, bool, false );
         CONFIG_VARIABLE( misc_fake_latency_key, int, 0 );
         CONFIG_VARIABLE( misc_fake_latency_key_toggle, int, 0 );

@@ -54,6 +54,7 @@
 #include <hooks/update_clientside_animations/update_clientside_animations.hpp>
 #include <hooks/is_paused/is_paused.hpp>
 #include <hooks/level_init_pre_entity/level_init_pre_entity.hpp>
+#include <hooks/in_prediction/in_prediction.hpp>
 
 std::unique_ptr< event_handler > game_event_handler = nullptr;
 
@@ -66,6 +67,7 @@ void hooks::impl::init( ) {
     lower_body_yaw_target_proxy::init( );
     //check_jump_button::init( );
     //anim_state::init( );
+    in_prediction::init( );
     get_eye_angles::init( );
     cl_move::init( );
     cl_fire_events::init( );
@@ -122,6 +124,7 @@ void hooks::impl::remove( ) {
     check_jump_button::original = { };
     setup_movement::original = { };
     setup_alive_loop::original = { };
+    in_prediction::original = { };
     setup_velocity::original = { };
     get_eye_angles::original = { };
     cl_move::original = { };

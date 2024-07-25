@@ -77,7 +77,7 @@ void shot_manager::process_shots( ) {
 
         auto target = shot->target;
 
-        if ( !target || !target->collideable( ) )
+        if ( !target )
             continue;
 
         if ( !shot->record->bones.data( ) )
@@ -96,8 +96,8 @@ void shot_manager::process_shots( ) {
 
         /* restore player data */
         const auto backup_origin = target->origin( );
-        const auto backup_mins = target->collideable( )->mins( );
-        const auto backup_maxs = target->collideable( )->maxs( );
+        const auto backup_mins = target->mins( );
+        const auto backup_maxs = target->maxs( );
         const auto backup_angles = target->get_abs_angles( );
         const auto backup_bones = target->bone_cache( );
 

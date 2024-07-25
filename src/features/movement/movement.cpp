@@ -10,7 +10,7 @@ void movement::on_create_move( c_user_cmd *cmd, const vector_3d &old_angles ) {
 
     if ( globals::local_player->move_type( ) == move_types::ladder || globals::local_player->move_type( ) == move_types::noclip )
         return;
-    
+
     ground_ticks = 0;
 
     if ( globals::local_player->flags( ) & player_flags::on_ground ) {
@@ -23,6 +23,8 @@ void movement::on_create_move( c_user_cmd *cmd, const vector_3d &old_angles ) {
     }
 
     if ( !( globals::local_player->flags( ) & player_flags::on_ground ) ) {
+        fast_stop( cmd );
+
         if ( g_vars.misc_bunny_hop.value )
             cmd->buttons &= ~buttons::jump;
 
@@ -41,7 +43,52 @@ void movement::on_create_move( c_user_cmd *cmd, const vector_3d &old_angles ) {
                 } break;
             }
         }
+    } else {
     }
+}
+
+void movement::quick_stop( c_user_cmd *cmd ) {
+    if ( !globals::local_player )
+        return;
+
+    const auto anim_state = globals::local_player->anim_state( );
+
+    if ( !anim_state )
+        return;
+
+    auto angle = math::vector_angle( globals::local_player->velocity( ) );
+
+    float speed = glm::length( globals::local_player->velocity( ) );
+
+    angle.y = globals::view_angles.y - angle.y;
+
+    vector_3d direction;
+    math::angle_vectors( angle, &direction );
+
+    auto stop = direction * -speed;
+
+    if ( anim_state->m_flVelocityLengthXY > 13.0f ) {
+        cmd->forward_move = stop.x;
+        cmd->side_move = stop.y;
+    }
+
+    else {
+        cmd->forward_move = 0.0f;
+        cmd->side_move = 0.0f;
+    }
+}
+
+void movement::fast_stop( c_user_cmd *cmd ) {
+    if ( !g_vars.misc_fast_stop.value )
+        return;
+
+    if ( globals::local_player )
+        return;
+
+    if ( glm::length( globals::local_player->velocity( ) ) < 5.0f )
+        return;
+
+    quick_stop( cmd );
 }
 
 void movement::directional_strafe( c_user_cmd *cmd, const vector_3d &old_angles ) {
@@ -158,6 +205,44 @@ void movement::directional_strafe( c_user_cmd *cmd, const vector_3d &old_angles 
     correct_movement( cmd, angles );
 }
 
+void movement::slow( c_user_cmd *cmd, float wish_speed ) {
+    //if ( !globals::local_player )
+    //    return;
+
+    //int i;
+    //float addspeed, accelspeed, currentspeed;
+    //vector_3d forward, right, up;
+    //vector_3d wish_vel;
+
+    //math::angle_vectors( globals::view_angles, &forward, &right, &up );
+
+    //wish_vel = {
+    //        math::normalize_angle( forward ).x * cmd->forward_move + math::normalize_angle( right ).x * cmd->side_move,
+    //        math::normalize_angle( forward ).y * cmd->forward_move + math::normalize_angle( right ).y * cmd->side_move,
+    //        0.0f };
+
+    //currentspeed = glm::dot( globals::local_player->velocity( ), wish_vel );
+
+    //addspeed = wish_speed - currentspeed;
+
+    //if ( addspeed <= 0 )
+    //    return;
+
+    //accelspeed = addspeed;
+
+    //if ( accelspeed > addspeed )
+    //    accelspeed = addspeed;
+
+    //float fRatio = accelspeed / ( globals::local_player->scoped( ) ? globals::local_weapon_data->max_speed_alt : globals::local_weapon_data->max_speed );
+
+    //cmd->forward_move = -( globals::cvars::cl_forwardspeed->get_float( ) * fRatio );
+    //cmd->side_move = -( globals::cvars::cl_sidespeed->get_float( ) * fRatio );
+    //cmd->up_move = 0;
+
+    //cmd->buttons &= ~buttons::walk;
+    //cmd->buttons |= buttons::speed;
+}
+
 void movement::correct_movement( c_user_cmd *cmd, const vector_3d &wish_direction ) {
     if ( !( globals::local_player->flags( ) & FL_ONGROUND ) && cmd->view_angles.z != 0.f )
         cmd->side_move = 0.f;
@@ -183,7 +268,9 @@ void movement::correct_movement( c_user_cmd *cmd, const vector_3d &wish_directio
 
         cmd->forward_move = dir.x;
         cmd->side_move = dir.y;
-    } else {
+    }
+    
+    else {
         if ( cmd->view_angles.x < -90.f || cmd->view_angles.x > 90.f )
             dir.x = -dir.x;
 

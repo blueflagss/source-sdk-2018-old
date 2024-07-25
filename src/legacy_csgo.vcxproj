@@ -52,6 +52,7 @@
     <ClInclude Include="hooks\get_eye_angles\get_eye_angles.hpp" />
     <ClInclude Include="hooks\get_viewmodel_fov\get_viewmodel_fov.hpp" />
     <ClInclude Include="hooks\hud_scope_paint\hud_scope_paint.hpp" />
+    <ClInclude Include="hooks\in_prediction\in_prediction.hpp" />
     <ClInclude Include="hooks\is_hltv\is_hltv.hpp" />
     <ClInclude Include="hooks\is_paused\is_paused.hpp" />
     <ClInclude Include="hooks\is_using_static_props_debug_modes\is_using_static_props_debug_modes.hpp" />
@@ -442,6 +443,7 @@
     <ClCompile Include="hooks\get_eye_angles\get_eye_angles.cpp" />
     <ClCompile Include="hooks\get_viewmodel_fov\get_viewmodel_fov.cpp" />
     <ClCompile Include="hooks\hud_scope_paint\hud_scope_paint.cpp" />
+    <ClCompile Include="hooks\in_prediction\in_prediction.cpp" />
     <ClCompile Include="hooks\is_hltv\is_hltv.cpp" />
     <ClCompile Include="hooks\is_paused\is_paused.cpp" />
     <ClCompile Include="hooks\is_using_static_props_debug_modes\is_using_static_props_debug_modes.cpp" />

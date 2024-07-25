@@ -43,7 +43,10 @@ namespace globals
 
     namespace cvars
     {
+        inline convar *sv_accelerate{ nullptr };
         inline convar *cl_extrapolate{ nullptr };
+        inline convar *sv_friction{ nullptr };
+        inline convar *sv_stopspeed{ nullptr };
         inline convar *cl_interp_ratio{ nullptr };
         inline convar *sv_client_min_interp_ratio{ nullptr };
         inline convar *cl_updaterate{ nullptr };
@@ -84,6 +87,7 @@ namespace globals
     inline bool is_targetting{ false };
     inline bool did_setup_datamap{ false };
     inline int target_index{ -1 };
+    inline int tick_rate{ -1 };
     inline c_user_cmd *user_cmd{ nullptr };
     inline c_user_cmd sent_user_cmd{ };
     inline int arrival_tick{ };
@@ -92,6 +96,7 @@ namespace globals
     inline float latency{ };
     inline vector_3d view_angles{ };
     inline vector_3d sent_angles{ };
+    inline vector_3d angles{ };
     inline vector_3d local_shoot_pos{ };
     inline v_matrix view_matrix{ };
     inline bool lby_updating{ false };

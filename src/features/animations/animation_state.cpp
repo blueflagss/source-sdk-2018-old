@@ -221,9 +221,10 @@ void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate 
     const auto backup_frametime = g_interfaces.global_vars->frametime;
     const auto backup_framecount = g_interfaces.global_vars->framecount;
 
+    animstate->m_nLastUpdateFrame = 0;
     animstate->m_flLastUpdateTime = game::time_to_ticks( animstate->m_pPlayer->simtime( ) ) - game::ticks_to_time( 1 );
 
-    g_interfaces.global_vars->curtime = static_cast< float >( animstate->m_pPlayer->tick_base( ) ) * g_interfaces.global_vars->interval_per_tick;
+    g_interfaces.global_vars->curtime = backup_cur_time * g_interfaces.global_vars->interval_per_tick;
     g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
     g_interfaces.global_vars->framecount = tick;
 

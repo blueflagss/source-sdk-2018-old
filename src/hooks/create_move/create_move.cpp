@@ -1,9 +1,10 @@
 #include "create_move.hpp"
+#include <core/config.hpp>
+#include <features/antiaim/antiaim.hpp>
+#include <features/movement/movement.hpp>
 #include <features/prediction_manager/prediction_manager.hpp>
 #include <features/ragebot/ragebot.hpp>
-#include <features/movement/movement.hpp>
 #include <features/sound_handler/sound_handler.hpp>
-#include <features/antiaim/antiaim.hpp>
 #include <features/visuals/visuals.hpp>
 
 float calculate_lerp( ) {
@@ -14,9 +15,9 @@ float calculate_lerp( ) {
 }
 
 void apply_leg_movement( c_user_cmd *cmd ) { /* premium */
-    float side_move;                          // xmm2_4
+    float side_move;                         // xmm2_4
     int new_buttons;                         // eax
-    float forward_move;                       // xmm1_4
+    float forward_move;                      // xmm1_4
 
     side_move = cmd->side_move;
     new_buttons = cmd->buttons & ~0x618u;
@@ -89,7 +90,7 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
     std::uintptr_t *stack_ptr;
     __asm mov stack_ptr, ebp
 
-    globals::user_cmd = cmd;
+                                 globals::user_cmd = cmd;
     globals::packet = reinterpret_cast< bool * >( *reinterpret_cast< uintptr_t * >( stack_ptr ) - 0x1C );
 
     const auto net_channel = g_interfaces.engine_client->get_net_channel_info( );
@@ -114,8 +115,7 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
                 g_interfaces.client_state->delta_tick( ),
                 g_interfaces.client_state->delta_tick( ) > 0,
                 g_interfaces.client_state->last_command_ack( ),
-                g_interfaces.client_state->last_outgoing_command( ) + g_interfaces.client_state->choked_commands( )
-        );
+                g_interfaces.client_state->last_outgoing_command( ) + g_interfaces.client_state->choked_commands( ) );
     }
 
     if ( globals::local_player->alive( ) ) {
@@ -129,8 +129,8 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         g_interfaces.engine_client->get_view_angles( globals::view_angles );
 
         if ( g_vars.exploits_fakelag.value ) {
-            if ( math::length_2d( g_prediction_context.velocity ) > 5.0f )
-                *globals::packet = g_interfaces.client_state->choked_commands( ) >= g_vars.exploits_fakelag_limit.value;
+            if ( math::length_2d( g_prediction_context.velocity ) > 5.0f || g_config.get_hotkey( g_vars.misc_fake_walk_key, g_vars.misc_fake_walk_key_toggle.value ) )
+                *globals::packet = g_interfaces.client_state->choked_commands( ) >= g_antiaim.get_max_choke_ticks( );
         }
 
         g_movement.on_create_move( cmd, globals::view_angles );
@@ -141,8 +141,9 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
             g_visuals.on_create_move( );
             g_sound_handler.on_create_move( );
             g_ragebot.on_create_move( cmd );
+            g_antiaim.fake_walk( cmd );
 
-            if ( !*globals::packet )
+            if ( *globals::packet )
                 globals::sent_user_cmd = *cmd;
         }
         g_prediction_context.finish( cmd );
@@ -154,33 +155,34 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         g_movement.correct_movement( cmd, math::clamp_angle( globals::view_angles ) );
 
         apply_leg_movement( cmd );
+
+        globals::angles = cmd->view_angles;
         g_animations.update_local_animations( cmd );
     } else {
         globals::local_weapon = nullptr;
     }
 
-    backup_players( true );   
-    
-	//if ( !*globals::packet ) { 
- //       auto net_channel = g_interfaces.client_state->net_channel;
+    backup_players( true );
 
- //       if ( net_channel ) {
- //           const int backup_choked = net_channel->choked_packets;
+    //if ( !*globals::packet ) {
+    //       auto net_channel = g_interfaces.client_state->net_channel;
 
- //           net_channel->choked_packets = 0;
- //           net_channel->send_datagram( );
- //           //net_channel->out_sequence_nr--;
- //           --*reinterpret_cast< int * >( reinterpret_cast< uintptr_t >( net_channel ) + 0x18 );
- //           //--*reinterpret_cast< int * >( reinterpret_cast< uintptr_t >( net_channel ) + 0x2C );
- //           net_channel->choked_packets = backup_choked;
- //       }
- //   }
+    //       if ( net_channel ) {
+    //           const int backup_choked = net_channel->choked_packets;
+
+    //           net_channel->choked_packets = 0;
+    //           net_channel->send_datagram( );
+    //           //net_channel->out_sequence_nr--;
+    //           --*reinterpret_cast< int * >( reinterpret_cast< uintptr_t >( net_channel ) + 0x18 );
+    //           //--*reinterpret_cast< int * >( reinterpret_cast< uintptr_t >( net_channel ) + 0x2C );
+    //           net_channel->choked_packets = backup_choked;
+    //       }
+    //   }
 
     globals::old_packet = *globals::packet;
-  
+
     return false;
 }
-
 
 void hooks::create_move::init( ) {
     original = safetyhook::create_inline( utils::get_method< void * >( g_interfaces.client_mode, 24 ),

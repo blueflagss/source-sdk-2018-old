@@ -7,14 +7,9 @@ bool c_base_player::get_screen_bounding_box( entity_box &box_dimensions ) {
 
     vector_3d mins, maxs;
 
-    if ( HASH( this->get_client_class( )->network_name ) == HASH_CT( "CCSPlayer" ) ) {
-        if ( g_animations.player_log[ this->index( ) ].anim_records.empty( ) ) 
-            return false;
-
-        auto &record = g_animations.player_log[ this->index( ) ].anim_records.front( );
-
-        mins = record.mins;
-        maxs = record.maxs;
+    if ( reinterpret_cast< c_cs_player * >( this )->is_player( ) ) {
+        mins = { -16.0f, -16.0f, 0.0f };
+        maxs = { 16.0f, 16.0f, 72.0f };
     }
 
     else {
@@ -36,7 +31,7 @@ bool c_base_player::get_screen_bounding_box( entity_box &box_dimensions ) {
             vector_3d( maxs.x, mins.y, maxs.z )
     };
 
-    const matrix_3x4 &trans = this->rgfl_coordinate_frame( );
+    const matrix_3x4 &trans = this->renderable_to_world_transform( );
 
     auto left = std::numeric_limits< float >::max( );
     auto top = std::numeric_limits< float >::max( );

@@ -82,7 +82,7 @@ public:
 
 public:
     OFFSET( rgfl_coordinate_frame, matrix_3x4, 0x440 );
-
+    DATAMAP( surface_friction, float, this->get_pred_desc_map( ), "m_surfaceFriction" );
     DATAMAP( current_command, c_user_cmd *, this->get_pred_desc_map( ), "m_nButtons", +0x4 );
     DATAMAP( eflags, int, this->get_pred_desc_map( ), "m_iEFlags" );
     DATAMAP( impulse, unsigned char, this->get_pred_desc_map( ), "m_nImpulse" );
@@ -109,6 +109,8 @@ public:
     NETVAR( weapon_handle, uint32_t, "DT_BaseCombatCharacter", "m_hActiveWeapon" );
     NETVAR( next_attack, float, "DT_BaseCombatCharacter", "m_flNextAttack" );
     NETVAR( player_state, c_player_state, "DT_BasePlayer", "pl" );
+
+    bool compute_hitbox_surrounding_box( vector_3d *world_min, vector_3d *world_max );
 
     bool get_screen_bounding_box( entity_box &box_dimensions );
     bool is_player_on_steam_friends( ) const;

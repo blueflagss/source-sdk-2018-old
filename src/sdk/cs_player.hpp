@@ -92,7 +92,7 @@ public:
     NETVAR( flash_duration, float, "DT_CSPlayer", "m_flFlashDuration" );
     NETVAR( eye_angles, vector_3d, "DT_CSPlayer", "m_angEyeAngles[0]" );
     NETVAR( lower_body_yaw_target, float, "DT_CSPlayer", "m_flLowerBodyYawTarget" );
-    NETVAR( viewmodel_handle, uint32_t, "DT_CSPlayer", "m_hViewModel[0]" );
+    NETVAR( viewmodel_handle, uint32_t, "DT_BasePlayer", "m_hViewModel[0]" );
     OFFSET( current_cmd, c_user_cmd *, 0x3348 );
     OFFSET( abs_velocity, vector_3d, 0x94 );
     OFFSET( last_cmd, c_user_cmd, 0x3298 );

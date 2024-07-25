@@ -191,13 +191,13 @@ public:
     vector_3d &mins( ) {
         auto offset = g_netvars.get_offset( HASH_CT( "DT_BaseEntity" ), HASH_CT( "m_Collision" ) );
 
-        return *reinterpret_cast< vector_3d * >( reinterpret_cast< uintptr_t >( this ) + offset + g_netvars.get_offset( HASH_CT( "DT_BaseEntity" ), HASH_CT( "m_vecMins" ) ) );
+        return *reinterpret_cast< vector_3d * >( reinterpret_cast< uintptr_t >( this ) + offset + g_netvars.get_offset( HASH_CT( "DT_CollisionProperty" ), HASH_CT( "m_vecMins" ) ) );
     }
 
     vector_3d &maxs( ) {
         auto offset = g_netvars.get_offset( HASH_CT( "DT_BaseEntity" ), HASH_CT( "m_Collision" ) );
 
-        return *reinterpret_cast< vector_3d * >( reinterpret_cast< uintptr_t >( this ) + offset + g_netvars.get_offset( HASH_CT( "DT_BaseEntity" ), HASH_CT( "m_vecMaxs" ) ) );
+        return *reinterpret_cast< vector_3d * >( reinterpret_cast< uintptr_t >( this ) + offset + g_netvars.get_offset( HASH_CT( "DT_CollisionProperty" ), HASH_CT( "m_vecMaxs" ) ) );
     }
 
     vector_3d world_space_center( ) {

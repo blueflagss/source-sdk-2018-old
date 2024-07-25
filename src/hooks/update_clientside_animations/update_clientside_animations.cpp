@@ -7,23 +7,20 @@ void __fastcall hooks::update_clientside_animations::hook( REGISTERS ) {
     if ( !player )
         return original.fastcall< void >( REGISTERS_OUT );
 
-    //if ( player == globals::local_player ) {
-    //    const auto animstate = globals::local_player-> anim_state( );
+    if ( player == globals::local_player ) {
+        const auto animstate = globals::local_player-> anim_state( );
 
-    //    if ( globals::allow_animations[ globals::local_player->index( ) ] ) {
-    //        /* fix viewmodel addons not updating. */
-    //        animstate->m_pPlayer = nullptr;
-    //        original.fastcall< void >( REGISTERS_OUT );
-    //        animstate->m_pPlayer = globals::local_player;
+        if ( globals::allow_animations[ globals::local_player->index( ) ] ) {
+            std::memcpy( globals::local_player->pose_parameters( ).data( ), g_animations.pose_parameters.data( ), g_animations.pose_parameters.size( ) );
+            std::memcpy( globals::local_player->anim_overlays( ), g_animations.animation_layers.data( ), g_animations.animation_layers.size( ) );
 
-    //        original.fastcall< void >( REGISTERS_OUT );
-    //    }
-    //} 
-    //
-    //else
-    //    original.fastcall< void >( REGISTERS_OUT );
-
-    if ( player->team( ) != globals::local_player->team( ) ) {
+            /* fix viewmodel addons not updating. */
+            animstate->m_pPlayer = nullptr;
+            original.fastcall< void >( REGISTERS_OUT );
+            animstate->m_pPlayer = globals::local_player;
+        }
+    } 
+    else {
         player->set_abs_origin( player->origin( ) );
 
         if ( globals::allow_animations[ player->index( ) ] ) {
@@ -40,7 +37,7 @@ void __fastcall hooks::update_clientside_animations::hook( REGISTERS ) {
             original.fastcall< void >( REGISTERS_OUT );
 
             player->eflags( ) = iEFlags;
-        }
+        } 
     }
 }
 

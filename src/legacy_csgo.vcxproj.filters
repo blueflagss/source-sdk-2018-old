@@ -1185,6 +1185,9 @@
     <ClInclude Include="hooks\level_init_pre_entity\level_init_pre_entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hooks\in_prediction\in_prediction.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sdk\interfaces\cvar.cpp">
@@ -1599,6 +1602,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks\level_init_pre_entity\level_init_pre_entity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\in_prediction\in_prediction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

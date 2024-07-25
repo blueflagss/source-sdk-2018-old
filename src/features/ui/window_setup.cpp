@@ -61,51 +61,66 @@ void menu::init( ) {
 
             auto weapon = ragebot->add_child( _xs( "Weapon" ), 0, false );
             {
-                weapon->add_object< penumbra::multi_combobox >( _xs( "Hitscan" ), std::deque< std::pair< std::string, bool * > >{
-                                                                                          { _xs( "Head" ), &g_vars.aimbot_hitboxes_head.value },
-                                                                                          { _xs( "Chest" ), &g_vars.aimbot_hitboxes_chest.value },
-                                                                                          { _xs( "Arms" ), &g_vars.aimbot_hitboxes_arms.value },
-                                                                                          { _xs( "Stomach" ), &g_vars.aimbot_hitboxes_stomach.value },
-                                                                                          { _xs( "Legs" ), &g_vars.aimbot_hitboxes_legs.value } } );
+                weapon->add_object< penumbra::multi_combobox >( _xs( "Hitboxes" ), 
+                std::deque< std::pair< std::string, bool * > >
+                {
+                    { _xs( "Head" ), &g_vars.aimbot_hitboxes_head.value },
+                    { _xs( "Chest" ), &g_vars.aimbot_hitboxes_chest.value },
+                    { _xs( "Arms" ), &g_vars.aimbot_hitboxes_arms.value },
+                    { _xs( "Stomach" ), &g_vars.aimbot_hitboxes_stomach.value },
+                    { _xs( "Legs" ), &g_vars.aimbot_hitboxes_legs.value } 
+                } );
 
-                weapon->add_object< penumbra::multi_combobox >( _xs( "Multipoints" ), std::deque< std::pair< std::string, bool * > >{
-                                                                                              { _xs( "Head" ), &g_vars.aimbot_multipoints_head.value },
-                                                                                              { _xs( "Chest" ), &g_vars.aimbot_multipoints_chest.value },
-                                                                                              { _xs( "Arms" ), &g_vars.aimbot_multipoints_arms.value },
-                                                                                              { _xs( "Stomach" ), &g_vars.aimbot_multipoints_stomach.value },
-                                                                                              { _xs( "Legs" ), &g_vars.aimbot_multipoints_legs.value } } );
+                weapon->add_object< penumbra::multi_combobox >( _xs( "Multipoints" ), 
+                std::deque< std::pair< std::string, bool * > >
+                {
+                    { _xs( "Head" ), &g_vars.aimbot_multipoints_head.value },
+                    { _xs( "Chest" ), &g_vars.aimbot_multipoints_chest.value },
+                    { _xs( "Arms" ), &g_vars.aimbot_multipoints_arms.value },
+                    { _xs( "Stomach" ), &g_vars.aimbot_multipoints_stomach.value },
+                    { _xs( "Legs" ), &g_vars.aimbot_multipoints_legs.value } 
+                } );
 
-                weapon->add_object< penumbra::slider< int > >( _xs( "Point scale" ), &g_vars.aimbot_multipoint_scale.value, 0, 100, "%" );
+                weapon->add_object< penumbra::slider< int > >( _xs( "Pointscale" ), &g_vars.aimbot_multipoint_scale.value, 0, 100, "%" );
                 weapon->add_object< penumbra::checkbox >( _xs( "Dynamic scaling" ), &g_vars.aimbot_multipoints_dynamic_scale.value );
                 weapon->add_object< penumbra::slider< int > >( _xs( "Hitchance" ), &g_vars.aimbot_hit_chance.value, 0, 100, "%" );
                 weapon->add_object< penumbra::slider< int > >( _xs( "Minimum damage" ), &g_vars.aimbot_min_damage.value, 0, 100, " dmg" );
             }
 
-            auto antiaim = ragebot->add_child( "Anti-aim", 1, false );
+            auto fakelag = ragebot->add_child( "Exploits", 2, false );
             {
-                antiaim->add_object< penumbra::checkbox >( "Enabled#a", &g_vars.exploits_antiaim.value );
+                fakelag->add_object< penumbra::checkbox >( "Fakelag", &g_vars.exploits_fakelag.value );
+                fakelag->add_object< penumbra::slider< int > >( "Limit#fakelag", &g_vars.exploits_fakelag_limit.value, 0, 16, " ticks" );
+            }
+
+            auto antiaim = ragebot->add_child( "Anti-aim", 2, false );
+            {
+                antiaim->add_object< penumbra::checkbox >( "Enabled#aa", &g_vars.exploits_antiaim.value );
                 antiaim->add_object< penumbra::combobox >( "Pitch", &g_vars.exploits_antiaim_pitch_type.value, std::deque< std::string >{ "Down", "Up", "Zero" } );
-                antiaim->add_object< penumbra::combobox >( "Direction", &g_vars.exploits_antiaim_dir_type.value, std::deque< std::string >{ "None", "Backwards", "Left ", "Right " } );
+                antiaim->add_object< penumbra::combobox >( "Direction", &g_vars.exploits_antiaim_dir_type.value, std::deque< std::string >{ "None", "Backwards", "Manual" } );
+                antiaim->add_object< penumbra::slider< float > >( "Offset", &g_vars.exploits_antiaim_yaw_offset.value, -180.f, 180.f, " deg" );
                 antiaim->add_object< penumbra::combobox >( "Yaw", &g_vars.exploits_antiaim_yaw_type.value, std::deque< std::string >{ "Direction", "Jitter", "Spin" } );
                 antiaim->add_object< penumbra::slider< float > >( "Jitter/Spin Range", &g_vars.exploits_antiaim_range.value, 0.f, 360.f, "" );
                 antiaim->add_object< penumbra::slider< float > >( "Spin Speed", &g_vars.exploits_antiaim_spin_speed.value, 0.f, 10.f, "" );
                 antiaim->add_object< penumbra::checkbox >( "Fake angles", &g_vars.exploits_antiaim_fake.value );
+                antiaim->add_object< penumbra::checkbox >( "Break LBY", &g_vars.exploits_antiaim_lby_break.value );
+                antiaim->add_object< penumbra::slider< float > >( "Addition angle", &g_vars.exploits_antiaim_lby_break_delta.value, -180.0f, 180.0f, " deg" );
                 antiaim->add_object< penumbra::combobox >( "Fake yaw type", &g_vars.exploits_antiaim_fake_yaw_type.value, std::deque< std::string >{ "Default", "Opposite" } );
-                antiaim->add_object< penumbra::checkbox >( "LBY breaker", &g_vars.exploits_antiaim_lby_break.value );
-                antiaim->add_object< penumbra::slider< float > >( "Value", &g_vars.exploits_antiaim_lby_break_delta.value, -180.0f, 180.0f, " deg" );
-                antiaim->add_object< penumbra::combobox >( "Leg movement", &g_vars.exploits_antiaim_leg_movement.value, std::deque< std::string >{ "None", "Slide", "Never slide" } );
+                antiaim->add_object< penumbra::checkbox >( "Distortion", &g_vars.exploits_antiaim_distortion.value );
+                antiaim->add_object< penumbra::slider< float > >( "Range", &g_vars.exploits_antiaim_distortion_range.value, -180.0f, 180.0f, " deg" );
+                antiaim->add_object< penumbra::slider< float > >( "Speed", &g_vars.exploits_antiaim_distortion_speed.value, 0.0f, 100.0f, "%" );
             }
-
-            auto fakelag = ragebot->add_child( "Exploits", 2, false );
+            
+            auto lag_compensation = ragebot->add_child( "Lagcomp", 1, false );
             {
-                fakelag->add_object< penumbra::checkbox >( "Fake lag", &g_vars.exploits_fakelag.value );
-                fakelag->add_object< penumbra::slider< int > >( "Limit#fakelag", &g_vars.exploits_fakelag_limit.value, 0, 16, " ticks" );
+                lag_compensation->add_object< penumbra::checkbox >( "Delay shot", &g_vars.aimbot_delay_shot.value );
+                lag_compensation->add_object< penumbra::checkbox >( "Fix fakelag", &g_vars.aimbot_fix_fakelag.value );
             }
 
-            auto misc = ragebot->add_child( "Miscellaneous#ragebot", 2, false );
+            auto misc = ragebot->add_child( "Miscellaneous#ragebot", 1, false );
             {
                 misc->add_object< penumbra::checkbox >( "Override resolver", &g_vars.aimbot_resolver_override.value );
-                
+                misc->add_object< penumbra::combobox >( "Leg movement", &g_vars.exploits_antiaim_leg_movement.value, std::deque< std::string >{ "None", "Slide", "Never slide" } ); 
             }
         }
 
@@ -235,31 +250,38 @@ void menu::init( ) {
 
         auto miscellaneous = main_window->add_tab( "Miscellaneous", ICON_FA_COGS, 3 );
         {
-            auto misc = miscellaneous->add_child( "Other#Miscellaneous", 0, false );
+            auto misc = miscellaneous->add_child( "Movement", 0, false );
             {
-                misc->add_object< penumbra::checkbox >( "Bypass sv_pure", &g_vars.misc_bypass_sv_pure.value );
+                misc->add_object< penumbra::checkbox >( "Fast stop", &g_vars.misc_fast_stop.value );
                 misc->add_object< penumbra::checkbox >( "Auto bunny hop", &g_vars.misc_bunny_hop.value );
                 misc->add_object< penumbra::combobox >( "Strafe assist", &g_vars.misc_auto_strafe_type.value, std::deque< std::string >{ "None", "View angles", "Movement keys" } );
+                
+                auto fake_walk = misc->add_object< penumbra::checkbox >( "Fake walk", &g_vars.misc_fake_walk.value );
+                {
+                    fake_walk->add_object< penumbra::hotkey >( "Fake walk key", &g_vars.misc_fake_walk_key.value, &g_vars.misc_fake_walk_key_toggle.value );
+                }
 
-                misc->add_object< penumbra::multi_combobox >( "Events", std::deque< std::pair< std::string, bool * > >{
-                    { "Planted C4", &g_vars.misc_events_log_bomb.value },
-                    { "Player hurt", &g_vars.misc_events_log_damage.value },
-                    { "Purchased weapons", &g_vars.misc_events_log_buy.value } 
-                } );
-             
-                misc->add_object< penumbra::button >( "Load test config", [ & ] {
-                    g_interfaces.engine_client->client_cmd_unrestricted( "sv_cheats 1; bot_stop 1; bot_kick all; bot_dont_shoot 1; mp_warmuptime 99999; mp_warmup_start" );
-                    g_notify.add( notify_type::none, false, _xs( "Loaded test game config" ) );
-                } );
+                misc->add_object< penumbra::slider< int > >( "Ticks#Fakewalk", &g_vars.misc_fake_walk_value.value, 0, 16, " ticks" );
             }
 
-            auto configuration = miscellaneous->add_child( "Config", 1, false );
+            auto configuration = miscellaneous->add_child( "Settings", 1, false );
             {
                 auto ui_color = configuration->add_object< penumbra::label >( "Theme" );
                 {
                     ui_color->add_object< penumbra::colorpicker >( "menu_controls_color", &g_vars.ui_theme.value, false );
                 }
 
+                configuration->add_object< penumbra::checkbox >( "Bypass sv_pure", &g_vars.misc_bypass_sv_pure.value );
+                configuration->add_object< penumbra::multi_combobox >( "Events", std::deque< std::pair< std::string, bool * > >{
+                    { "Planted C4", &g_vars.misc_events_log_bomb.value },
+                    { "Player hurt", &g_vars.misc_events_log_damage.value },
+                    { "Purchased weapons", &g_vars.misc_events_log_buy.value } 
+                } );
+
+                configuration->add_object< penumbra::button >( "Load test config", [ & ] {
+                    g_interfaces.engine_client->client_cmd_unrestricted( "sv_cheats 1; bot_stop 1; bot_kick all; bot_dont_shoot 1; mp_warmuptime 99999; mp_warmup_start" );
+                    g_notify.add( notify_type::none, false, _xs( "Loaded test game config" ) );
+                } );
                 auto config_text = configuration->add_object< penumbra::textbox >( "Name", &config_name, 100 );
 
                 config_list = configuration->add_object< penumbra::combobox >( "Select config", &this->config_selected, this->config_items );
