@@ -52,6 +52,7 @@ void visuals::render( ) {
     }
 
     render_scope_lines( );
+    show_manual_indicators( );
     hitmarker( );
     indicators( );
     penetration_crosshair( );
@@ -230,6 +231,55 @@ void visuals::render_weapon( c_cs_weapon_base *weapon ) {
     render::string( fonts::visuals_04b03, box.x + ( box.w / 2 ) - text_dimensions.x / 2, box.y + bar_offset + box.h + 1.5f, color( 255, 255, 255, 255 * max_distance_clamped ), weapon_text, false, true );
 }
 
+void visuals::show_manual_indicators( ) {
+    if ( g_vars.exploits_antiaim_dir_type.value != 2 || !g_vars.exploits_antiaim_manual_show_indicators.value )
+        return;
+
+    if ( !globals::local_player || !globals::local_player->alive( ) )
+        return;
+
+    const auto arrow_size = 10.0f;
+
+    auto rotate_point = [ ]( vector_2d center, vector_2d &point, float rotation ) {
+        point -= center;
+        math::rotate_point( point, rotation );
+        point += center;
+    };
+
+    auto render_arrow = [ & ]( vector_2d position, float rotation ) {
+        std::array< vector_2d, 3 > points = {
+                vector_2d( position.x + 7.0f + arrow_size, position.y + 7.0f + arrow_size ),
+                vector_2d( position.x - 7.0f - arrow_size, position.y ),
+                vector_2d( position.x + 7.0f + arrow_size, position.y - 7.0f - arrow_size )
+        };
+
+        rotate_point( { position.x, position.y }, points[ 0 ], rotation );
+        rotate_point( { position.x, position.y }, points[ 1 ], rotation );
+        rotate_point( { position.x, position.y }, points[ 2 ], rotation );
+
+        render::filled_triangle( points, g_vars.exploits_antiaim_manual_indicators_color.value );
+
+        if ( g_vars.exploits_antiaim_manual_show_indicators_outline.value )
+            render::triangle( points, color{ g_vars.exploits_antiaim_manual_indicators_color.value, 255 } );
+    };
+
+    auto position_1 = vector_2d{ ( ( globals::ui::screen_size.x / 2 ) - arrow_size * 2.0f ) + 21.0f, 30.0f + ( globals::ui::screen_size.y / 2 ) + arrow_size * 4.0f };
+    auto position_2 = vector_2d{ ( ( globals::ui::screen_size.x / 2 ) - arrow_size * 10.0f ) + 21.0f, 30.0f + ( globals::ui::screen_size.y / 2 ) - arrow_size * 3.0f };
+    auto position_3 = vector_2d{ ( ( globals::ui::screen_size.x / 2 ) + arrow_size * 6.0f ) + 21.0f, 30.0f + ( globals::ui::screen_size.y / 2 ) - arrow_size * 3.0f };
+
+    switch ( g_antiaim.manual_dir ) {
+        case manual_direction::left: {
+            render_arrow( position_2, 0.0f );
+        } break;
+        case manual_direction::right: {
+            render_arrow( position_3, -180.0f );
+        } break;
+        case manual_direction::back: {
+            render_arrow( position_1, -90.0f );
+        } break;
+    }
+}
+
 void visuals::render_player( c_cs_player *player ) {
     if ( opacity_array[ player->index( ) ] <= 0.02f )
         return;
@@ -325,7 +375,7 @@ void visuals::render_player( c_cs_player *player ) {
             esp_config[ player->index( ) ].bottom_bar_offset += text_dimensions.y;
         }
 
-        if ( g_vars.visuals_player_weapon_icon.value ) {
+        if ( g_vars.visuals_player_weapon_icon.value && weapon->item_definition_index( ) >= weapons::revolver ) {
             auto icon = csgo_hud_icons[ weapon->item_definition_index( ) ];
             auto text_dimensions = render::get_text_size( fonts::csgo_icons, icon );
 
@@ -347,7 +397,7 @@ void visuals::render_player( c_cs_player *player ) {
             flags.emplace_back( std::pair< std::string, color >{ _xs( "BOT" ), { 255, 255, 255 } } );
 
         if ( g_vars.visuals_player_flags_scoped.value && player->scoped( ) )
-            flags.emplace_back( std::pair< std::string, color >{ _xs( "ZOOM" ), { 255, 255, 255 } } );
+            flags.emplace_back( std::pair< std::string, color >{ _xs( "SCOPED" ), { 255, 255, 255 } } );
 
         auto get_armor_type = []( c_cs_player *player ) -> std::string {
             if ( player->armor( ) > 0 && player->helmet( ) )
@@ -385,7 +435,7 @@ void visuals::render_player( c_cs_player *player ) {
 
         for ( size_t i = { 0ul }; i < flags.size( ); ++i ) {
             auto &flag_object = flags.at( i );
-            auto offset = ( i * ( render::get_text_size( fonts::visuals_04b03, flags[ i ].first ).y + 1.0f ) );
+            auto offset = ( i * ( render::get_text_size( fonts::visuals_04b03, flags[ i ].first ).y + 0.5f ) );
 
             render::string( fonts::visuals_04b03, box.x + box.w + 2, box.y + offset - 1, color{ color::white( ), 255 * opacity_array[ player->index( ) ] }, flag_object.first, false, true );
         }
@@ -453,7 +503,7 @@ void visuals::render_offscreen( c_cs_player *player ) const {
     if ( !g_vars.visuals_other_oof_arrows.value )
         return;
 
-    if ( !globals::local_player->alive( ) || !player->alive( ) )
+    if ( player->dormant( ) )
         return;
 
     vector_3d forward;

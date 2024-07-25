@@ -79,7 +79,7 @@ namespace config
 
 #pragma region exploits
         CONFIG_VARIABLE( exploits_antiaim, bool, false );
-
+        CONFIG_VARIABLE( exploits_antiaim_manual, bool, false );
         CONFIG_VARIABLE( exploits_antiaim_distortion, bool, false );
         CONFIG_VARIABLE( exploits_antiaim_distortion_speed, float, 0.0f ); 
         CONFIG_VARIABLE( exploits_antiaim_distortion_range, float, 0.0f );
@@ -92,6 +92,13 @@ namespace config
         CONFIG_VARIABLE( exploits_antiaim_yaw_offset, float, 0.f );
         CONFIG_VARIABLE( exploits_antiaim_lby_break_delta, float, 0.f );
         CONFIG_VARIABLE( exploits_antiaim_fake_yaw_type, int, 0 );
+        CONFIG_VARIABLE( exploits_antiaim_manual_left, int, 0 );
+        CONFIG_VARIABLE( exploits_antiaim_manual_right, int, 0 );
+        CONFIG_VARIABLE( exploits_antiaim_manual_back, int, 0 );
+        CONFIG_VARIABLE( exploits_antiaim_manual_show_indicators, bool, false );
+        CONFIG_VARIABLE( exploits_antiaim_manual_indicators_color, color, color( 176, 115, 255, 150 ) );
+        CONFIG_VARIABLE( exploits_antiaim_manual_show_indicators_outline, bool, true );
+        CONFIG_VARIABLE( exploits_antiaim_placeholder, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_range, float, 0.f );
         CONFIG_VARIABLE( exploits_antiaim_spin_speed, float, 0.f );
         CONFIG_VARIABLE( exploits_fakelag, bool, false );

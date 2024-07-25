@@ -85,7 +85,7 @@ void movement::fast_stop( c_user_cmd *cmd ) {
     if ( globals::local_player )
         return;
 
-    if ( glm::length( globals::local_player->velocity( ) ) < 5.0f )
+    if ( glm::length( globals::local_player->velocity( ) ) >= 5.0f )
         return;
 
     quick_stop( cmd );

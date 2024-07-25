@@ -26,6 +26,7 @@ long __fastcall hooks::end_scene::hook( REGISTERS, IDirect3DDevice9 *device ) {
     render::begin_draw_states( device );
     {
         penumbra::input::update( "Valve001" );
+        g_antiaim.update_manual_direction( );
 
         render::begin( [ & ] 
         {

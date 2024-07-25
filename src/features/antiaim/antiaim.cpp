@@ -2,9 +2,47 @@
 #include <core/config.hpp>
 #include <features/animations/animation_sync.hpp>
 #include <features/movement/movement.hpp>
+#include <features/ui/input/input.hpp>
 #include <random>
 
 std::mt19937 rng( std::time( NULL ) );
+
+void antiaim::update_manual_direction( ) {
+    using_manual_dir = manual_dir != manual_direction::none;
+
+    bool states[ 3 ] = {
+            penumbra::input::key_pressed( g_vars.exploits_antiaim_manual_left.value ),
+            penumbra::input::key_pressed( g_vars.exploits_antiaim_manual_right.value ),
+            penumbra::input::key_pressed( g_vars.exploits_antiaim_manual_back.value )
+    };
+    
+    auto set_antiaim_dir = [ & ]( manual_direction state ) {
+        if ( manual_dir == state ) {
+            manual_dir = manual_direction::none;
+            using_manual_dir = false;
+        } else {
+            manual_dir = state;
+            using_manual_dir = true;
+        }
+    };
+
+    if ( states[ 0 ] ) {
+        set_antiaim_dir( manual_direction::left );
+        //globals::hotkeys::manual_left = false;
+    }
+
+    if ( states[ 1 ] ) {
+        set_antiaim_dir( manual_direction::right );
+
+        //globals::hotkeys::manual_right = false;
+    }
+
+    if ( states[ 2 ] ) {
+        set_antiaim_dir( manual_direction::back );
+
+        //globals::hotkeys::manual_back = false;
+    }
+}
 
 void antiaim::handle_direction( c_user_cmd *cmd ) {
     switch ( g_vars.exploits_antiaim_dir_type.value ) {
@@ -14,12 +52,21 @@ void antiaim::handle_direction( c_user_cmd *cmd ) {
         case 1:
             dir = cmd->view_angles.y + 180.f;
             break;
-        case 2:
-            dir = cmd->view_angles.y + 90.f;
-            break;
-        case 3:
-            dir = cmd->view_angles.y - 90.f;
-            break;
+        case 2: {
+            dir = cmd->view_angles.y + 180.f;
+
+            if ( using_manual_dir ) {
+                if ( manual_dir == manual_direction::back )
+                    dir = cmd->view_angles.y + 180.0f;
+
+                else if ( manual_dir == manual_direction::left )
+                        dir = cmd->view_angles.y + 90.0f;
+
+                else if ( manual_dir == manual_direction::right )
+                        dir = cmd->view_angles.y - 90.0f;
+                
+            }
+        } break;
         default:
             break;
     }
@@ -52,20 +99,6 @@ void antiaim::handle_real( c_user_cmd *cmd ) {
     const float range = g_vars.exploits_antiaim_range.value / 2.f;
     std::uniform_real_distribution gen( -range, range );
 
-    switch ( g_vars.exploits_antiaim_yaw_type.value ) {
-        case 1:
-            cmd->view_angles.y += gen( rng );
-            break;
-        case 2:
-            cmd->view_angles.y = ( dir - g_vars.exploits_antiaim_range.value / 2.f );
-            cmd->view_angles.y +=
-                    std::fmod( g_interfaces.global_vars->curtime * ( g_vars.exploits_antiaim_spin_speed.value * 100.f ),
-                               g_vars.exploits_antiaim_range.value );
-            break;
-        default:
-            break;
-    }
-
     if ( g_vars.exploits_antiaim_lby_break.value ) {
         const auto standing = glm::length( globals::local_player->velocity( ) ) < 1.0f;
         const auto air = ( globals::local_player->flags( ) & player_flags::on_ground ) || globals::local_player->velocity( ).z > 1.0f;
@@ -73,11 +106,27 @@ void antiaim::handle_real( c_user_cmd *cmd ) {
         if ( !g_interfaces.client_state->choked_commands( ) && ( g_interfaces.global_vars->curtime > g_animations.lower_body_realign_timer ) && ( standing || air ) )
             cmd->view_angles.y += g_vars.exploits_antiaim_lby_break_delta.value;
     }
-    distortion( cmd );
 
-    cmd->view_angles.y += g_vars.exploits_antiaim_yaw_offset.value;
+    if ( !using_manual_dir ) {
+        switch ( g_vars.exploits_antiaim_yaw_type.value ) {
+            case 1:
+                cmd->view_angles.y += gen( rng );
+                break;
+            case 2:
+                cmd->view_angles.y = ( dir - g_vars.exploits_antiaim_range.value / 2.f );
+                cmd->view_angles.y +=
+                        std::fmod( g_interfaces.global_vars->curtime * ( g_vars.exploits_antiaim_spin_speed.value * 100.f ),
+                                   g_vars.exploits_antiaim_range.value );
+                break;
+            default:
+                break;
+        }
+
+        distortion( cmd );
+        cmd->view_angles.y += g_vars.exploits_antiaim_yaw_offset.value;
+    }
+
     cmd->view_angles.y = math::normalize( cmd->view_angles.y );
-
     real.y = cmd->view_angles.y;
 }
 
@@ -148,7 +197,7 @@ void antiaim::handle_pitch( c_user_cmd *cmd ) {
 
 void antiaim::distortion( c_user_cmd *cmd ) {
     const auto timer = ( g_vars.exploits_antiaim_distortion_speed.value / 100.0f ) * 0.0625f;
-    const auto angle = ( float ) ( ( float ) ( 1.0f - std::powf( distortion_timer, 2 ) ) * g_vars.exploits_antiaim_distortion_range.value ) - ( float ) ( g_vars.exploits_antiaim_distortion_range.value * 0.5 );
+    const auto angle = ( float ) ( ( float ) ( 1.0f - std::powf( distortion_timer, 2.0f ) ) * g_vars.exploits_antiaim_distortion_range.value ) - ( float ) ( g_vars.exploits_antiaim_distortion_range.value * 0.5 );
 
     distortion_timer += timer;
     cmd->view_angles.y += switch_distortion_side ? angle : -angle;

@@ -39,7 +39,10 @@ namespace globals
     namespace hotkeys
     {
         inline bool thirdperson{ false };
-    }
+        inline bool manual_left{ false };
+        inline bool manual_right{ false };
+        inline bool manual_back{ false };
+    }// namespace hotkeys
 
     namespace cvars
     {

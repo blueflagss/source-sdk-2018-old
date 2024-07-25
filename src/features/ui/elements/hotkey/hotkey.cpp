@@ -3,6 +3,7 @@
 
 void penumbra::hotkey::animate( ) {
     auto hotkey_dimensions = render::get_text_size( fonts::montserrat_main, this->_hotkey_text );
+
     auto center_object = glm::vec2{ this->position.x + ( this->size.x / 2 ) - hotkey_dimensions.x / 2, this->position.y + ( this->size.y / 2 ) - hotkey_dimensions.y / 2 };
 
     auto hotkey_rectangle_position = glm::vec2{ this->position.x - 9.0f - hotkey_dimensions.x, this->position.y - 2.0f };
@@ -52,7 +53,7 @@ void penumbra::hotkey::paint( ) {
     const auto animation_open_lerp = animations::get( HASH_CT( "selection__open__lerp__" ) + HASH( this->name.c_str( ) ), 0.0f );
 
     auto hotkey_rectangle_position = glm::vec2{ this->position.x - 11.0f - animation_lerp.value, this->position.y - 2.0f };
-    auto hotkey_rectangle_dimensions = glm::vec2{ animation_lerp.value, hotkey_dimensions.y + 3.0f };
+    auto hotkey_rectangle_dimensions = glm::vec2{ std::clamp< float >( animation_lerp.value, 60.0f, 300.0f ), hotkey_dimensions.y + 3.0f };
 
     render::filled_rect( hotkey_rectangle_position.x, hotkey_rectangle_position.y, animation_lerp.value, hotkey_rectangle_dimensions.y, color{ 32, 32, 32, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 24, 24, 24, 200 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), 3.0f );
     render::rect( hotkey_rectangle_position.x, hotkey_rectangle_position.y, animation_lerp.value, hotkey_rectangle_dimensions.y, color{ 60, 60, 60, 100 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 50, 50, 50, 100 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), 2.0f );

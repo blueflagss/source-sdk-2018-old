@@ -66,6 +66,7 @@ public:
     void hitmarker( );
     void update_configuration( c_base_entity *entity );
     void render_weapon( c_cs_weapon_base *weapon );
+    void show_manual_indicators( );
     void render_scope_lines( );
     void penetration_crosshair( );
     void on_create_move( );

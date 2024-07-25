@@ -56,7 +56,7 @@ public:
             return "";
         };
 
-        g_interfaces.cvar->console_color_printf( g_vars.ui_theme.value, _xs( "[geekbar] " ) );
+        g_interfaces.cvar->console_color_printf( g_vars.ui_theme.value, _xs( "[penumbra] " ) );
 
         if ( type != notify_type::none )
             g_interfaces.cvar->console_color_printf( console_text_tag_color, fmt::format( _xs( "{}" ), get_notify_tag( ) ).data( ) );

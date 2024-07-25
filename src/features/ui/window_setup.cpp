@@ -19,10 +19,10 @@ void menu::handle_hotkeys( ) {
     if ( !this->is_initialized )
         return;
 
-    if ( main_window && main_window->is_visible )
-        return;
-
     globals::hotkeys::thirdperson = g_config.get_hotkey( g_vars.visuals_other_thirdperson_bind, g_vars.visuals_other_thirdperson_toggle.value );
+    globals::hotkeys::manual_left = penumbra::input::key_pressed( g_vars.exploits_antiaim_manual_left.value );
+    globals::hotkeys::manual_right = penumbra::input::key_pressed( g_vars.exploits_antiaim_manual_right.value );
+    globals::hotkeys::manual_back = penumbra::input::key_pressed( g_vars.exploits_antiaim_manual_back.value );
 }
 
 void menu::on_screen_size_updated( int width, int height ) {
@@ -32,7 +32,8 @@ void menu::on_screen_size_updated( int width, int height ) {
     for ( auto &window : penumbra::windows ) {
         window->position *= glm::vec2{
                 std::clamp< float >( globals::ui::screen_size.x / globals::ui::old_screen_size.x, 0.0f, globals::ui::screen_size.x ),
-                std::clamp< float >( globals::ui::screen_size.y / globals::ui::old_screen_size.y, 0.0f, globals::ui::screen_size.y ) };
+                std::clamp< float >( globals::ui::screen_size.y / globals::ui::old_screen_size.y, 0.0f, globals::ui::screen_size.y )
+        };
     }
 
     /* set last screen size. */
@@ -46,7 +47,7 @@ void menu::init( ) {
     auto window_center = vector_2d( ( globals::ui::screen_size.x - this->main_window_dimensions.x ) / 2, ( globals::ui::screen_size.y - this->main_window_dimensions.y ) / 2 );
 
     /* initialize menu. */
-    main_window = this->add_window( _xs( "hypnotic" ), _xs( "" ), nullptr, window_center, this->main_window_dimensions, WINDOW_MAIN );
+    main_window = this->add_window( _xs( "Penumbra" ), _xs( "" ), nullptr, window_center, this->main_window_dimensions, WINDOW_MAIN );
     {
         auto ragebot = main_window->add_tab( "Ragebot", ICON_FA_CROSSHAIRS, 3 );
         {
@@ -96,15 +97,34 @@ void menu::init( ) {
             auto antiaim = ragebot->add_child( "Anti-aim", 2, false );
             {
                 antiaim->add_object< penumbra::checkbox >( "Enabled#aa", &g_vars.exploits_antiaim.value );
+                antiaim->add_object< penumbra::checkbox >( "Fake yaw", &g_vars.exploits_antiaim_fake.value );
                 antiaim->add_object< penumbra::combobox >( "Pitch", &g_vars.exploits_antiaim_pitch_type.value, std::deque< std::string >{ "Down", "Up", "Zero" } );
                 antiaim->add_object< penumbra::combobox >( "Direction", &g_vars.exploits_antiaim_dir_type.value, std::deque< std::string >{ "None", "Backwards", "Manual" } );
                 antiaim->add_object< penumbra::slider< float > >( "Offset", &g_vars.exploits_antiaim_yaw_offset.value, -180.f, 180.f, " deg" );
-                antiaim->add_object< penumbra::combobox >( "Yaw", &g_vars.exploits_antiaim_yaw_type.value, std::deque< std::string >{ "Direction", "Jitter", "Spin" } );
-                antiaim->add_object< penumbra::slider< float > >( "Jitter/Spin Range", &g_vars.exploits_antiaim_range.value, 0.f, 360.f, "" );
-                antiaim->add_object< penumbra::slider< float > >( "Spin Speed", &g_vars.exploits_antiaim_spin_speed.value, 0.f, 10.f, "" );
-                antiaim->add_object< penumbra::checkbox >( "Fake angles", &g_vars.exploits_antiaim_fake.value );
                 antiaim->add_object< penumbra::checkbox >( "Break LBY", &g_vars.exploits_antiaim_lby_break.value );
                 antiaim->add_object< penumbra::slider< float > >( "Addition angle", &g_vars.exploits_antiaim_lby_break_delta.value, -180.0f, 180.0f, " deg" );
+
+                auto manual_left = antiaim->add_object< penumbra::label >( "Manual left" );
+                {
+                    manual_left->add_object< penumbra::hotkey >( "manual_left", &g_vars.exploits_antiaim_manual_left.value, &g_vars.exploits_antiaim_placeholder.value );
+                }
+
+                auto manual_right = antiaim->add_object< penumbra::label >( "Manual right" );
+                {
+                    manual_right->add_object< penumbra::hotkey >( "manual_right", &g_vars.exploits_antiaim_manual_right.value, &g_vars.exploits_antiaim_placeholder.value );
+                }
+
+                auto manual_back = antiaim->add_object< penumbra::label >( "Manual back" );
+                {
+                    manual_back->add_object< penumbra::hotkey >( "manual_back", &g_vars.exploits_antiaim_manual_back.value, &g_vars.exploits_antiaim_placeholder.value );
+                }
+
+                auto manual_indicators = antiaim->add_object< penumbra::checkbox >( "Indicators", &g_vars.exploits_antiaim_manual_show_indicators.value );
+                manual_indicators->add_object< penumbra::colorpicker >( "manual_aa_indicators_color", &g_vars.exploits_antiaim_manual_indicators_color.value, true );
+                antiaim->add_object< penumbra::checkbox >( "Outline#indicators", &g_vars.exploits_antiaim_manual_show_indicators_outline.value );
+                antiaim->add_object< penumbra::combobox >( "Yaw", &g_vars.exploits_antiaim_yaw_type.value, std::deque< std::string >{ "Direction", "Jitter", "Spin" } );
+                antiaim->add_object< penumbra::slider< float > >( "Jitter/Spin range", &g_vars.exploits_antiaim_range.value, 0.f, 360.f, " deg" );
+                antiaim->add_object< penumbra::slider< float > >( "Spin speed", &g_vars.exploits_antiaim_spin_speed.value, 0.f, 10.f, "%" );
                 antiaim->add_object< penumbra::combobox >( "Fake yaw type", &g_vars.exploits_antiaim_fake_yaw_type.value, std::deque< std::string >{ "Default", "Opposite" } );
                 antiaim->add_object< penumbra::checkbox >( "Distortion", &g_vars.exploits_antiaim_distortion.value );
                 antiaim->add_object< penumbra::slider< float > >( "Range", &g_vars.exploits_antiaim_distortion_range.value, -180.0f, 180.0f, " deg" );

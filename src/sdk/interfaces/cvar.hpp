@@ -109,7 +109,7 @@ public:
 class i_cvar {
 public:
     void console_color_printf( const color &col, const char *format, ... ) {
-        return utils::get_method< void( __cdecl * )( void *, const color &, const char *, ... ) >( this, 25 )( this, col, format );
+        return utils::get_method< void( __cdecl * )( void *, const uint32_t &, const char *, ... ) >( this, 25 )( this, _byteswap_ulong( col.col ), format );
     }
 
     void console_printf( const char *format, ... ) {
