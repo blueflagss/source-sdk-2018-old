@@ -5,6 +5,7 @@
 #include <features/ragebot/ragebot.hpp>
 #include <features/resolver/resolver.hpp>
 #include <features/sound_handler/sound_handler.hpp>
+#include <threadutils/threading.h>
 
 void lag_record::reset( c_cs_player *player ) {
     this->player = player;
@@ -29,13 +30,7 @@ void lag_record::reset( c_cs_player *player ) {
     choked = std::clamp< int >( game::time_to_ticks( player->simtime( ) - old_sim_time ), 0, 20 );
     on_ground = false;
     is_exploit = false;
-
-    *reinterpret_cast< float * >( reinterpret_cast< uintptr_t >( &anim_state ) + 0x9C ) = player->anim_overlays( )[ 6 ].weight;
-    *reinterpret_cast< float * >( reinterpret_cast< uintptr_t >( &anim_state ) + 0x98 ) = player->anim_overlays( )[ 6 ].cycle;
-    *reinterpret_cast< float * >( reinterpret_cast< uintptr_t >( &anim_state ) + 0x19C ) = player->anim_overlays( )[ 7 ].sequence;
-    *reinterpret_cast< float * >( reinterpret_cast< uintptr_t >( &anim_state ) + 0x190 ) = player->anim_overlays( )[ 7 ].weight;
-    *reinterpret_cast< float * >( reinterpret_cast< uintptr_t >( &anim_state ) + 0x198 ) = player->anim_overlays( )[ 7 ].cycle;
-    *reinterpret_cast< float * >( reinterpret_cast< uintptr_t >( &anim_state ) + 0x180 ) = player->anim_overlays( )[ 12 ].weight;
+    forward_track = false;
 
     if ( player->bone_cache( ) )
         memcpy( this->bones.data( ), player->bone_cache( ), player->bone_count( ) * sizeof( matrix_3x4 ) );
@@ -58,7 +53,7 @@ bool lag_record::is_valid( ) {
     correct += globals::lerp_amount;
     correct = std::clamp< float >( correct, 0.0f, globals::cvars::sv_maxunlag->get_float( ) );
 
-    const float dead_time = curtime - globals::cvars::sv_maxunlag->get_float( );
+    const int dead_time = curtime - globals::cvars::sv_maxunlag->get_float( );
 
     if ( this->sim_time <= dead_time )
         return false;
@@ -83,42 +78,22 @@ void lag_record::cache( ) {
 }
 
 void animation_sync::generate_shoot_position( ) {
-    // Implementing the commented-out code can potentially improve the shoot position calculation, but it needs to be verified against the existing gameplay and animation logic to ensure it doesn't introduce any inaccuracies.
-    const auto anim_state = globals::local_player->anim_state( );
-    if ( !anim_state )
+}
+
+struct movement_args {
+    c_cs_player *player;
+    vector_3d origin;
+    vector_3d velocity;
+};
+
+static void threaded_process_movement( movement_args *args ) {
+    if ( !args || !args->player )
         return;
-    if ( !g_animations.animated_bones[ globals::local_player->index( ) ].data( ) )
-        return;
 
-    const auto abs_origin = globals::local_player->origin( );
-    auto *bone_cache = &globals::local_player->bone_cache( );
+    g_prediction_context.simulate_tick( );
 
-    matrix_3x4 *backup_cache = nullptr;
-
-    if ( bone_cache ) {
-        for ( auto i = 0; i < 128; i++ ) {
-            g_animations.animated_bones[ globals::local_player->index( ) ][ i ].mat[ 0 ][ 3 ] += abs_origin.x;
-            g_animations.animated_bones[ globals::local_player->index( ) ][ i ].mat[ 1 ][ 3 ] += abs_origin.y;
-            g_animations.animated_bones[ globals::local_player->index( ) ][ i ].mat[ 2 ][ 3 ] += abs_origin.z;
-        }
-
-        backup_cache = globals::local_player->bone_cache( );
-        globals::local_player->bone_cache( ) = g_animations.animated_bones[ globals::local_player->index( ) ].data( );
-    }
-
-    globals::local_shoot_pos = globals::local_player->origin( ) + globals::local_player->view_offset( );
-
-    if ( bone_cache ) {
-        globals::local_player->modify_eye_position( anim_state, &globals::local_shoot_pos, g_animations.animated_bones[ globals::local_player->index( ) ].data( ) );
-
-        for ( auto i = 0; i < 128; i++ ) {
-            g_animations.animated_bones[ globals::local_player->index( ) ][ i ].mat[ 0 ][ 3 ] -= abs_origin.x;
-            g_animations.animated_bones[ globals::local_player->index( ) ][ i ].mat[ 1 ][ 3 ] -= abs_origin.y;
-            g_animations.animated_bones[ globals::local_player->index( ) ][ i ].mat[ 2 ][ 3 ] -= abs_origin.z;
-        }
-
-        globals::local_player->bone_cache( ) = backup_cache;
-    }
+    args->velocity = args->player->velocity( );
+    args->origin = args->player->origin( );
 }
 
 bool animation_sync::should_predict_lag( aim_player &target, lag_record *record, lag_record *previous ) {
@@ -127,37 +102,16 @@ bool animation_sync::should_predict_lag( aim_player &target, lag_record *record,
     if ( !record )
         return false;
 
-    auto &info = player_log[ target.entity->index( ) ];
-    size_t size{ };
-
-    for ( const auto &it : info.anim_records ) {
-        if ( it.dormant )
-            break;
-
-        ++size;
-    }
-
-    const auto prev_1 = ( &info.anim_records[ info.lag_records.size( ) - 1 ] );
-    const auto prev_2 = ( &info.anim_records[ info.lag_records.size( ) - 2 ] );
-
-    if ( !prev_1 || !prev_2 )
-        return false;
-
-    if ( size > 1 && ( math::length_sqr( record->origin - prev_1->origin ) > 4096.f || size > 2 && math::length_sqr( prev_1->origin - prev_2->origin ) > 4096.f ) )
-        record->break_lc = true;
-
-    if ( !record->break_lc )
-        return false;
-
     const auto player = target.entity;
 
     if ( !player )
         return false;
 
-    if ( record->choked <= 0 )
+    if ( record->choked <= 1 )
         return false;
 
     const auto anim_state = player->anim_state( );
+
     if ( !anim_state )
         return false;
 
@@ -181,22 +135,13 @@ bool animation_sync::should_predict_lag( aim_player &target, lag_record *record,
     }
 
     const auto adjusted_arrive_tick = game::time_to_ticks( globals::latency + g_interfaces.global_vars->realtime - game::ticks_to_time( record->tick ) );
+
     record->arrival_tick = adjusted_arrive_tick;
 
     if ( adjusted_arrive_tick - record->choked >= 0 ) {
         target.delay_shot = true;
         return true;
     }
-
-    int updatedelta = globals::server_tick - record->tick;
-
-    if ( globals::latency_ticks <= record->choked - updatedelta )
-        return true;
-
-    auto next = record->tick + 1;
-
-    if ( next + record->choked >= globals::arrival_tick )
-        return true;
 
     if ( !g_vars.aimbot_fix_fakelag.value )
         return false;
@@ -211,32 +156,76 @@ bool animation_sync::should_predict_lag( aim_player &target, lag_record *record,
 
     const auto lag_amount = std::clamp< int >( record->choked, 1, 16 );
 
-    while ( true ) {
-        next += lag_amount;
+    if ( !g_prediction_context.predict_player_entity( record->player ) )
+        return false;
 
-        if ( next >= globals::arrival_tick )
-            break;
+    int next_tick = g_interfaces.client_state->server_tick( ) + 1;
+    const int cmd_arrival_tick = g_interfaces.client_state->server_tick( ) + globals::latency_ticks;
 
-        for ( int simulation_ticks = 0; simulation_ticks < lag_amount; ++simulation_ticks ) {
-            extrapolate( record, record->origin, record->velocity, record->flags, record->on_ground );
+    lag_record *newest_non_onshot_rec = nullptr;
+    float newest_time = 0.0f;
 
-            record->sim_time += g_interfaces.global_vars->interval_per_tick;
-            ++pred;
+    auto &info = player_log[ target.entity->index( ) ];
 
-            if ( simulation_ticks == 0 && anim_state ) {
-                update_player_animation( player, *record, nullptr, false );
-            }
+    for ( auto &rec : info.anim_records ) {
+        if ( rec.sim_time > newest_time && !rec.shot ) {
+            newest_non_onshot_rec = &rec;
+            newest_time = rec.sim_time;
         }
     }
 
-    if ( pred <= 0 )
-        return true;
+    auto newest_rec_for_bones = newest_non_onshot_rec ? newest_non_onshot_rec : record;
+    auto newest_rec = record;
+    auto hit_tick = game::time_to_ticks( newest_rec->sim_time );
 
-    if ( anim_state )
-        std::memcpy( anim_state, &backup, sizeof( c_csgo_player_animstate ) );
+    if ( next_tick + newest_rec->choked < cmd_arrival_tick ) {
+        while ( true ) {
+            next_tick += newest_rec->choked;
 
-    player->invalidate_bone_cache( );
-    build_bones( record, player, record->bones.data( ), record->sim_time );
+            if ( next_tick >= cmd_arrival_tick )
+                break;
+
+            auto extrap_rec = new lag_record{ *newest_rec };
+
+            const auto start_origin = newest_rec_for_bones->origin;
+            extrap_rec->bones = newest_rec_for_bones->bones;
+
+            for ( int sim = 0; sim < newest_rec->choked; sim++ ) {
+                movement_args mv{ };
+
+                mv.player = record->player;
+
+                Threading::QueueJobRef( threaded_process_movement, ( void * ) &mv );
+                Threading::FinishQueue( true );
+
+                if ( mv.origin != vector_3d( ) )
+                    extrap_rec->origin = mv.origin;
+
+                hit_tick++;
+            }
+
+            for ( auto &mat : extrap_rec->bones )
+                mat.set_origin( mat.get_origin( ) - start_origin + extrap_rec->origin );
+
+            extrap_rec->sim_time = extrap_rec->anim_time = game::ticks_to_time( hit_tick );
+            extrap_rec->forward_track = true;
+            extrap_rec->break_lc = false;
+
+            *record = *extrap_rec;
+
+            pred++;
+
+            if ( pred > 4 )
+                break;
+        }
+    }
+
+    g_prediction_context.restore( );
+
+ /*   if ( pred > 0 ) {
+        player->invalidate_bone_cache( );
+        build_bones( player, record->bones.data( ), player->pose_parameters( ), record->anim_time );
+    }*/
 
     return true;
 }
@@ -261,7 +250,7 @@ bool animation_sync::get_lagcomp_bones( c_cs_player *player, std::array< matrix_
             auto &record = lag_records[ i ];
 
             if ( time_valid_no_deadtime( lag_records[ i ].sim_time ) ) {
-                if ( glm::length( record.origin - player->get_abs_origin( ) ) < 1.0f )
+                if ( glm::length( record.origin - player->origin( ) ) < 1.0f )
                     return false;
 
                 bool end = ( i - 1 ) <= 0;
@@ -278,7 +267,7 @@ bool animation_sync::get_lagcomp_bones( c_cs_player *player, std::array< matrix_
 
                 float mul = 1.f / add;
 
-                auto lerp = next + ( lag_records[ i ].origin - next ) * std::clamp( delta * mul, 0.0f, 1.0f );
+                auto lerp = next + ( lag_records[ i ].abs_origin - next ) * std::clamp( delta * mul, 0.0f, 1.0f );
 
                 out = lag_records[ i ].bones;
 
@@ -293,70 +282,9 @@ bool animation_sync::get_lagcomp_bones( c_cs_player *player, std::array< matrix_
     return false;
 };
 
-bool animation_sync::build_bones( c_cs_player *player, matrix_3x4 *out, float curtime ) {
+bool animation_sync::build_bones( c_cs_player *player, matrix_3x4 *out, std::array< float, 24 > &poses, float curtime ) {
     if ( !player->index( ) || player->index( ) > 64 )
         return false;
-
-    g_interfaces.model_cache->begin_lock( );
-
-    const auto cur_time = g_interfaces.global_vars->curtime;
-    const auto frame_time = g_interfaces.global_vars->frametime;
-    const auto abs_frame_time = g_interfaces.global_vars->abs_frametime;
-    const auto interval_per_tick = curtime / ( g_interfaces.global_vars->interval_per_tick + 0.5f );
-    const auto frame_count = g_interfaces.global_vars->framecount;
-    const auto tick_count = g_interfaces.global_vars->tick_count;
-
-    g_interfaces.global_vars->curtime = curtime;
-    g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
-    g_interfaces.global_vars->abs_frametime = g_interfaces.global_vars->interval_per_tick;
-    g_interfaces.global_vars->framecount = interval_per_tick;
-    g_interfaces.global_vars->tick_count = interval_per_tick;
-
-    const auto backup_effects = player->effects( );
-    const auto backup_setup_time = player->last_bone_setup_time( );
-    const auto backup_maintain_sequence_transitions = player->maintain_sequence_transitions( );
-
-    player->maintain_sequence_transitions( ) = false;
-    player->last_bone_setup_time( ) = 0;
-    player->effects( ) |= effects::nointerp;
-
-    globals::is_building_bones[ player->index( ) ] = true;
-    bool setup = player->setup_bones( out, 128, 0x7FF00, curtime );
-    globals::is_building_bones[ player->index( ) ] = false;
-
-    player->maintain_sequence_transitions( ) = backup_maintain_sequence_transitions;
-    player->last_bone_setup_time( ) = backup_setup_time;
-    player->effects( ) = backup_effects;
-
-    g_interfaces.global_vars->curtime = cur_time;
-    g_interfaces.global_vars->frametime = frame_time;
-    g_interfaces.global_vars->abs_frametime = abs_frame_time;
-    g_interfaces.global_vars->framecount = frame_count;
-    g_interfaces.global_vars->tick_count = tick_count;
-
-    g_interfaces.model_cache->end_lock( );
-
-    return setup;
-}
-
-bool animation_sync::build_bones( lag_record *record, c_cs_player *player, matrix_3x4 *out, float curtime ) {
-    if ( !player->index( ) || player->index( ) > 64 )
-        return false;
-
-    g_interfaces.model_cache->begin_lock( );
-
-    const auto cur_time = g_interfaces.global_vars->curtime;
-    const auto frame_time = g_interfaces.global_vars->frametime;
-    const auto abs_frame_time = g_interfaces.global_vars->abs_frametime;
-    const auto interval_per_tick = curtime / ( g_interfaces.global_vars->interval_per_tick + 0.5f );
-    const auto frame_count = g_interfaces.global_vars->framecount;
-    const auto tick_count = g_interfaces.global_vars->tick_count;
-
-    g_interfaces.global_vars->curtime = curtime;
-    g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
-    g_interfaces.global_vars->abs_frametime = g_interfaces.global_vars->interval_per_tick;
-    g_interfaces.global_vars->framecount = interval_per_tick;
-    g_interfaces.global_vars->tick_count = interval_per_tick;
 
     std::array< float, 24 > backup_poses;
     std::memcpy( backup_poses.data( ), player->pose_parameters( ).data( ), backup_poses.size( ) );
@@ -365,27 +293,17 @@ bool animation_sync::build_bones( lag_record *record, c_cs_player *player, matri
     const auto backup_setup_time = player->last_bone_setup_time( );
     const auto backup_maintain_sequence_transitions = player->maintain_sequence_transitions( );
 
-    player->maintain_sequence_transitions( ) = false;
     player->last_bone_setup_time( ) = 0;
     player->effects( ) |= effects::nointerp;
-    std::memcpy( player->pose_parameters( ).data( ), record->pose_parameters.data( ), record->pose_parameters.size( ) );
+    std::memcpy( player->pose_parameters( ).data( ), pose_parameters.data( ), pose_parameters.size( ) );
 
     globals::is_building_bones[ player->index( ) ] = true;
     bool setup = player->setup_bones( out, 128, 0x7FF00, curtime );
     globals::is_building_bones[ player->index( ) ] = false;
 
     std::memcpy( player->pose_parameters( ).data( ), backup_poses.data( ), backup_poses.size( ) );
-    player->maintain_sequence_transitions( ) = backup_maintain_sequence_transitions;
     player->last_bone_setup_time( ) = backup_setup_time;
     player->effects( ) = backup_effects;
-
-    g_interfaces.global_vars->curtime = cur_time;
-    g_interfaces.global_vars->frametime = frame_time;
-    g_interfaces.global_vars->abs_frametime = abs_frame_time;
-    g_interfaces.global_vars->framecount = frame_count;
-    g_interfaces.global_vars->tick_count = tick_count;
-
-    g_interfaces.model_cache->end_lock( );
 
     return setup;
 }
@@ -436,7 +354,7 @@ void animation_sync::update_velocity( c_cs_player *player, lag_record *record, l
             record->velocity = ( record->origin - previous->origin ) * ( 1.0f / game::ticks_to_time( record->choked ) );
     }
 
-    //record->velocity_detail = fix_velocity( record->layer_records.data( ), previous, player );
+    record->velocity_detail = fix_velocity( record->layer_records.data( ), previous, player );
 
     if ( record->flags & player_flags::on_ground && ( glm::length( record->velocity ) > 0.1f || state->m_flVelocityLengthXY > 0.1f ) && record->layer_records[ ANIMATION_LAYER_LEAN ].weight == 0.f && record->layer_records[ ANIMATION_LAYER_MOVEMENT_MOVE ].weight < 0.1f )
         record->fake_walk = true;
@@ -467,10 +385,6 @@ void animation_sync::update_velocity( c_cs_player *player, lag_record *record, l
         record->anim_velocity = { 0.f, 0.f, 0.f };
 }
 
-void animation_sync::update_lby_timer( c_csgo_player_animstate *state, c_user_cmd *user_cmd ) {
-    // This function is left empty intentionally. Add LBY timer update logic here if needed.
-}
-
 void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
     globals::lby_updating = false;
 
@@ -491,6 +405,14 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
         lower_body_realign_timer = g_interfaces.global_vars->curtime;
     }
 
+    vector_3d last_angle = globals::lby_updating ? globals::sent_user_cmd.view_angles : globals::angles;
+
+    if ( state->m_bLanding && !*reinterpret_cast< bool * >( reinterpret_cast< std::uintptr_t >( state ) + 0x0328 ) && *reinterpret_cast< float * >( reinterpret_cast< std::uintptr_t >( state ) + 0x00A4 ) > 0.f )
+        last_angle.x = -12.f;
+
+    std::clamp( last_angle.x, -90.f, 90.f );
+    math::normalize_angle( last_angle );
+
     if ( state->m_bOnGround ) {
         if ( state->m_flVelocityLengthXY > 0.1f ) {
             lower_body_realign_timer = g_interfaces.global_vars->curtime + 0.22f;
@@ -499,19 +421,25 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
             lower_body_realign_timer = g_interfaces.global_vars->curtime + 1.1f;
         }
     }
-    std::memcpy( pose_parameters.data( ), globals::local_player->pose_parameters( ).data( ), pose_parameters.size( ) );
-    foot_yaw = state->m_flFootYaw;
+
     auto angles = user_cmd->view_angles;
-    globals::local_player->player_state( ).v_angle = angles;
-    std::memcpy( animation_layers.data( ), globals::local_player->anim_overlays( ), animation_layers.size( ) );
+    globals::local_player->player_state( ).v_angle = last_angle;
 
     const auto client_side_backup = globals::local_player->client_side_animation( );
 
     globals::allow_animations[ globals::local_player->index( ) ] = globals::local_player->client_side_animation( ) = true;
-    g_rebuilt.update_animation_state( state, globals::lby_updating ? globals::sent_user_cmd.view_angles : globals::angles, globals::local_player->tick_base( ) );
-    globals::local_player->update_clientside_animation( );
-    globals::local_player->client_side_animation( ) = client_side_backup;
-    globals::allow_animations[ globals::local_player->index( ) ] = false;
+    g_rebuilt.update_animation_state( state, last_angle, globals::local_player->tick_base( ) );
+    globals::local_player->client_side_animation( ) = globals::allow_animations[ globals::local_player->index( ) ] = client_side_backup;
+    std::memcpy( animation_layers.data( ), globals::local_player->anim_overlays( ), animation_layers.size( ) );
+
+    if ( g_vars.exploits_antiaim_static_legs_in_air.value && ( !( g_prediction_context.predicted_flags & player_flags::on_ground ) || !( globals::local_player->flags( ) & player_flags::on_ground ) ) ) {
+        animation_layers[ ANIMATION_LAYER_LEAN ].weight = 0.0f;
+        animation_layers[ ANIMATION_LAYER_FLINCH ].weight = 1.0f;
+        animation_layers[ ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB ].weight = 1.0f;
+
+        globals::local_player->pose_parameters( )[ POSE_LEAN_YAW ] = 0.0f;
+        globals::local_player->pose_parameters( )[ POSE_JUMP_FALL ] = 1.0f;
+    }
 
     if ( g_config.get_hotkey( g_vars.misc_fake_walk_key, g_vars.misc_fake_walk_key_toggle.value ) )
         animation_layers[ ANIMATION_LAYER_MOVEMENT_MOVE ].weight = 0.0f;
@@ -521,8 +449,6 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
             globals::local_player->anim_overlays( )[ i ].owner = globals::local_player;
     }
 
-    //std::memcpy( pose_parameters.data( ), globals::local_player->pose_parameters( ).data( ), pose_parameters.size( ) );
-
     const auto backup_angle = globals::local_player->player_state( ).v_angle;
 
     if ( globals::local_player->sequence( ) != -1 )
@@ -531,11 +457,13 @@ void animation_sync::update_local_animations( c_user_cmd *user_cmd ) {
     if ( *reinterpret_cast< bool * >( reinterpret_cast< uintptr_t >( globals::local_player ) + 0x99CD ) )
         g_addresses.handle_taser_anim.get< void( __thiscall * )( void * ) >( )( globals::local_player );
 
+    std::memcpy( pose_parameters.data( ), globals::local_player->pose_parameters( ).data( ), pose_parameters.size( ) );
     animated_origin[ globals::local_player->index( ) ] = globals::local_player->origin( );
-    build_bones( globals::local_player, animated_bones[ globals::local_player->index( ) ].data( ), game::ticks_to_time( globals::local_player->tick_base( ) ) );
+    build_bones( globals::local_player, animated_bones[ globals::local_player->index( ) ].data( ), pose_parameters, g_interfaces.global_vars->curtime );
 
     on_ground = state->m_bOnGround;
     globals::local_player->player_state( ).v_angle = backup_angle;
+    foot_yaw = state->m_flFootYaw;
 }
 
 void animation_sync::maintain_local_animations( ) {
@@ -554,8 +482,6 @@ void animation_sync::maintain_local_animations( ) {
 }
 
 void animation_sync::update_player_animation( c_cs_player *player, lag_record &record, lag_record *previous, bool update ) {
-    record.reset( player );
-
     const auto state = player->anim_state( );
 
     if ( !state )
@@ -593,20 +519,15 @@ void animation_sync::update_player_animation( c_cs_player *player, lag_record &r
     auto update_client_side_animations = [ & ]( c_cs_player *player ) -> void {
         const auto last_client_side_anim = player->client_side_animation( );
         const auto enemy = globals::local_player->team( ) != player->team( );
+        const auto backup_lower_body_yaw = player->lower_body_yaw_target( );
+
+        g_resolver.start( player, record, previous );
+        record.eye_angles.y = math::normalize( player->eye_angles( ).y );
+        player->lower_body_yaw_target( ) = backup_lower_body_yaw;
 
         globals::allow_animations[ player->index( ) ] = player->client_side_animation( ) = true;
-
-        if ( enemy )
-            g_resolver.start( record, previous );
-
-        math::angle_normalize( record.eye_angles.y );
-        player->eye_angles( ) = record.eye_angles;
-
         g_rebuilt.update_animation_state( state, record.eye_angles, record.anim_time );
-        player->update_clientside_animation( );
-
         globals::allow_animations[ player->index( ) ] = player->client_side_animation( ) = last_client_side_anim;
-        player->lower_body_yaw_target( ) = record.lower_body_yaw;
     };
 
     c_global_vars_base backup_vars{ };
@@ -626,7 +547,7 @@ void animation_sync::update_player_animation( c_cs_player *player, lag_record &r
     player->origin( ) = record.origin;
     player->eflags( ) &= ~( 0x1000 | 0x800 );
 
-    if ( update && !log.player_info.fake_player ) {
+    if ( !log.player_info.fake_player ) {
         update_land( player, &record, previous );
         update_velocity( player, &record, previous );
 
@@ -646,26 +567,21 @@ void animation_sync::update_player_animation( c_cs_player *player, lag_record &r
 
     update_client_side_animations( player );
 
-    player->rgfl_coordinate_frame( ).set_origin( record.origin );
-    player->anim_overlays( )[ ANIMATION_LAYER_LEAN ].weight = 0.0f;
     player->update_collision_bounds( );
-    player->duck_amount( ) = record.duck_amount;
     player->flags( ) = backup_flags;
     player->eflags( ) = backup_eflags;
-    player->lower_body_yaw_target( ) = backup_lower_body_yaw;
     player->origin( ) = backup_origin;
     player->velocity( ) = backup_velocity;
     player->abs_velocity( ) = backup_abs_velocity;
     player->set_abs_origin( backup_abs_origin );
+    *player->anim_state( ) = record.anim_state;
+    player->duck_amount( ) = record.duck_amount;
 
-    std::memcpy( player->anim_overlays( ), record.layer_records.data( ), record.layer_records.size( ) );
+    if ( player->get_move_parent( ) )
+        player->get_move_parent( )->set_abs_origin( record.origin );
 
-    if ( update )
-        g_animations.build_bones( &record, record.player, record.bones.data( ), record.anim_time );
-
-    std::memcpy( player->pose_parameters( ).data( ), record.pose_parameters.data( ), record.pose_parameters.size( ) );
-    g_interfaces.global_vars->restore( backup_vars );
     player->invalidate_physics_recursive( invalidate_physics_bits::animation_changed | invalidate_physics_bits::position_changed | invalidate_physics_bits::velocity_changed );
+    g_interfaces.global_vars->restore( backup_vars );
 }
 
 velocity_detail animation_sync::fix_velocity( c_animation_layer *layers, lag_record *previous, c_cs_player *player ) {
@@ -704,15 +620,12 @@ velocity_detail animation_sync::fix_velocity( c_animation_layer *layers, lag_rec
     float max_weapon_speed = weapon_info ? ( player->scoped( ) ? weapon_info->max_speed : weapon_info->max_speed_alt ) : 250.0f;
 
     if ( on_ground ) {
-        avg_velocity.z = 0.0f;
         velocity = avg_velocity;
 
         auto detail = velocity_detail::none;
 
         if ( move_layer.playback_rate > 0.0f ) {
             auto direction = math::normalize_angle( velocity );
-            direction.z = 0.0f;
-
             const float avg_speed_xy = math::length_2d( velocity );
             const float move_weight_with_air_smooth = move_layer.weight;
             const float target_move_weight_to_speed_xy = max_weapon_speed * valve_math::Lerp( CS_PLAYER_SPEED_WALK_MODIFIER, CS_PLAYER_SPEED_DUCK_MODIFIER, player->duck_amount( ) ) * move_weight_with_air_smooth;
@@ -834,7 +747,7 @@ void animation_sync::on_post_frame_stage_notify( client_frame_stage stage ) {
                 __asm {
                     pushad
                     movss xmm1, duration
-                    push 1// bool monoColor
+                    push 1
                     mov ecx, ent
                     call draw_server_hitboxes
                     popad
@@ -865,7 +778,7 @@ void animation_sync::extrapolate( lag_record *record, vector_3d &origin, vector_
 
     c_game_trace t;
     c_trace_filter_hitscan filter;
-    filter.player = record->player;
+    filter.player = globals::local_player;
 
     g_interfaces.engine_trace->trace_ray( ray, mask_playersolid, &filter, &t );
 
@@ -922,6 +835,7 @@ void animation_sync::on_net_update_end( ) {
         return;
 
     auto net_channel = g_interfaces.engine_client->get_net_channel_info( );
+
     if ( !net_channel )
         return;
 
@@ -936,11 +850,11 @@ void animation_sync::on_net_update_end( ) {
         }
 
         auto &info = player_log[ n ];
+
         if ( info.index != player->index( ) || player->spawn_time( ) != info.spawn_time )
             info.reset( player );
 
         g_interfaces.engine_client->get_player_info( player->index( ), &info.player_info );
-        info.anim_records.reserve( game::time_to_ticks( 1.0f ) );
 
         for ( int i = 0; i < info.anim_records.size( ); ++i ) {
             const auto &record = info.anim_records[ i ];
@@ -957,6 +871,8 @@ void animation_sync::on_net_update_end( ) {
                 break;
             }
         }
+
+        info.anim_records.reserve( globals::tick_rate );
 
         if ( info.anim_records.exhausted( ) )
             info.anim_records.pop_back( );
@@ -990,13 +906,8 @@ void animation_sync::on_net_update_end( ) {
 
             bool should_update = ( info.anim_records.empty( ) || next_update );
 
-            //if ( !should_update && !player->dormant( ) && player->origin( ) != player->old_origin( ) ) {
-            //    should_update = true;
-
-            //    player->simtime( ) = game::ticks_to_time( g_interfaces.client_state->server_tick( ) );
-            //}
-
             lag_record *previous = nullptr;
+
             if ( should_update ) {
                 if ( !info.anim_records.empty( ) && abs( game::time_to_ticks( player->simtime( ) - player->old_simtime( ) ) ) > 64 )
                     info.reset( player );
@@ -1006,8 +917,20 @@ void animation_sync::on_net_update_end( ) {
 
                 if ( auto *rec = info.anim_records.push_front( ) ) {
                     *rec = record;
+
                     rec->dormant = false;
+                    rec->reset( player );
+
                     update_player_animation( player, *rec, previous );
+                    rec->abs_angles = vector_3d( 0.0f, player->anim_state( )->m_flFootYaw, 0.0f );
+
+                    const auto backup_lean = player->anim_overlays( )[ 12 ].weight;        
+                    player->anim_overlays( )[ 12 ].weight = 0.0f;
+                    player->set_abs_angles( rec->abs_angles );
+                    build_bones( player, rec->bones.data( ), player->pose_parameters(), rec->anim_time );
+                    player->anim_overlays( )[ 12 ].weight = backup_lean;
+
+                    std::memcpy( player->anim_overlays( ), rec->layer_records.data( ), rec->layer_records.size( ) );
 
                     if ( rec->is_valid( ) && !rec->break_lc )
                         info.lag_records.push_front( &info.anim_records.front( ) );
@@ -1015,7 +938,7 @@ void animation_sync::on_net_update_end( ) {
             }
         }
 
-        const auto dead_time = g_interfaces.engine_client->get_last_time_stamp( ) - globals::cvars::sv_maxunlag->get_float( );
+        const int dead_time = game::ticks_to_time( globals::local_player->tick_base( ) ) - globals::cvars::sv_maxunlag->get_float( );
         auto tail_index = info.lag_records.size( ) - 1;
 
         while ( tail_index < info.lag_records.size( ) ) {
@@ -1043,11 +966,16 @@ void animation_sync::apply_animations( ) {
             continue;
 
         auto &info = player_log[ n ];
+
         if ( info.anim_records.empty( ) )
             continue;
 
         auto &front = info.anim_records.front( );
+
         animated_bones[ player->index( ) ] = front.bones;
         animated_origin[ player->index( ) ] = front.origin;
+
+        player->set_abs_angles( front.abs_angles );
+        player->pose_parameters( ) = front.pose_parameters;
     }
 }

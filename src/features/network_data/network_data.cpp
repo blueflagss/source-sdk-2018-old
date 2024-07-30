@@ -1,4 +1,5 @@
 #include "network_data.hpp"
+#include <features/ragebot/ragebot.hpp>
 
 void network_data::init( c_cs_player *player ) {
     if ( initialized )
@@ -27,6 +28,35 @@ void network_data::pre_update( c_cs_player *player ) {
 
     for ( auto &var : float_vars )
         var.last_value = *reinterpret_cast< float * >( player_addr + var.offset );
+}
+
+void network_data::ping_reducer( ) {
+    if ( !g_interfaces.engine_client->is_connected( ) || !g_interfaces.engine_client->is_in_game( ) )
+        return;
+
+    if ( !globals::local_player )
+        return;
+
+    for ( int i{ 1 }; i <= g_interfaces.global_vars->max_clients; ++i ) {
+        c_cs_player *player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
+
+        if ( !player || player->dormant( ) || !player->alive( ) || player == globals::local_player || player->team( ) == globals::local_player->team( ) )
+            continue;
+
+        g_ragebot.m_backup[ i - 1 ].store( player );
+    }
+
+    static auto cl_readpackets = signature::find( _xs( "engine.dll" ), _xs( "53 8A D9 8B 0D ? ? ? ? 56 57 8B B9" ) ).get< void( __cdecl * )( bool ) >( );
+    cl_readpackets( true );
+
+    for ( int i{ 1 }; i <= g_interfaces.global_vars->max_clients; ++i ) {
+        c_cs_player *player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
+
+        if ( !player || player->dormant( ) || !player->alive( ) || player == globals::local_player || player->team( ) == globals::local_player->team( ) )
+            continue;
+
+        g_ragebot.m_backup[ i - 1 ].restore( player );
+    }
 }
 
 void network_data::post_update( c_cs_player *player ) {

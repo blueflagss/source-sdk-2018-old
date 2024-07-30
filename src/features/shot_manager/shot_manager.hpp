@@ -40,12 +40,12 @@ public:
 
 struct visual_impact_data_t {
 public:
-    vector_3d impact_pos, shoot_pos;
+    vector_3d pos, shoot_pos;
     int tickbase;
     bool ignore, hurt_player;
 
 public:
-    visual_impact_data_t( const vector_3d &impact_pos, const vector_3d &shoot_pos, int tickbase ) : impact_pos{ impact_pos }, shoot_pos{ shoot_pos }, tickbase{ tickbase }, ignore{ false }, hurt_player{ false } {}
+    visual_impact_data_t( const vector_3d &pos, const vector_3d &shoot_pos, int tickbase ) : pos{ pos }, shoot_pos{ shoot_pos }, tickbase{ tickbase }, ignore{ false }, hurt_player{ false } {}
 };
 
 class shot_manager {

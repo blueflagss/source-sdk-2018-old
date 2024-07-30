@@ -80,7 +80,8 @@ bool math::intersect_bb( vector_3d &start, vector_3d &delta, vector_3d &min, vec
 
     return start_solid || ( t1 < t2 && t1 >= 0.0f );
 }
-float math::segment_to_segment( const vector_3d s1, const vector_3d s2, const vector_3d k1, const vector_3d k2 ) {
+
+float math::segment_to_segment( const vector_3d &s1, const vector_3d &s2, const vector_3d &k1, const vector_3d &k2 ) {
     static auto constexpr epsilon = 0.00000001;
 
     auto u = s2 - s1;
@@ -149,7 +150,8 @@ float math::segment_to_segment( const vector_3d s1, const vector_3d s2, const ve
     const auto calc = sqrt_ps( n.v );
     return reinterpret_cast< const m128 * >( &calc )->f[ 0 ];
 }
-bool math::intersect( vector_3d start, vector_3d end, vector_3d a, vector_3d b, float radius ) {
+
+bool math::intersect( vector_3d &start, vector_3d &end, vector_3d &a, vector_3d &b, float radius ) {
     const auto dist = segment_to_segment( start, end, a, b );
     return ( dist < radius );
 }
@@ -478,9 +480,12 @@ void math::angle_normalize( float &angle ) {
 }
 
 vector_3d math::normalize_angle( vector_3d angle ) {
-    auto vec = std::sqrt( length_sqr( angle ) );
+    auto l = glm::length( angle );
 
-    angle /= ( vec + std::numeric_limits< float >::epsilon( ) );
+    if ( l != 0.0f )
+        angle /= l;
+    else
+        angle.x = angle.y = angle.z = 0.0f;
 
     return angle;
 }

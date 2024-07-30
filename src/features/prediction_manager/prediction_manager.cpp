@@ -107,12 +107,7 @@ void prediction_context::start( c_user_cmd *ucmd ) {
     g_interfaces.move_helper->process_impacts( );
 
     post_think( globals::local_player );
-}
-
-void prediction_context::finish( c_user_cmd *ucmd ) {
-    if ( !globals::local_player || !ucmd || !g_interfaces.move_helper )
-        return;
-
+    
     if ( globals::local_weapon ) {
         auto weapon_data = globals::local_weapon_data;
 
@@ -121,7 +116,6 @@ void prediction_context::finish( c_user_cmd *ucmd ) {
                 globals::local_weapon->update_accuracy_penalty( );
 
             auto weapon_id = globals::local_weapon->item_definition_index( );
-
             auto is_special_weapon = weapon_id == 9 || weapon_id == 11 || weapon_id == 38 || weapon_id == 40;
 
             ideal_inaccuracy = 0.0f;
@@ -150,6 +144,11 @@ void prediction_context::finish( c_user_cmd *ucmd ) {
 
         g_animations.generate_shoot_position( );
     }
+}
+
+void prediction_context::finish( c_user_cmd *ucmd ) {
+    if ( !globals::local_player || !ucmd || !g_interfaces.move_helper )
+        return;
 
     g_interfaces.game_movement->finish_track_prediction_errors( globals::local_player );
     g_interfaces.move_helper->set_host( nullptr );
@@ -232,6 +231,10 @@ void prediction_context::setup_move_data( c_cs_player *player, c_move_data *move
     move_data->view_angles = { 0.0f, math::velocity_to_angles( move_data->velocity ).y, 0.0f };
     move_data->max_speed = player->max_speed( );
 
+    move_data->constraint_center = { };
+    move_data->constraint_radius = 0.f;
+    move_data->constraint_speed_factor = 0.f;
+
     if ( backup_player_data.flags & player_flags::ducking )
         move_data->max_speed *= 0.3333f;
 
@@ -240,8 +243,10 @@ void prediction_context::setup_move_data( c_cs_player *player, c_move_data *move
     vector_3d forward, right;
     math::angle_vectors( move_data->view_angles, &forward, &right, nullptr );
 
-    move_data->forward_move = ( move_data->velocity.y - right.y / right.x * move_data->velocity.x ) / ( forward.y - right.y / right.x * forward.x );
-    move_data->side_move = ( move_data->velocity.x - forward.x * move_data->forward_move ) / right.x;
+    move_data->forward_move = 450.0f;
+    move_data->side_move = 450.0f;
+   
+    g_interfaces.game_movement->setup_movement_bounds( move_data );
 }
 
 bool prediction_context::predict_player_entity( c_cs_player *player ) {
@@ -280,7 +285,7 @@ bool prediction_context::predict_player_entity( c_cs_player *player ) {
         player->velocity( ).y = 0.015f;
 
     setup_move_data( this->target, &this->move_data );
-
+  
     return true;
 }
 

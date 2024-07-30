@@ -66,7 +66,7 @@ void penumbra::tab::input( ) {
             for ( int n = 0; n < this->child_windows[ i ].size( ); n++ ) {
                 auto &object = this->child_windows[ i ][ n ];
                
-                object->window_height = object->cursor_position.y + 16.0f;
+                object->window_height = object->cursor_position.y + 17.0f;
 
                 auto animation = animations::get( HASH_CT( "child__lerp__" ) + HASH( ( object->name + object->element_id ).c_str( ) ), object->window_height );
                        

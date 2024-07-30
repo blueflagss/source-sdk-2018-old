@@ -33,6 +33,7 @@ private:
 
 public:
     void init( c_cs_player *player );
+    void ping_reducer( );
     void pre_update( c_cs_player *player );
     void post_update( c_cs_player *player );
 

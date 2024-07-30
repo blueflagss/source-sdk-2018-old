@@ -14,14 +14,15 @@ void penumbra::label::input( ) {
     for ( auto &object : this->children_objects ) {
         if ( object->element_type == TYPE_HOTKEY ) {
             object->position = {
-                    this->position.x + parent_window->size.x - object->size.x - 8.5f,
-                    this->position.y };
+                    this->position.x + parent_window->size.x - object->size.x - 9.5f,
+                    this->position.y 
+            };
         } else {
             object->position = {
-                    this->position.x + parent_window->size.x - object->size.x - 19.5f,
-                    this->position.y };
+                    this->position.x + parent_window->size.x - object->size.x - 20.5f,
+                    this->position.y
+            };
         }
-
 
         object->input( );
     }

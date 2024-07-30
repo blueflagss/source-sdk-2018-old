@@ -12,14 +12,14 @@ vector_3d c_cs_weapon_base::calculate_spread( int seed, float inaccuracy, float 
     math::random_seed( ( seed & 0xff ) + 1 );
 
     r1 = math::random_float( 0.0f, 1.0f );
-    r2 = math::random_float( 0.0f, glm::pi< float >( ) );
+    r2 = math::random_float( 0.0f, glm::pi< float >( ) * 2.0f );
 
     if ( globals::cvars::weapon_accuracy_shotgun_spread_patterns->get_int( ) > 0 )
         g_addresses.get_shotgun_spread.get< void( __stdcall * )( int, int, int, float *, float * ) >( )( item_def_index, 0, globals::local_weapon_data->bullets * wpn_recoil_index, &r4, &r3 );
 
     else {
         r3 = math::random_float( 0.0f, 1.0f );
-        r4 = math::random_float( 0.0f, glm::pi< float >( ) );
+        r4 = math::random_float( 0.0f, glm::pi< float >( ) * 2.0f );
     }
 
     if ( item_def_index == weapons::revolver && revolver2 ) {

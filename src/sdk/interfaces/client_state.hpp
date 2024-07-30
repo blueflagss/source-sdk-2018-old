@@ -93,7 +93,7 @@ class c_net_channel {
 public:
     PAD( 0x3F );
     int out_sequence_nr;
-    int isequence_nr;
+    int in_sequence_nr;
     int out_sequence_nr_ack;
     int out_reliable_state;
     int in_reliable_state;

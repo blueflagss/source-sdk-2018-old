@@ -240,7 +240,6 @@ public:
 #include <sdk/other/thinkable.hpp>
 #include <sdk/other/unknown.hpp>
 #include <sdk/base_entity.hpp>
-#include <sdk/base_object.hpp>
 #include <sdk/cs_player.hpp>
 #include <sdk/cs_base_weapon.hpp>
 #include <sdk/player_animstate.hpp>

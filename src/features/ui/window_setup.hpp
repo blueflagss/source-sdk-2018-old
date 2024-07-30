@@ -19,6 +19,7 @@ public:
     void hide_ui( );
     void handle_hotkeys( );
     void on_screen_size_updated( int width, int height );
+    void init_skins( );
     void init( );
     void refresh_config_items( );
     void display_watermark( );
@@ -26,7 +27,7 @@ public:
 
 public:
     std::shared_ptr< penumbra::window > main_window = nullptr;
-    std::shared_ptr< penumbra::window > spies_behind_you = nullptr;
+    std::shared_ptr< penumbra::window > skinchanger = nullptr;
 
     bool is_initialized = false;
     bool is_opened( );

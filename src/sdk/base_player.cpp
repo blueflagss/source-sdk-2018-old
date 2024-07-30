@@ -1,65 +1,63 @@
 #include "base_player.hpp"
 #include <features/animations/animation_sync.hpp>
 
-bool c_base_player::get_screen_bounding_box( entity_box &box_dimensions ) {
-    if ( !this )
-        return false;
+bool c_base_player::get_bounding_box( box_t &box ) {
+    auto origin = ( HASH( this->get_client_class( )->network_name ) == HASH_CT( "CCSPlayer" ) ) && this->bone_cache( ) ? this->bone_cache( )->get_origin( ) : this->origin( );
 
-    vector_3d mins, maxs;
+    vector_2d flb, brt, blb, frt, frb, brb, blt, flt;
+    float left, top, right, bottom;
 
-    if ( reinterpret_cast< c_cs_player * >( this )->is_player( ) ) {
-        mins = { -16.0f, -16.0f, 0.0f };
-        maxs = { 16.0f, 16.0f, 72.0f };
-    }
+    auto min = this->collideable( )->mins( ) + origin;
+    auto max = this->collideable( )->maxs( ) + origin;
 
-    else {
-        if ( !this->collideable( ) ) 
-            return false;
-
-        mins = this->collideable( )->mins( );
-        maxs = this->collideable( )->maxs( );
-    }
-
-    std::array< vector_3d, 8 > points = {
-            vector_3d( mins.x, mins.y, mins.z ),
-            vector_3d( mins.x, maxs.y, mins.z ),
-            vector_3d( maxs.x, maxs.y, mins.z ),
-            vector_3d( maxs.x, mins.y, mins.z ),
-            vector_3d( maxs.x, maxs.y, maxs.z ),
-            vector_3d( mins.x, maxs.y, maxs.z ),
-            vector_3d( mins.x, mins.y, maxs.z ),
-            vector_3d( maxs.x, mins.y, maxs.z )
+    vector_3d points[] = {
+            vector_3d( min.x, min.y, min.z ),
+            vector_3d( min.x, min.y, max.z ),
+            vector_3d( min.x, max.y, min.z ),
+            vector_3d( min.x, max.y, max.z ),
+            vector_3d( max.x, min.y, min.z ),
+            vector_3d( max.x, min.y, max.z ),
+            vector_3d( max.x, max.y, min.z ),
+            vector_3d( max.x, max.y, max.z ),
     };
 
-    const matrix_3x4 &trans = this->renderable_to_world_transform( );
-
-    auto left = std::numeric_limits< float >::max( );
-    auto top = std::numeric_limits< float >::max( );
-    auto right = std::numeric_limits< float >::lowest( );
-    auto bottom = std::numeric_limits< float >::lowest( );
-
-    std::array< vector_2d, 8 > screen_points = { };
-
-    vector_3d transformed_points;
-
-    for ( int i = 0; i < 8; i++ ) {
-        math::vector_transform( points[ i ], trans, transformed_points );
-
-        if ( !render::world_to_screen( transformed_points, screen_points[ i ] ) )
-            return false;
-
-        left = std::min( left, screen_points[ i ].x );
-        top = std::min( top, screen_points[ i ].y );
-        right = std::max( right, screen_points[ i ].x );
-        bottom = std::max( bottom, screen_points[ i ].y );
+    if ( !render::world_to_screen( points[ 3 ], flb ) || !render::world_to_screen( points[ 5 ], brt ) || !render::world_to_screen( points[ 0 ], blb ) || !render::world_to_screen( points[ 4 ], frt ) || !render::world_to_screen( points[ 2 ], frb ) || !render::world_to_screen( points[ 1 ], brb ) || !render::world_to_screen( points[ 6 ], blt ) || !render::world_to_screen( points[ 7 ], flt ) ) {
+        return false;
     }
 
-    box_dimensions = entity_box(
-            static_cast< float >( left ),
-            static_cast< float >( top ),
-            static_cast< float >( right - left ),
-            static_cast< float >( bottom - top )
-    );
+    vector_2d arr[] = {
+            flb,
+            brt,
+            blb,
+            frt,
+            frb,
+            brb,
+            blt,
+            flt };
+
+    left = flb.x;
+    top = flb.y;
+    right = flb.x;
+    bottom = flb.y;
+
+    for ( auto i = 1; i < 8; i++ ) {
+        if ( left > arr[ i ].x )
+            left = arr[ i ].x;
+
+        if ( bottom < arr[ i ].y )
+            bottom = arr[ i ].y;
+
+        if ( right < arr[ i ].x )
+            right = arr[ i ].x;
+
+        if ( top > arr[ i ].y )
+            top = arr[ i ].y;
+    }
+
+    box.x = static_cast< int >( left );
+    box.y = static_cast< int >( top );
+    box.w = static_cast< int >( right - left );
+    box.h = static_cast< int >( bottom - top );
 
     return true;
 }

@@ -1,8 +1,9 @@
+#include <globals.hpp>
 #include <core/config.hpp>
 #include <core/hooks.hpp>
 #include <features/features.hpp>
 #include <features/visuals/chams.hpp>
-#include <globals.hpp>
+#include <features/skin_changer/skin_changer.hpp>
 #include <threadutils/semaphores.h>
 #include <threadutils/shared_mutex.h>
 #include <threadutils/threading.h>
@@ -58,13 +59,15 @@ int __stdcall cheat_main( void *loader_data ) {
     g_interfaces.init( );
     g_config.init( );
     g_netvars.init( );
+    g_skin_changer.init( );
 
     int width, height;
     g_interfaces.engine_client->get_screen_size( width, height );
 
     globals::ui::screen_size = {
             static_cast< float >( width ),
-            static_cast< float >( height ) };
+            static_cast< float >( height )
+    };
 
     Threading::InitThreads( );
 

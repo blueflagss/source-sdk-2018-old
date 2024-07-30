@@ -38,6 +38,7 @@ public:
     __forceinline void store( c_cs_player *player ) {
         // get bone cache ptr.
         auto cache = player->bone_cache( );
+
         if ( !cache )
             return;
 
@@ -63,11 +64,11 @@ public:
 
         std::memcpy( cache, m_bones, sizeof( matrix_3x4 ) * m_bone_count );
 
-        //player->bone_count( ) = m_bone_count;
+        player->bone_count( ) = m_bone_count;
         player->origin( ) = m_origin;
         player->set_collision_bounds( m_mins, m_maxs );
-        //player->set_abs_angles( m_abs_ang );
-        //player->set_abs_origin( m_origin );
+        player->set_abs_angles( m_abs_ang );
+        player->set_abs_origin( m_origin );
     }
 };
 
@@ -102,6 +103,7 @@ public:
     resolve_mode mode;
     float sim_time;
     float anim_time;
+    bool forward_track;
     int index;
     float old_sim_time;
     bool break_lc;
@@ -155,8 +157,7 @@ public:
     void generate_shoot_position( );
     bool should_predict_lag( aim_player &target, lag_record *record, lag_record *previous );
     bool get_lagcomp_bones( c_cs_player *player, std::array< matrix_3x4, 128 > &out );
-    bool build_bones( c_cs_player *player, matrix_3x4 *out, float curtime );
-    bool build_bones( lag_record *record, c_cs_player *player, matrix_3x4 *out, float curtime );
+    bool build_bones( c_cs_player *player, matrix_3x4 *out, std::array< float, 24 > &poses, float curtime );
     void update_land( c_cs_player *player, lag_record *record, lag_record *last_record );
     void update_velocity( c_cs_player *player, lag_record *record, lag_record *previous );
     void update_lby_timer( c_csgo_player_animstate *state, c_user_cmd *user_cmd );

@@ -1,11 +1,6 @@
 #include "notify_on_layer_change_sequence.hpp"
 
 void __fastcall hooks::notify_on_layer_change_sequence::hook( REGISTERS, const c_animation_layer *layer, const float new_sequence ) {
-    const auto state = reinterpret_cast< c_csgo_player_animstate * >( ecx );
-
-    if ( !state || !state->m_pPlayer || state->m_pPlayer != globals::local_player )
-        return original.fastcall< void >( REGISTERS_OUT, layer, new_sequence );
-
     return;
 }
 

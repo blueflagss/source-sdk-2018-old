@@ -60,68 +60,19 @@ class i_net_channel_handler;
 typedef struct netpacket_s netpacket_t;
 typedef struct netadr_s netadr_t;
 
-class i_net_channel : public i_net_channel_info {
+class i_net_channel {
 public:
-    virtual ~i_net_channel( void ){ };
-
-    virtual void set_data_rate( float rate ) = 0;
-    virtual bool register_message( void *msg ) = 0;
-    virtual bool start_streaming( unsigned int challenge_nr ) = 0;
-    virtual void reset_streaming( void ) = 0;
-    virtual void set_timeout( float seconds ) = 0;
-    virtual void set_demo_recorder( i_demo_recorder *recorder ) = 0;
-    virtual void set_challenge_nr( unsigned int chnr ) = 0;
-    virtual void reset( void ) = 0;
-    virtual void clear( void ) = 0;
-    virtual void shutdown( const char *reason ) = 0;
-    virtual void process_playback( void ) = 0;
-    virtual bool process_stream( void ) = 0;
-    virtual void process_packet( struct netpacket_s *packet, bool b_has_header ) = 0;
-    virtual bool send_net_msg( void *msg, bool b_force_reliable = false, bool b_voice = false ) = 0;
-    virtual bool send_data( void *msg, bool b_reliable = true ) = 0;
-    virtual bool send_file( const char *filename, unsigned int transfer_id ) = 0;
-    virtual void deny_file( const char *filename, unsigned int transfer_id ) = 0;
-    virtual void request_file_old( const char *filename, unsigned int transfer_id ) = 0;// get rid of this function when we version the
-    virtual void set_choked( void ) = 0;
-    virtual int send_datagram( void *data ) = 0;
-    virtual bool transmit( bool only_reliable = false ) = 0;
-    virtual const netadr_t &get_remote_address( void ) const = 0;
-    virtual i_net_channel_handler *get_msg_handler( void ) const = 0;
-    virtual int get_drop_number( void ) const = 0;
-    virtual int get_socket( void ) const = 0;
-    virtual unsigned int get_challenge_nr( void ) const = 0;
-    virtual void get_sequence_data( int &n_out_sequence_nr, int &n_in_sequence_nr, int &n_out_sequence_nr_ack ) = 0;
-    virtual void set_sequence_data( int n_out_sequence_nr, int n_in_sequence_nr, int n_out_sequence_nr_ack ) = 0;
-    virtual void update_message_stats( int msggroup, int bits ) = 0;
-    virtual bool can_packet( void ) const = 0;
-    virtual bool is_overflowed( void ) const = 0;
-    virtual bool is_timed_out( void ) const = 0;
-    virtual bool has_pending_reliable_data( void ) = 0;
-    virtual void set_file_transmission_mode( bool b_background_mode ) = 0;
-    virtual void set_compression_mode( bool b_use_compression ) = 0;
-    virtual unsigned int request_file( const char *filename ) = 0;
-    virtual float get_time_since_last_received( void ) const = 0;// get time since last received packet in seconds
-    virtual void set_max_buffer_size( bool b_reliable, int n_bytes, bool b_voice = false ) = 0;
-    virtual bool is_null( ) const = 0;
-    virtual int get_num_bits_written( bool b_reliable ) = 0;
-    virtual void set_interpolation_amount( float fl_interpolation_amount ) = 0;
-    virtual void set_remote_framerate( float fl_frame_time, float fl_frame_time_std_deviation ) = 0;
-
-    // max # of payload bytes before we must split/fragment the packet
-    virtual void set_max_routable_payload_size( int n_split_size ) = 0;
-    virtual int get_max_routable_payload_size( ) = 0;
-
-    virtual int get_protocol_version( ) = 0;
-
+    PAD( 0x14 );
     bool processing_messages;
     bool should_delete;
+    PAD( 0x2 );
     int out_sequence_nr;
     int in_sequence_nr;
     int out_sequence_nr_ack;
     int out_reliable_state;
     int in_reliable_state;
     int choked_packets;
-    int packet_drop;
+    PAD( 0x414 );// 0x0030
 };
 
 class i_net_message {

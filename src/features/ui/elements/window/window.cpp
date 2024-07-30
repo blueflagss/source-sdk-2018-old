@@ -204,8 +204,6 @@ void penumbra::window::input( )
 
         object->input( );
     }
-
-    globals::scroll_delta = 0.0;
 }
 
 void penumbra::window::handle_object( const std::shared_ptr< penumbra::object > &object ) {

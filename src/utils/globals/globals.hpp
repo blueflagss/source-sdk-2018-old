@@ -39,6 +39,7 @@ namespace globals
     namespace hotkeys
     {
         inline bool thirdperson{ false };
+        inline bool fake_latency{ false };
         inline bool manual_left{ false };
         inline bool manual_right{ false };
         inline bool manual_back{ false };
@@ -96,6 +97,7 @@ namespace globals
     inline int arrival_tick{ };
     inline int server_tick{ };
     inline int latency_ticks{ };
+    inline int last_reliable{ };
     inline float latency{ };
     inline vector_3d view_angles{ };
     inline vector_3d sent_angles{ };

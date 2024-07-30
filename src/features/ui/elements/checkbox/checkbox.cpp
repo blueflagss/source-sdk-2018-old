@@ -17,7 +17,7 @@ void penumbra::checkbox::paint( ) {
     render::filled_rect( this->position, this->size, color{ globals::theme_accent, 255 * globals::fade_opacity[ this->get_main_window( ) ] * animation_fade.value }, 3.0f );
 
     render::rect( this->position, this->size, color{ 9, 9, 9, 120 * globals::fade_opacity[ this->get_main_window( ) ] }, 2.0f );
-    render::string( fonts::visuals_segoe_ui, this->position.x + this->size.x + 6.0f, this->position.y - 2.5f, color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, this->name, false );
+    render::string( fonts::visuals_segoe_ui, this->position.x + this->size.x + 6.0f, this->position.y - 2.0f, color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, this->name, false );
 
     for ( auto &object : this->children_objects )
         object->paint( );
@@ -39,12 +39,12 @@ void penumbra::checkbox::input( ) {
     for ( auto &object : this->children_objects ) {
         if ( object->element_type == TYPE_HOTKEY ) {
             object->position = {
-                    this->position.x + parent_window->size.x - object->size.x - 8.5f,
+                    this->position.x + parent_window->size.x - object->size.x - 9.5f,
                     this->position.y
             };
         } else {
             object->position = {
-                    this->position.x + parent_window->size.x - object->size.x - 19.5f,
+                    this->position.x + parent_window->size.x - object->size.x - 20.5f,
                     this->position.y 
             };
         }

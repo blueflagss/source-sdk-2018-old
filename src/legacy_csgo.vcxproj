@@ -27,11 +27,13 @@
     <ClInclude Include="dependencies\blur\blur.hpp" />
     <ClInclude Include="dependencies\blur\blur_binary.h" />
     <ClInclude Include="features\animations\animation_state.hpp" />
+    <ClInclude Include="features\fake_latency\fake_latency.hpp" />
     <ClInclude Include="features\grenade_prediction\grenade_prediction.hpp" />
     <ClInclude Include="features\network_data\network_data.hpp" />
     <ClInclude Include="features\penetration\penetration.hpp" />
     <ClInclude Include="features\resolver\resolver.hpp" />
     <ClInclude Include="features\shot_manager\shot_manager.hpp" />
+    <ClInclude Include="features\skin_changer\skin_changer.hpp" />
     <ClInclude Include="features\sound_handler\sound_handler.hpp" />
     <ClInclude Include="features\ui\elements\tooltip\tooltip.hpp" />
     <ClInclude Include="hooks\check_jump_button\check_jump_button.hpp" />
@@ -48,6 +50,7 @@
     <ClInclude Include="hooks\do_post_screen_space_effects\do_post_screen_space_effects.hpp" />
     <ClInclude Include="hooks\do_procedural_footplant\do_procedural_footplant.hpp" />
     <ClInclude Include="hooks\estimate_abs_velocity\estimate_abs_velocity.hpp" />
+    <ClInclude Include="hooks\get_screen_aspect_ratio\get_screen_aspect_ratio.hpp" />
     <ClInclude Include="hooks\get_bool\get_bool.hpp" />
     <ClInclude Include="hooks\get_eye_angles\get_eye_angles.hpp" />
     <ClInclude Include="hooks\get_viewmodel_fov\get_viewmodel_fov.hpp" />
@@ -76,9 +79,11 @@
     <ClInclude Include="hooks\process_movement\process_movement.hpp" />
     <ClInclude Include="hooks\render_smoke_overlay\render_smoke_overlay.hpp" />
     <ClInclude Include="hooks\run_command\run_command.hpp" />
+    <ClInclude Include="hooks\send_datagram\send_datagram.hpp" />
     <ClInclude Include="hooks\setup_bones\setup_bones.hpp" />
     <ClInclude Include="hooks\should_skip_animation_frame\should_skip_animation_frame.hpp" />
     <ClInclude Include="hooks\standard_blending_rules\standard_blending_rules.hpp" />
+    <ClInclude Include="hooks\cl_dispatch_sound\cl_dispatch_sound.hpp" />
     <ClInclude Include="hooks\update_animation_state\update_animation_state.hpp" />
     <ClInclude Include="hooks\update_clientside_animations\update_clientside_animations.hpp" />
     <ClInclude Include="resources\04b03.hpp" />
@@ -345,7 +350,6 @@
     <ClInclude Include="sdk\math\ray.hpp" />
     <ClInclude Include="sdk\math\vector.hpp" />
     <ClInclude Include="sdk\multiplayer_animstate.hpp" />
-    <ClInclude Include="sdk\base_object.hpp" />
     <ClInclude Include="sdk\other\bitbuf.h" />
     <ClInclude Include="sdk\other\crc32.h" />
     <ClInclude Include="sdk\other\key_values.hpp" />
@@ -418,11 +422,13 @@
     <ClCompile Include="core\interfaces.cpp" />
     <ClCompile Include="dependencies\blur\blur.cpp" />
     <ClCompile Include="features\animations\animation_state.cpp" />
+    <ClCompile Include="features\fake_latency\fake_latency.cpp" />
     <ClCompile Include="features\grenade_prediction\grenade_prediction.cpp" />
     <ClCompile Include="features\network_data\network_data.cpp" />
     <ClCompile Include="features\penetration\penetration.cpp" />
     <ClCompile Include="features\resolver\resolver.cpp" />
     <ClCompile Include="features\shot_manager\shot_manager.cpp" />
+    <ClCompile Include="features\skin_changer\skin_changer.cpp" />
     <ClCompile Include="features\sound_handler\sound_handler.cpp" />
     <ClCompile Include="features\ui\elements\tooltip\tooltip.cpp" />
     <ClCompile Include="hooks\check_jump_button\check_jump_button.cpp" />
@@ -439,6 +445,7 @@
     <ClCompile Include="hooks\do_post_screen_space_effects\do_post_screen_space_effects.cpp" />
     <ClCompile Include="hooks\do_procedural_footplant\do_procedural_footplant.cpp" />
     <ClCompile Include="hooks\estimate_abs_velocity\estimate_abs_velocity.cpp" />
+    <ClCompile Include="hooks\get_screen_aspect_ratio\get_screen_aspect_ratio.cpp" />
     <ClCompile Include="hooks\get_bool\get_bool.cpp" />
     <ClCompile Include="hooks\get_eye_angles\get_eye_angles.cpp" />
     <ClCompile Include="hooks\get_viewmodel_fov\get_viewmodel_fov.cpp" />
@@ -467,9 +474,11 @@
     <ClCompile Include="hooks\process_movement\process_movement.cpp" />
     <ClCompile Include="hooks\render_smoke_overlay\render_smoke_overlay.cpp" />
     <ClCompile Include="hooks\run_command\run_command.cpp" />
+    <ClCompile Include="hooks\send_datagram\send_datagram.cpp" />
     <ClCompile Include="hooks\setup_bones\setup_bones.cpp" />
     <ClCompile Include="hooks\should_skip_animation_frame\should_skip_animation_frame.cpp" />
     <ClCompile Include="hooks\standard_blending_rules\standard_blending_rules.cpp" />
+    <ClCompile Include="hooks\cl_dispatch_sound\cl_dispatch_sound.cpp" />
     <ClCompile Include="hooks\update_animation_state\update_animation_state.cpp" />
     <ClCompile Include="hooks\update_clientside_animations\update_clientside_animations.cpp" />
     <ClCompile Include="sdk\cs_base_weapon.cpp" />
@@ -543,7 +552,6 @@
     <ClCompile Include="sdk\base_player.cpp" />
     <ClCompile Include="sdk\interfaces\cvar.cpp" />
     <ClCompile Include="sdk\interfaces\engine_trace.cpp" />
-    <ClCompile Include="sdk\base_object.cpp" />
     <ClCompile Include="sdk\other\bitbuf.cpp" />
     <ClCompile Include="sdk\other\crc32.cpp" />
     <ClCompile Include="sdk\other\key_values.cpp" />

@@ -176,8 +176,6 @@ public:
     NETVAR( ground_entity_handle, uint32_t, "DT_BasePlayer", "m_hGroundEntity" );
     NETVAR( cycle, float, "DT_BaseAnimating", "m_flCycle" );
     NETVAR( model_scale, float, "DT_BaseAnimating", "m_flModelScale" );
-    OFFSET( bone_count, int, 0x2908 );
-    OFFSET( bone_cache, matrix_3x4 *, 0x28FC );
     OFFSET( old_origin, vector_3d, 0x3A8 );
 
     bool is_player( ) {
@@ -186,18 +184,6 @@ public:
 
     var_mapping_t *get_var_mapping( ) {
         return reinterpret_cast< var_mapping_t * >( reinterpret_cast< uintptr_t >( this ) + 0x14 );
-    }
-
-    vector_3d &mins( ) {
-        auto offset = g_netvars.get_offset( HASH_CT( "DT_BaseEntity" ), HASH_CT( "m_Collision" ) );
-
-        return *reinterpret_cast< vector_3d * >( reinterpret_cast< uintptr_t >( this ) + offset + g_netvars.get_offset( HASH_CT( "DT_CollisionProperty" ), HASH_CT( "m_vecMins" ) ) );
-    }
-
-    vector_3d &maxs( ) {
-        auto offset = g_netvars.get_offset( HASH_CT( "DT_BaseEntity" ), HASH_CT( "m_Collision" ) );
-
-        return *reinterpret_cast< vector_3d * >( reinterpret_cast< uintptr_t >( this ) + offset + g_netvars.get_offset( HASH_CT( "DT_CollisionProperty" ), HASH_CT( "m_vecMaxs" ) ) );
     }
 
     vector_3d world_space_center( ) {

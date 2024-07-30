@@ -14,6 +14,7 @@ int __fastcall hooks::base_interpolate_part1::hook( REGISTERS, float &curtime, v
     //    return 0;
     //}
 
+
     return reinterpret_cast< decltype( &hooks::base_interpolate_part1::hook ) >( hooks::base_interpolate_part1::original.trampoline( ).address( ) )( REGISTERS_OUT, curtime, old_origin, old_angs, no_more_changes );
 }
 

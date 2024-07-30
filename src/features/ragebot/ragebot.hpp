@@ -35,7 +35,7 @@ struct aim_point {
     int hb;
 };
 
-struct thread_args {
+struct hitscan_data {
     bool valid{ };
     bool done{ };
     int hb;
@@ -64,11 +64,9 @@ namespace hitscan_info
 
 class ragebot {
 private:
-    void search_player( c_cs_player *player );
     void search_targets( );
-    void generate_points_for_hitbox( c_cs_player *player, lag_record *record, int side, std::vector< std::pair< vector_3d, bool > > &points, mstudiobbox_t *hitbox, mstudiohitboxset_t *set, int idx, float scale );
-    void generate_points( c_cs_player *player, lag_record* record );
     bool scan_target( c_cs_player *player, lag_record *record, aim_player &target );
+    static void hitscan_thread( hitscan_data *args );
     void adjust_speed( c_user_cmd *ucmd );
     bool get_hitbox_data( vector_3d start, hitbox_data *rtn, c_cs_player *player, int hitbox, matrix_3x4 *matrix );
 
@@ -83,10 +81,9 @@ public:
 
     std::vector< int > get_hitboxes( );
     void reset( );
-    bool can_hit_player( c_cs_player *player, vector_3d start, vector_3d end, lag_record *record, matrix_3x4 *matrix );
-    bool can_hit_player( c_cs_player *player, vector_3d start, vector_3d end, lag_record *record, int hitbox, matrix_3x4 *matrix );
+    bool can_hit( c_cs_player *player, vector_3d start, vector_3d end, lag_record *record, matrix_3x4 *matrix );
 
-    bool should_hit( c_cs_player *player, const vector_3d &angle, lag_record *record );
+    bool calculate_hitchance( c_cs_player *player, const int &hitbox, const vector_3d &angle, lag_record *record );
     void on_create_move( c_user_cmd *cmd );
     bool get_hitbox_position( c_cs_player *player, matrix_3x4 *bones, int hitbox, vector_3d &position );
 };

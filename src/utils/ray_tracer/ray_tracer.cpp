@@ -1,5 +1,4 @@
 #include "ray_tracer.hpp"
-#include "../../includes.hpp"
 //#include <cassert>
 
 RayTracer::Ray::Ray( const vector_3d &direction ) : m_startPoint( ), m_direction( direction ), m_length( 0.f ) {}
@@ -10,7 +9,7 @@ RayTracer::Ray::Ray( const vector_3d &startPoint, const vector_3d &endPoint ) : 
     auto vectorDiff = endPoint - startPoint;
     m_direction = vectorDiff;
     math::normalize_place( m_direction );
-    m_length = vectorDiff.length( );
+    m_length = glm::length( vectorDiff );
 }
 
 RayTracer::Hitbox::Hitbox( ) : m_mins( ), m_maxs( ), m_radius( ) {}
@@ -22,11 +21,11 @@ RayTracer::Hitbox::Hitbox( const std::tuple< vector_3d, vector_3d, float > &init
 RayTracer::Trace::Trace( ) : m_hit( false ), m_fraction( 0.f ), m_traceEnd( ) {}
 
 void RayTracer::TraceFromCenter( const Ray &ray, const Hitbox &hitbox, Trace &trace, int flags ) {
-    //assert( ray.m_direction.Length( ) > 0.f );
+    //assert( ray.m_direction ) > 0.f );
 
     // we are treating the cylinder as a cylinder y^2+z^2=r^2, in the x-direction, so we will make it the x direction
-    vector_3d unitDesired( 1.f, 0.f, 0.f );
-    matrix_3x4 identityMatrix(
+    const vector_3d unitDesired( 1.f, 0.f, 0.f );
+    const matrix_3x4 identityMatrix(
             1.f, 0.f, 0.f, 0.f,
             0.f, 1.f, 0.f, 0.f,
             0.f, 0.f, 1.f, 0.f );
@@ -37,7 +36,7 @@ void RayTracer::TraceFromCenter( const Ray &ray, const Hitbox &hitbox, Trace &tr
     auto maxsOffset = hitbox.m_maxs - center;
 
     auto vecHitbox = maxsOffset - minsOffset;
-    auto hitboxLength = glm::length(vecHitbox);
+    auto hitboxLength = glm::length( vecHitbox );
 
     // now we calculate the transformation matrix to get our normalized hitbox to center
     auto unitHitbox = vecHitbox / hitboxLength;
@@ -162,7 +161,7 @@ void RayTracer::TraceHitbox( const Ray &ray, const Hitbox &hitbox, Trace &trace,
     auto maxsOffset = hitbox.m_maxs - center;
 
     auto vecHitbox = maxsOffset - minsOffset;
-    auto hitboxLength = glm::length(vecHitbox);
+    auto hitboxLength = glm::length( vecHitbox );
 
     // now we calculate the transformation matrix to get our normalized hitbox to center
     auto unitHitbox = vecHitbox / hitboxLength;
@@ -178,7 +177,7 @@ void RayTracer::TraceHitbox( const Ray &ray, const Hitbox &hitbox, Trace &trace,
     auto adjustedStart = ray.m_startPoint - center;
 
     // if cross is 0, then we don't have to rotate because they are parallel
-    if ( cross.length( ) > 0.f ) {
+    if (glm::length(  cross ) > 0.f ) {
         matrix_3x4 crossMatrix(
                 0.f, -cross.z, cross.y, 0.f,
                 cross.z, 0.f, -cross.x, 0.f,
@@ -209,8 +208,8 @@ void RayTracer::TraceHitbox( const Ray &ray, const Hitbox &hitbox, Trace &trace,
         // the ray goes through both caps, easy case because we don't actually need to trace the ray because they are circles
         if ( rotatedDirection.x > 0 ) {
             // through the right cap, scale by radius and call it a day
-            auto newLength = glm::length(minsOffset) + hitbox.m_radius;
-            auto offset = ( minsOffset * ( newLength ) / glm::length(minsOffset) );
+            auto newLength = glm::length( minsOffset ) + hitbox.m_radius;
+            auto offset = ( minsOffset * ( newLength ) / glm::length( minsOffset ) );
 
             if ( flags & Flags_RETURNEND )
                 trace.m_traceEnd = center + offset;

@@ -10,6 +10,7 @@
 #include <hooks/lock_cursor/lock_cursor.hpp>
 #include <hooks/wnd_proc/wnd_proc.hpp>
 #include <hooks/override_view/override_view.hpp>
+#include <hooks/get_screen_aspect_ratio/get_screen_aspect_ratio.hpp>
 #include <hooks/get_alpha_modulation/get_alpha_modulation.hpp>
 #include <hooks/is_using_static_props_debug_modes/is_using_static_props_debug_modes.hpp>
 #include <hooks/run_command/run_command.hpp>
@@ -55,16 +56,20 @@
 #include <hooks/is_paused/is_paused.hpp>
 #include <hooks/level_init_pre_entity/level_init_pre_entity.hpp>
 #include <hooks/in_prediction/in_prediction.hpp>
+#include <hooks/cl_dispatch_sound/cl_dispatch_sound.hpp>
+#include <hooks/send_datagram/send_datagram.hpp>
 
 std::unique_ptr< event_handler > game_event_handler = nullptr;
 
 void hooks::impl::init( ) {
+    cl_dispatch_sound::init( );
     level_init_pre_entity::init( );
     is_paused::init( );
     update_clientside_animations::init( );
     paint_traverse::init( );
     level_shutdown::init( );
     lower_body_yaw_target_proxy::init( );
+    get_screen_aspect_ratio::init( );
     //check_jump_button::init( );
     //anim_state::init( );
     in_prediction::init( );
@@ -117,7 +122,10 @@ void hooks::impl::init( ) {
 }
 
 void hooks::impl::remove( ) {
+    send_datagram::original = { };
+    cl_dispatch_sound::original = { };
     is_paused::original = { };
+    get_screen_aspect_ratio::original = { };
     update_clientside_animations::original = { };
     paint_traverse::original = { };
     level_shutdown::original = { };

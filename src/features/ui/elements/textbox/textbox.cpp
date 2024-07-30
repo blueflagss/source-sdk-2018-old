@@ -51,8 +51,8 @@ void penumbra::textbox::paint( ) {
 
     auto item_dimensions = render::get_text_size( fonts::visuals_segoe_ui, *this->value );
 
-    render::filled_rect( animation_lerp.value, this->position.y + 8.0f + TEXTBOX_OFFSET.y - 5.f, animation_line_lerp.value, 10.0f, color{ 0, 0, 0, 0 }.lerp( color{ globals::theme_accent, 100 * animation_active.value * globals::fade_opacity[ this->get_main_window( ) ] }, animation_active.value ) );
-    render::string( fonts::visuals_segoe_ui, this->position.x + 8.0f, this->position.y + 3.0f + TEXTBOX_OFFSET.y - 4.f, color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 255, 255, 255, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_active.value ), *this->value );
+    render::filled_rect( animation_lerp.value, this->position.y + 13.0f + TEXTBOX_OFFSET.y - 9.5f, animation_line_lerp.value, 13.0f, color{ 0, 0, 0, 0 }.lerp( color{ globals::theme_accent, 100 * animation_active.value * globals::fade_opacity[ this->get_main_window( ) ] }, animation_active.value ) );
+    render::string( fonts::visuals_segoe_ui, this->position.x + 8.0f, this->position.y + 5.5f + TEXTBOX_OFFSET.y - 4.f, color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 255, 255, 255, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_active.value ), *this->value );
 
     if ( !this->is_in_object )
         render::string( fonts::visuals_segoe_ui, this->position.x - 0.5f, this->position.y - 3.5f, color{ 200, 200, 200, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, this->name );

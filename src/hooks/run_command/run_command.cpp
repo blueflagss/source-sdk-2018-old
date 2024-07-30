@@ -16,10 +16,10 @@ void __fastcall hooks::run_command::hook( REGISTERS, c_base_player *player, c_us
         return original.fastcall< void >( REGISTERS_OUT, player, ucmd, move_helper );
     }
 
-    if ( ucmd->command_number > last_command_time ) {
-       
-        last_command_time = ucmd->command_number;
-    }
+    //if ( ucmd->command_number > last_command_time ) {
+
+    //    last_command_time = ucmd->command_number;
+    //}
 
     original.fastcall< void >( REGISTERS_OUT, player, ucmd, move_helper );
 }

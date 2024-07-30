@@ -9,7 +9,7 @@ float __fastcall hooks::get_alpha_modulation::hook( REGISTERS ) {
     if ( material->is_error_material( ) || !strstr( material->get_texture_group_name( ), _xs( "StaticProp textures" ) ) )
         return original.fastcall< float >( REGISTERS_OUT );
 
-    return 1.0f - ( g_vars.visuals_other_prop_transparency.value / 100.f );
+    return ( g_vars.visuals_other_prop_transparency.value / 100.f );
 }
 
 void hooks::get_alpha_modulation::init( ) {

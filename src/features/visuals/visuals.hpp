@@ -71,7 +71,7 @@ public:
     void penetration_crosshair( );
     void on_create_move( );
     void world_modulation( );
-    void render_bar( c_cs_player *player, const entity_box &box, const float &value, const float &progress, color col, bool show = false );
+    void render_bar( c_cs_player *player, const box_t &box, const float &value, const float &progress, color col, bool show = false );
    
     float hitmarker_fraction = 0.0f;
 

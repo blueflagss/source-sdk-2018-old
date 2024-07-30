@@ -130,8 +130,8 @@ public:
     NETVAR( item_definition_index, int, "DT_BaseAttributableItem", "m_iItemDefinitionIndex" );
     NETVAR( accuracy_penalty, float, "DT_WeaponCSBase", "fAccuracyPenalty" );
     NETVAR( next_primary_attack, float, "DT_WeaponCSBase", "m_flNextPrimaryAttack" );
-    NETVAR( clip_1, int, "DT_WeaponCSBase", "m_iClip1" );
-    NETVAR( clip_2, int, "DT_WeaponCSBase", "m_iClip2" );
+    NETVAR( clip_1, int, "DT_BaseCombatWeapon", "m_iClip1" );
+    NETVAR( clip_2, int, "DT_BaseCombatWeapon", "m_iClip2" );
     NETVAR( zoom_level, float, "DT_WeaponCSBaseGun", "m_zoomLevel" );
     NETVAR( primary_reserve_ammo_count, int, "DT_BaseCombatWeapon", "m_iPrimaryReserveAmmoCount" );
 

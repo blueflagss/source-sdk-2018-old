@@ -2,9 +2,9 @@
 #include <globals.hpp>
 #include <glm/gtx/norm.hpp>
 
-struct entity_box {
-    entity_box( ) = default;
-    entity_box( float x, float y, float w, float h ) : x( x ), y( y ), w( w ), h( h ){ };
+struct box_t {
+    box_t( ) = default;
+    box_t( float x, float y, float w, float h ) : x( x ), y( y ), w( w ), h( h ){ };
 
     float x, y, w, h;
 };
@@ -83,8 +83,8 @@ namespace math
     vector_3d vector_rotate( const vector_3d &in1, const vector_3d &in2 );
     bool intersect_ray_with_box( const vector_3d &rayStart, const vector_3d &rayDelta, const vector_3d &boxMins, const vector_3d &boxMaxs, float epsilon, c_game_trace *pTrace, float *pFractionLeftSolid );
     bool intersect_bb( vector_3d &start, vector_3d &delta, vector_3d &min, vector_3d &max );
-    float segment_to_segment( const vector_3d s1, const vector_3d s2, const vector_3d k1, const vector_3d k2 );
-    bool intersect( vector_3d start, vector_3d end, vector_3d a, vector_3d b, float radius );
+    float segment_to_segment( const vector_3d &s1, const vector_3d &s2, const vector_3d &k1, const vector_3d &k2 );
+    bool intersect( vector_3d &start, vector_3d &end, vector_3d &a, vector_3d &b, float radius );
     void vector_irotate( const vector_3d &in1, const matrix_3x4 &in2, vector_3d &out );
     void concat_transforms( const matrix_3x4 &in1, const matrix_3x4 &in2, matrix_3x4 &out );
     void angle_matrix( const vector_3d &angles, matrix_3x4 &matrix );

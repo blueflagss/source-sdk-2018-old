@@ -222,11 +222,14 @@ void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate 
     const auto backup_framecount = g_interfaces.global_vars->framecount;
 
     animstate->m_nLastUpdateFrame = 0;
-    animstate->m_flLastUpdateTime = game::time_to_ticks( animstate->m_pPlayer->simtime( ) ) - game::ticks_to_time( 1 );
 
-    g_interfaces.global_vars->curtime = backup_cur_time * g_interfaces.global_vars->interval_per_tick;
-    g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
-    g_interfaces.global_vars->framecount = tick;
+    if ( animstate->m_pPlayer == globals::local_player ) {
+        animstate->m_flLastUpdateTime = animstate->m_pPlayer->old_simtime( );
+
+        g_interfaces.global_vars->curtime = tick * g_interfaces.global_vars->interval_per_tick;
+        g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
+        g_interfaces.global_vars->framecount = tick;
+    }
 
     const c_csgo_player_animstate backup_animstate = *animstate;
 
@@ -374,13 +377,13 @@ void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate 
         set_sequence( animstate, ANIMATION_LAYER_ADJUST, select_weighted_sequence( animstate, ACT_CSGO_IDLE_TURN_BALANCEADJUST ) );
         animstate->m_bAdjustStarted = true;
     }
-
-    *animstate = backup_animstate;
-
     /* restore client vars */
-    g_interfaces.global_vars->curtime = backup_cur_time;
-    g_interfaces.global_vars->frametime = backup_frametime;
-    g_interfaces.global_vars->framecount = backup_framecount;
+    if ( animstate->m_pPlayer == globals::local_player ) {
+        g_interfaces.global_vars->curtime = backup_cur_time;
+        g_interfaces.global_vars->frametime = backup_frametime;
+        g_interfaces.global_vars->framecount = backup_framecount;
+    }
+    *animstate = backup_animstate;
 }
 
 void c_animation_state_rebuilt::set_weight( c_csgo_player_animstate *state, int layer_idx, float weight ) {

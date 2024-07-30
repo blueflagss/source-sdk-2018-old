@@ -134,6 +134,9 @@ int antiaim::get_max_choke_ticks( ) {
     if ( g_config.get_hotkey( g_vars.misc_fake_walk_key, g_vars.misc_fake_walk_key_toggle.value ) )
         return g_vars.misc_fake_walk_value.value;
 
+    if ( glm::length( globals::local_player->velocity( ) ) < 0.18f )
+        return 1.0f;
+
     return g_vars.exploits_fakelag_limit.value;
 }
 

@@ -98,18 +98,14 @@ std::pair< float, bool > resolver::AntiFreestand( c_cs_player *player, lag_recor
 
     return { angles.front( ).dist, true };
 }
-
-void resolver::start( lag_record &record, lag_record *previous ) { // fuck it dawg for rn this is better then whatever the fuck was here be4 i dont even remember what it was i just know it kinda sucked
-    if ( !previous )
-        return;
-
-    auto player_log = &g_animations.player_log[ record.player->index( ) ];
+void resolver::start( c_cs_player *player, lag_record &record, lag_record *previous ) {
+    auto player_log = &g_animations.player_log[ player->index( ) ];
 
     if ( !player_log )
         return;
 
     if ( player_log->player_info.fake_player ) {
-        record.mode = resolve_mode::none; 
+        record.mode = resolve_mode::none;
         return;
     }
 
@@ -117,9 +113,9 @@ void resolver::start( lag_record &record, lag_record *previous ) { // fuck it da
 
     const auto moving = glm::length( record.velocity ) > 0.1f && !record.fake_walk;
     const auto diff = math::normalize_angle( player_log->body - player_log->walk_record.lower_body_yaw );
-    const auto layer_activity = record.player->get_sequence_activity( record.layer_records[ ANIMATION_LAYER_ADJUST ].sequence );
+    const auto layer_activity = player->get_sequence_activity( record.layer_records[ ANIMATION_LAYER_ADJUST ].sequence );
     const auto velyaw = math::rad_to_deg( std::atan2( record.velocity.y, record.velocity.x ) );
-    const auto away_target = math::normalize( math::angle_from_vectors( globals::local_player->origin( ), record.player->origin( ) ).y );
+    const auto away_target = math::normalize( math::angle_from_vectors( globals::local_player->origin( ), player->origin( ) ).y );
     const auto in_air = !record.on_ground;
 
     player_log->anti_freestand_record.left_damage = 0.0f;
@@ -146,8 +142,8 @@ void resolver::start( lag_record &record, lag_record *previous ) { // fuck it da
     const auto left_eye_pos = record.origin + vector_3d( 0.f, 0.f, 64.f ) + ( direction_1 * 16.f );
     const auto right_eye_pos = record.origin + vector_3d( 0.f, 0.f, 64.f ) + ( direction_2 * 16.f );
 
-    player_log->anti_freestand_record.left_damage = g_penetration.run( globals::local_player->get_shoot_position( ), left_eye_pos, record.player, record.bones, false ).out_damage;
-    player_log->anti_freestand_record.right_damage = g_penetration.run( globals::local_player->get_shoot_position( ), right_eye_pos, record.player, record.bones, false ).out_damage;
+    player_log->anti_freestand_record.left_damage = g_penetration.run( globals::local_player->get_shoot_position( ), left_eye_pos, player, record.bones, false ).out_damage;
+    player_log->anti_freestand_record.right_damage = g_penetration.run( globals::local_player->get_shoot_position( ), right_eye_pos, player, record.bones, false ).out_damage;
 
     ray_t ray;
     c_game_trace trace;
@@ -169,165 +165,102 @@ void resolver::start( lag_record &record, lag_record *previous ) { // fuck it da
 
     const auto delta_time = record.anim_time - player_log->walk_record.anim_time;
 
-    // Detect jittering fake and static real yaw (my fuckin ass)
-    bool is_jittering_fake = false;
-    bool is_static_real = false;
+    //bool is_jittering_fake = false;
+    //bool is_static_real = false;
 
-    if ( player_log->lag_records.size( ) > 2 ) {
-        auto &latest_record = player_log->lag_records[ player_log->lag_records.size( ) - 1 ];
-        auto &prev_record = player_log->lag_records[ player_log->lag_records.size( ) - 2 ];
+    //if ( player_log->lag_records.size( ) > 2 ) {
+    //    auto &latest_record = player_log->lag_records[ player_log->lag_records.size( ) - 1 ];
+    //    auto &prev_record = player_log->lag_records[ player_log->lag_records.size( ) - 2 ];
 
-        if ( abs( latest_record->eye_angles.y - prev_record->eye_angles.y ) > 35.0f ) { // as you can see here, we are doing some more math thanks to my good pal Albert Eisntein
-            is_jittering_fake = true; // probably wrong but fuck it lets try and see how it goes w someone that isn't braindead testing
+    //    if ( abs( latest_record->eye_angles.y - prev_record->eye_angles.y ) > 35.0f ) {
+    //        is_jittering_fake = true;
+    //    }
+
+    //    if ( abs( latest_record->lower_body_yaw - prev_record->lower_body_yaw ) < 1.0f ) {
+    //        is_static_real = true;
+    //    }
+    //}
+
+    if ( !record.on_ground ) {
+        record.mode = resolve_mode::air;
+        player->eye_angles( ).y = velyaw;
+
+        if ( player_log->missed_shots > 0 ) {
+            record.mode = resolve_mode::air_brute;
+
+            switch ( player_log->missed_shots % 3 ) {
+                case 1:
+                    player->eye_angles( ).y = velyaw + 180.f;
+                    break;
+                case 2:
+                    player->eye_angles( ).y = velyaw - 90.f;
+                    break;
+                case 3:
+                    player->eye_angles( ).y = velyaw + 90.f;
+                    break;
+            }
         }
 
-        if ( abs( latest_record->lower_body_yaw - prev_record->lower_body_yaw ) < 1.0f ) {
-            is_static_real = true; // we might need an else statement here but idrk nor care enough 
-        }
+        return;
     }
 
-    if ( record.moved ) {
+    //if ( record.moved ) {
         if ( record.anim_time >= player_log->body_update_time ) {
-            record.mode = resolve_mode::lby_update; // p1000
-
-            player_log->body_update_time = record.sim_time + 1.1f;
-            player_log->lby_updated = true;
-
-            if ( player_log->missed_shots > 6 && layer_activity != ACT_CSGO_IDLE_TURN_BALANCEADJUST ) { // the fuck even is this shit
-                record.eye_angles.y = player_log->walk_record.lower_body_yaw + 180.f; // mhm yeah this makes total sense
-            } else if ( player_log->missed_shots > 4 && layer_activity != ACT_CSGO_IDLE_ADJUST_STOPPEDMOVING ) {
-                record.eye_angles.y = away_target + 180.f;
-            }
-
-            return;
-        } else if ( record.player->lower_body_yaw_target( ) != player_log->last_lby ) {
-            record.eye_angles.y = player_log->body;
             record.mode = resolve_mode::lby_update;
 
             player_log->body_update_time = record.sim_time + 1.1f;
             player_log->lby_updated = true;
-            player_log->last_lby = record.player->lower_body_yaw_target( );
+            player->eye_angles( ).y = record.lower_body_yaw;
 
             return;
         }
 
-      //  if ( anti_freestanding( record ) ) { wack ass anti freestand
-      //      record.mode = resolve_mode::freestand;
-       //     return;
-     //   }
+        else if ( player->lower_body_yaw_target( ) != player_log->last_lby ) {
+            player->eye_angles( ).y = player_log->body;
+            record.mode = resolve_mode::lby_update;
 
-        if ( player_log->missed_shots < 1 ) {
-            record.mode = record.on_ground ? resolve_mode::standing : resolve_mode::air;
-            record.eye_angles.y = away_target; // this is extremely outstandingly smart and noothing will ever surpass, thank you ladies and gentleman
+            player_log->lby_updated = true;
+            player_log->last_lby = player->lower_body_yaw_target( );
+
             return;
         }
-
-        if ( player_log->missed_shots > 1 ) { // INF
-            record.mode = resolve_mode::brute; // oh no save me please not brute
-
-            switch ( player_log->missed_shots % 5 ) {
-                case 1:
-                    record.eye_angles.y = player_log->body + 110.f;
-                    break;
-                case 2:
-                    record.eye_angles.y = velyaw - 90.f;
-                    break;
-                case 3:
-                    record.eye_angles.y = away_target + 180.f;
-                    break;
-                case 4:
-                    record.eye_angles.y = player_log->body - 110.f;
-                    break;
-                case 5:
-                    record.eye_angles.y = away_target;
-                    break;
-                default:
-                    break;
-            }
-        }
-    } else if ( moving && !record.on_ground ) {
-        record.mode = resolve_mode::moving;
-        player_log->body_update_time = record.sim_time; // OH YEAHHHH BABYYYY
-        return;
-    } else if ( moving && record.on_ground ) {
-        player_log->body_update_time = record.sim_time + 0.22f; // fuckin unheard of
-        record.eye_angles.y = player_log->body; // ur fuckin done for loser
-    }
-
-    if ( !record.on_ground ) {
-        record.mode = resolve_mode::air;
 
         if ( player_log->missed_shots > 0 ) {
-            record.mode = resolve_mode::air_brute; // please got find any other method ASAP
-
-            switch ( player_log->missed_shots % 3 ) {
-                case 0:
-                    record.eye_angles.y = velyaw + 180.f; // FUCK YES
-                    break;
-                case 1:
-                    record.eye_angles.y = velyaw - 90.f;
-                    break;
-                case 2:
-                    record.eye_angles.y = velyaw + 90.f;
-                    break;
-            }
-        }
-
-        return;
-    }
-
-    // Use animation layers and pose parameters for resolving.
-    auto &layers = record.layer_records;
-
-    // Extract the activity of the current layer.
-    int activity = record.player->get_sequence_activity( layers[ ANIMATION_LAYER_ADJUST ].sequence );
-    float weight = layers[ ANIMATION_LAYER_ADJUST ].weight;
-    float cycle = layers[ ANIMATION_LAYER_ADJUST ].cycle;
-
-    if ( activity == ACT_CSGO_IDLE_TURN_BALANCEADJUST && weight > 0.5f && cycle < 0.5f ) {
-        record.eye_angles.y = player_log->body + 90.f; // wild mathamatical equations from albert himself
-        record.mode = resolve_mode::lby_update;
-    } else if ( activity == ACT_CSGO_IDLE_TURN_BALANCEADJUST && weight > 0.5f && cycle >= 0.5f ) {
-        record.eye_angles.y = player_log->body - 90.f;
-        record.mode = resolve_mode::lby_update;
-    } else if ( activity == ACT_CSGO_IDLE_ADJUST_STOPPEDMOVING && weight == 1.0f ) {
-        record.eye_angles.y = player_log->body;
-        record.mode = resolve_mode::adjust_stop; // totally adjusted and like STOPPED...
-    } // {
-       // if ( anti_freestanding( record ) ) { // shit is like a brick just sits there and annoys the fuck out of me
-         //   record.mode = resolve_mode::freestand;
-          //  return;
-        //}
-
-        if ( player_log->missed_shots < 1 ) {
-            record.mode = record.on_ground ? resolve_mode::standing : resolve_mode::air;
-            record.eye_angles.y = away_target; // da supremacy way :sunglasses:
-            return;
-        }
-
-        if ( player_log->missed_shots > 1 ) { // stay away voldemort
             record.mode = resolve_mode::brute;
             switch ( player_log->missed_shots % 5 ) {
                 case 1:
-                    record.eye_angles.y = record.fake_walk ? player_log->body + 110.f : away_target - 90.0f; // uh yes I did graduate from havard as with my profession being math, thanks for asking.
+                    player->eye_angles( ).y = away_target;
                     break;
                 case 2:
-                    record.eye_angles.y = velyaw - 90.0f;
+                    player->eye_angles( ).y = velyaw - 90.0f;
                     break;
                 case 3:
-                    record.eye_angles.y = away_target + 180.0f;
+                    player->eye_angles( ).y = away_target + 180.0f;
                     break;
                 case 4:
-                    record.eye_angles.y = record.fake_walk ? player_log->body - 110.f : velyaw + 180.0f; // fuck outta here ur gone now 
+                    player->eye_angles( ).y = record.fake_walk ? player_log->body - 110.f : velyaw + 180.0f;
                     break;
                 case 5:
-                    record.eye_angles.y = away_target; // we shit bricks bc hes neo
+                    player->eye_angles( ).y = away_target;
                     break;
                 default:
                     break;
             }
+        } else {
+            if ( anti_freestanding( record ) ) {
+                record.mode = resolve_mode::freestand;
+                return;
+            }
         }
+    if ( moving && !record.on_ground ) {
+        record.mode = resolve_mode::moving;
+        player_log->body_update_time = record.sim_time;
+        return;
+    } else if ( moving && record.on_ground ) {
+        player_log->body_update_time = record.sim_time + 0.22f;
+        player->eye_angles( ).y = player_log->body;
     }
+}
 
 
 lag_record *resolver::find_ideal_record( c_cs_player *player ) {

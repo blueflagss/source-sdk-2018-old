@@ -27,7 +27,7 @@ void visuals::render( ) {
 
                 update_configuration( player );
 
-                           if ( !player->alive( ) )
+                if ( !player->alive( ) )
                     break;
 
                 if ( !g_vars.visual_players_toggled.value )
@@ -36,17 +36,17 @@ void visuals::render( ) {
                 render_player( player );
             }
             default: {
-                //const auto weapon = entity->get< c_cs_weapon_base * >( );
+                const auto weapon = entity->get< c_cs_weapon_base * >( );
 
-                //if ( !weapon->is_base_combat_weapon( ) )
-                //    break;
+                if ( !weapon->is_base_combat_weapon( ) )
+                    break;
 
-                //const auto weapon_owner = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_player * >( weapon->owner( ) );
+                const auto weapon_owner = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_player * >( weapon->owner( ) );
 
-                //if ( weapon_owner )
-                //    break;
+                if ( weapon_owner )
+                    break;
 
-                //render_weapon( weapon );
+                render_weapon( weapon );
             } break;
         }
     }
@@ -158,8 +158,7 @@ void visuals::hitmarker( ) {
 
     auto screen_center = vector_2d(
             globals::ui::screen_size.x / 2.0f,
-            globals::ui::screen_size.y / 2.0f 
-    );
+            globals::ui::screen_size.y / 2.0f );
 
     render::line( screen_center.x - line_size, screen_center.y - line_size, screen_center.x - ( line_size / 2 ), screen_center.y - ( line_size / 2 ), color{ 200, 200, 200, 255 * hitmarker_fraction }, 2.5f );
     render::line( screen_center.x - line_size, screen_center.y + line_size, screen_center.x - ( line_size / 2 ), screen_center.y + ( line_size / 2 ), color{ 200, 200, 200, 255 * hitmarker_fraction }, 2.5f );
@@ -185,17 +184,17 @@ void visuals::update_configuration( c_base_entity *entity ) {
 }
 
 void visuals::render_weapon( c_cs_weapon_base *weapon ) {
-    entity_box box;
+    box_t box;
 
     if ( weapon->dormant( ) )
         return;
 
-    if ( !weapon->get_screen_bounding_box( box ) )
+    if ( !weapon->get_bounding_box( box ) )
         return;
 
     int bar_offset = 0;
 
-    const auto max_distance = 58.0f;
+    const auto max_distance = 32.0f;
     const auto origin = weapon->origin( );
     const auto distance_to_player = glm::length( origin - globals::local_player->origin( ) ) * 0.01905f;
     const auto max_distance_clamped = ( max_distance - std::clamp< float >( distance_to_player, 0, max_distance ) ) / max_distance;
@@ -203,32 +202,30 @@ void visuals::render_weapon( c_cs_weapon_base *weapon ) {
     if ( max_distance_clamped < 0.02f )
         return;
 
-    render::rect( box.x + 1, box.y + 1, box.w - 2, box.h - 2, color{ 46, 46, 46, 160 * max_distance_clamped } );
-    render::rect( box.x - 1, box.y - 1, box.w + 2, box.h + 2, color{ 46, 46, 46, 160 * max_distance_clamped } );
-    render::rect( box.x, box.y, box.w, box.h, color{ g_vars.visuals_box_color.value, 200 * max_distance_clamped } );
+    if ( g_vars.visual_weapon_dropped_box.value ) {
+        render::rect( box.x + 1, box.y + 1, box.w - 2, box.h - 2, color{ 46, 46, 46, 160 * max_distance_clamped } );
+        render::rect( box.x - 1, box.y - 1, box.w + 2, box.h + 2, color{ 46, 46, 46, 160 * max_distance_clamped } );
+        render::rect( box.x, box.y, box.w, box.h, color{ g_vars.visuals_box_color.value, 200 * max_distance_clamped } );
+    }
 
-    auto weapon_text = utils::convert_utf8( weapon->get_name( ) );
-    auto text_dimensions = render::get_text_size( fonts::visuals_04b03, weapon_text );
+    const auto progress = static_cast< float >( weapon->clip_1( ) ) / static_cast< float >( weapon->primary_reserve_ammo_count( ) );
+    const auto width = ( box.w * progress );
 
-    std::transform( weapon_text.begin( ), weapon_text.end( ), weapon_text.begin( ), ::toupper );
+    if ( g_vars.visual_weapon_dropped_ammo.value && weapon->clip_1( ) > 0 ) {
+        render::filled_rect( box.x + 1.0f, box.y + box.h + 2.0f + bar_offset, box.w - 2.0f, 4.0f, color{ 12, 12, 12, 140 * max_distance_clamped } );
+        render::filled_rect( box.x + 1.0f, box.y + box.h + 2.0f + bar_offset, width - 2.0f, 4.0f, color{ g_vars.visual_weapon_dropped_ammo_color.value, 200 * max_distance_clamped } );
+        render::rect( box.x + 1.0f, box.y + box.h + 2.0f + bar_offset, box.w - 2.0f, 4.0f, color{ 46, 46, 46, 255 * max_distance_clamped } );
+        render::string( fonts::visuals_04b03, box.x + width, box.y + box.h + 2.0f + bar_offset, color{ color::white( ), 255 * max_distance_clamped }, fmt::format( _xs( "{}" ), weapon->clip_1( ) ), false, true );
 
-    //const auto progress = static_cast< float >( weapon->clip_1( ) / weapon->primary_reserve_ammo_count( ) );
-    //const auto width = ( box.w * progress );
+        bar_offset += 5.5f;
+    }
 
-    //if ( progress <= 0.0f ) {
-    //    bar_offset = 0;
-    //    return;
-    //}
+    if ( g_vars.visual_weapon_dropped_name.value ) {
+        auto icon = csgo_hud_icons[ weapon->item_definition_index( ) ];
+        auto text_dimensions = render::get_text_size( fonts::csgo_icons, icon );
 
-    //render::filled_rect( box.x + 1.0f, box.y + box.h + 2.0f + bar_offset, box.w, 2.5f, color{ 46, 46, 46, 110 * max_distance_clamped } );
-    //render::filled_rect( box.x + 1.0f, box.y + box.h + 2.0f + bar_offset, width - 2.0f, 4.0f, color{ 255, 255, 255, 200 * max_distance_clamped } );
-    //render::rect( box.x + 1.0f, box.y + box.h + 2.0f + bar_offset, box.w - 2.0f, 4.0f, color{ 46, 46, 46, 255 * max_distance_clamped } );
-
-    //if ( progress < 1.0f )
-    //    render::string( fonts::visuals_04b03, box.x + 1.0f + box.w, box.y + box.h + 2.0f + 7.0f + bar_offset, color{ color::white( ), 255 * max_distance_clamped }, fmt::format( _xs( "{}" ), weapon->clip_1( ) ), false, true );
-
-    bar_offset += 5.5f;
-    render::string( fonts::visuals_04b03, box.x + ( box.w / 2 ) - text_dimensions.x / 2, box.y + bar_offset + box.h + 1.5f, color( 255, 255, 255, 255 * max_distance_clamped ), weapon_text, false, true );
+        render::string( fonts::csgo_icons, box.x + ( box.w / 2 ) - text_dimensions.x / 2, box.y + bar_offset + box.h, color( 255, 255, 255, 255 * max_distance_clamped ), icon, false, false );
+    }
 }
 
 void visuals::show_manual_indicators( ) {
@@ -238,9 +235,9 @@ void visuals::show_manual_indicators( ) {
     if ( !globals::local_player || !globals::local_player->alive( ) )
         return;
 
-    const auto arrow_size = 10.0f;
+    const auto arrow_size = 8.0f;
 
-    auto rotate_point = [ ]( vector_2d center, vector_2d &point, float rotation ) {
+    auto rotate_point = []( vector_2d center, vector_2d &point, float rotation ) {
         point -= center;
         math::rotate_point( point, rotation );
         point += center;
@@ -250,8 +247,7 @@ void visuals::show_manual_indicators( ) {
         std::array< vector_2d, 3 > points = {
                 vector_2d( position.x + 7.0f + arrow_size, position.y + 7.0f + arrow_size ),
                 vector_2d( position.x - 7.0f - arrow_size, position.y ),
-                vector_2d( position.x + 7.0f + arrow_size, position.y - 7.0f - arrow_size )
-        };
+                vector_2d( position.x + 7.0f + arrow_size, position.y - 7.0f - arrow_size ) };
 
         rotate_point( { position.x, position.y }, points[ 0 ], rotation );
         rotate_point( { position.x, position.y }, points[ 1 ], rotation );
@@ -291,9 +287,9 @@ void visuals::render_player( c_cs_player *player ) {
     if ( !player_log )
         return;
 
-    entity_box box;
+    box_t box;
 
-    if ( !player->get_screen_bounding_box( box ) )
+    if ( !player->get_bounding_box( box ) )
         return;
 
     player_info_t player_info;
@@ -335,7 +331,7 @@ void visuals::render_player( c_cs_player *player ) {
         const auto health_text_dimensions = render::get_text_size( fonts::visuals_04b03, health_text );
         const auto health_bar_color = g_vars.visuals_player_health_override.value ? color{ g_vars.visuals_health_override_color.value, 255 * opacity_array[ player->index( ) ] } : color{ 166, 0, 0, 255 * opacity_array[ player->index( ) ] }.lerp( color{ 157, 255, 0, 255 * opacity_array[ player->index( ) ] }, std::clamp< float >( static_cast< float >( player->health( ) ) / 100.f, 0.0f, 1.0f ) );
 
-        render::filled_rect( box.x - 6.0f, box.y, 2.5f, box.h, color{ 46, 46, 46, 110 * opacity_array[ player->index( ) ] } );
+        render::filled_rect( box.x - 6.0f, box.y, 2.5f, box.h, color{ 12, 12, 12, 140 * opacity_array[ player->index( ) ] } );
 
         if ( dormant ) {
             render::filled_rect( box.x - 6.0f, box.y - 1, 2.5f, box.h, color{ 189, 189, 189, 200 * opacity_array[ player->index( ) ] } );
@@ -375,11 +371,11 @@ void visuals::render_player( c_cs_player *player ) {
             esp_config[ player->index( ) ].bottom_bar_offset += text_dimensions.y;
         }
 
-        if ( g_vars.visuals_player_weapon_icon.value && weapon->item_definition_index( ) >= weapons::revolver ) {
+        if ( g_vars.visuals_player_weapon_icon.value && weapon->item_definition_index( ) >= weapons::deagle ) {
             auto icon = csgo_hud_icons[ weapon->item_definition_index( ) ];
             auto text_dimensions = render::get_text_size( fonts::csgo_icons, icon );
 
-            render::string( fonts::csgo_icons, box.x + ( box.w / 2 ) - text_dimensions.x / 2, box.y + esp_config[ player->index( ) ].bottom_bar_offset + esp_config[ player->index( ) ].weapon_offset + box.h, color( 255, 255, 255, 255 ), icon, true, false );
+            render::string( fonts::csgo_icons, box.x + ( box.w / 2 ) - text_dimensions.x / 2, box.y + esp_config[ player->index( ) ].bottom_bar_offset + esp_config[ player->index( ) ].weapon_offset + box.h, color( 255, 255, 255, 255 ), icon, false, false );
         }
     }
 
@@ -480,7 +476,7 @@ void visuals::world_modulation( ) {
     }
 }
 
-void visuals::render_bar( c_cs_player *player, const entity_box &box, const float &value, const float &progress, color col, bool show ) {
+void visuals::render_bar( c_cs_player *player, const box_t &box, const float &value, const float &progress, color col, bool show ) {
     auto &config = esp_config[ player->index( ) ];
     const auto width = ( box.w * progress );
 
@@ -509,7 +505,7 @@ void visuals::render_offscreen( c_cs_player *player ) const {
     vector_3d forward;
     vector_3d origin, local_origin;
 
-    origin = player->get_render_origin( ), local_origin = globals::local_shoot_pos;
+    origin = player->origin( ), local_origin = globals::local_shoot_pos;
 
     math::angle_vectors( globals::view_angles, &forward );
 
@@ -521,7 +517,7 @@ void visuals::render_offscreen( c_cs_player *player ) const {
         auto rotation = ( globals::view_angles - math::vector_angle( local_origin - origin ) ).y - 90.0f;
         auto angle_radians = math::deg_to_rad( rotation );
 
-        auto rotate_point = [ ]( vector_2d center, vector_2d &point, float rotation ) {
+        auto rotate_point = []( vector_2d center, vector_2d &point, float rotation ) {
             point -= center;
             math::rotate_point( point, rotation );
             point += center;
@@ -532,13 +528,12 @@ void visuals::render_offscreen( c_cs_player *player ) const {
 
         auto position = vector_2d(
                 ( globals::ui::screen_size.x / 2.0f ) - ( 400 * ( distance / 100.f ) ) * std::cos( angle_radians ),
-                ( globals::ui::screen_size.y / 2.0f ) - ( 400 * ( distance / 100.f ) ) * std::sin( angle_radians )
-        );
+                ( globals::ui::screen_size.y / 2.0f ) - ( 400 * ( distance / 100.f ) ) * std::sin( angle_radians ) );
 
         std::array< vector_2d, 3 > points = {
                 vector_2d( position.x + 7.0f + size, position.y + 7.0f + size ),
                 vector_2d( position.x - 7.0f - size, position.y ),
-                vector_2d( position.x + 7.0f + size, position.y - 7.0f - size ) 
+                vector_2d( position.x + 7.0f + size, position.y - 7.0f - size )
         };
 
         rotate_point( { position.x, position.y }, points[ 0 ], rotation );

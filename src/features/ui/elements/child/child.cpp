@@ -97,7 +97,7 @@ void penumbra::child::handle_object( const std::shared_ptr< penumbra::object > &
             this->cursor_position += LISTBOX_OFFSET + glm::vec2{ 0.0f, object->size.y + 8.0f };
         } break;
         case TYPE_TEXTBOX: {
-            object->size = glm::vec2{ this->size.x - 20.0f, 16.0f };
+            object->size = glm::vec2{ this->size.x - 20.0f, 20.0f };
 
             this->cursor_position += TEXTBOX_OFFSET + glm::vec2{ 0.0f, object->size.y + 8.0f };
         } break;

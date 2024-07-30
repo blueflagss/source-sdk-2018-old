@@ -49,5 +49,5 @@ public:
     virtual bool is_moving_player_stuck( void ) const = 0;
     virtual void *get_moving_player( void ) const = 0;
     virtual void unblock_pusher( void *player, void *pusher ) = 0;
-    virtual void setup_movement_bounds( void *move ) = 0;
+    virtual void setup_movement_bounds( c_move_data *move ) = 0;
 };

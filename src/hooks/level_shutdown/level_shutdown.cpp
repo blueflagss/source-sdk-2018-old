@@ -1,6 +1,7 @@
 #include "level_shutdown.hpp"
 #include <features/shot_manager/shot_manager.hpp>
 #include <features/sound_handler/sound_handler.hpp>
+#include <hooks/send_datagram/send_datagram.hpp>
 
 void __fastcall hooks::level_shutdown::hook( REGISTERS ) {
     globals::local_weapon_data = nullptr;
@@ -8,8 +9,10 @@ void __fastcall hooks::level_shutdown::hook( REGISTERS ) {
 
     g_shot_manager.reset_data( );
     g_sound_handler.reset_data( );
-
     globals::local_player = nullptr;
+
+    send_datagram::did_hook = false;
+    send_datagram::original = { };
 
     return original.fastcall< void >( REGISTERS_OUT );
 }

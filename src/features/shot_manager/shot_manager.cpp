@@ -11,7 +11,7 @@ void shot_manager::on_shot_fire( c_cs_player *target, float damage, int bullets,
 
         shot.target = target;
         shot.record = record;
-        shot.time = game::ticks_to_time( globals::local_player->tick_base( ) );
+        shot.time = g_interfaces.global_vars->curtime;
         shot.lag = record->choked;
         shot.lat = globals::latency;
         shot.damage = damage;
@@ -96,8 +96,8 @@ void shot_manager::process_shots( ) {
 
         /* restore player data */
         const auto backup_origin = target->origin( );
-        const auto backup_mins = target->mins( );
-        const auto backup_maxs = target->maxs( );
+        const auto backup_mins = target->collideable( )->mins( );
+        const auto backup_maxs = target->collideable( )->maxs( );
         const auto backup_angles = target->get_abs_angles( );
         const auto backup_bones = target->bone_cache( );
 
@@ -118,7 +118,7 @@ void shot_manager::process_shots( ) {
                 g_interfaces.engine_trace->clip_ray_to_entity( ray, mask_shot, target, &trace );
 
                 const auto had_prediction_error = globals::local_player->velocity_modifier( ) < 1.0f && g_interfaces.prediction->prev_ack_had_errors > 0;
-                const auto should_hit_player = g_ragebot.can_hit_player( target, start, end, shot->record, shot->record->bones.data( ) );
+                const auto should_hit_player = g_ragebot.can_hit( target, start, end, shot->record, shot->record->bones.data( ) );
 
                 const auto get_missed_shot = [ & ]( ) -> const char * {
                     const char *missed_shot = _xs( "spread" );
@@ -136,7 +136,7 @@ void shot_manager::process_shots( ) {
                         else if ( !globals::local_player->alive( ) )
                             missed_shot = _xs( "local death" );
 
-                        if ( ( trace.entity && trace.entity == target ) || should_hit_player ) {
+                        if ( should_hit_player ) {
                             missed_shot = _xs( "resolver" );
 
                             /* increment missed shots on our current target. */
@@ -185,8 +185,11 @@ void shot_manager::on_impact( event_t *evt ) {
             evt->get_float( _xs( "z" ) ) 
     };
 
-    time = game::ticks_to_time( globals::local_player->tick_base( ) );
+    time = g_interfaces.global_vars->curtime;
 
+    if ( g_vars.visuals_other_bullet_impacts.value )
+        g_interfaces.debug_overlay->add_box_overlay( pos, vector_3d( -2.0f, -2.0f, -2.0f ), vector_3d( 2.0f, 2.0f, 2.0f ), vector_3d( 0.0f, 0.0f, 0.0f ), g_vars.visuals_other_server_bullet_impact_col.value.r, g_vars.visuals_other_server_bullet_impact_col.value.g, g_vars.visuals_other_server_bullet_impact_col.value.b, g_vars.visuals_other_server_bullet_impact_col.value.a, 7.0f );
+    
     if ( shots.empty( ) )
         return;
 
@@ -203,7 +206,7 @@ void shot_manager::on_impact( event_t *evt ) {
         if ( s.matched )
             continue;
 
-        float predicted = s.time + s.lat;
+        float predicted = s.time;
         float delta = std::fabs( time - predicted );
 
         if ( delta > 1.0f )
@@ -267,7 +270,7 @@ void shot_manager::on_hurt( event_t *evt ) {
     if ( !target )
         return;
 
-    time = game::ticks_to_time( globals::local_player->tick_base( ) );
+    time = g_interfaces.global_vars->curtime;
 
     shot_record_t *matched_shot = nullptr;
     auto best_delta = std::numeric_limits< float >::max( );
@@ -276,8 +279,8 @@ void shot_manager::on_hurt( event_t *evt ) {
         if ( shot.hurt_player )
             continue;
 
-        float predicted = shot.time + shot.lat;
-        float delta = std::fabs( time  - predicted );
+        float predicted = shot.time;
+        float delta = std::fabs( time - predicted );
 
         if ( delta > 1.0f )
             continue;

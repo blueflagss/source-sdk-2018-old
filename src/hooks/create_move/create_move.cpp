@@ -1,11 +1,13 @@
 #include "create_move.hpp"
 #include <core/config.hpp>
+#include <hooks/send_datagram/send_datagram.hpp>
 #include <features/antiaim/antiaim.hpp>
 #include <features/movement/movement.hpp>
 #include <features/prediction_manager/prediction_manager.hpp>
 #include <features/ragebot/ragebot.hpp>
 #include <features/sound_handler/sound_handler.hpp>
 #include <features/visuals/visuals.hpp>
+#include <features/fake_latency/fake_latency.hpp>
 
 float calculate_lerp( ) {
     auto updaterate = std::clamp< float >( globals::cvars::cl_updaterate->get_float( ), globals::cvars::sv_minupdaterate->get_float( ), globals::cvars::sv_maxupdaterate->get_float( ) );
@@ -148,21 +150,30 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         }
         g_prediction_context.finish( cmd );
 
+        if ( g_vars.misc_fake_latency.value )
+            g_fake_latency.update_latency_sequences( );
+        else
+            g_fake_latency.clear_latency_sequences( );
+
         vector_3d engine_angles;
 
         g_interfaces.engine_client->get_view_angles( engine_angles );
         g_interfaces.engine_client->set_view_angles( math::clamp_angle( engine_angles ) );
         g_movement.correct_movement( cmd, math::clamp_angle( globals::view_angles ) );
-
+        g_animations.update_local_animations( cmd );
         apply_leg_movement( cmd );
 
         globals::angles = cmd->view_angles;
-        g_animations.update_local_animations( cmd );
     } else {
         globals::local_weapon = nullptr;
     }
 
     backup_players( true );
+
+    if ( !send_datagram::did_hook ) {
+        send_datagram::init( );
+        send_datagram::did_hook = true;
+    }
 
     //if ( !*globals::packet ) {
     //       auto net_channel = g_interfaces.client_state->net_channel;

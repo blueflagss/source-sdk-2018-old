@@ -2,7 +2,7 @@
 #include <icons_fa.hpp>
 
 void penumbra::hotkey::animate( ) {
-    auto hotkey_dimensions = render::get_text_size( fonts::montserrat_main, this->_hotkey_text );
+    auto hotkey_dimensions = render::get_text_size( fonts::visuals_segoe_ui, this->_hotkey_text );
 
     auto center_object = glm::vec2{ this->position.x + ( this->size.x / 2 ) - hotkey_dimensions.x / 2, this->position.y + ( this->size.y / 2 ) - hotkey_dimensions.y / 2 };
 
@@ -31,12 +31,16 @@ void penumbra::hotkey::paint( ) {
         char output[ 16 ] = { };
 
         switch ( virtual_key ) {
-            case VK_LBUTTON:  return "LMOUSE";
-            case VK_RBUTTON:  return "RMOUSE";
-            case VK_MBUTTON:  return "MOUSE3";
-            case VK_XBUTTON1: return "MOUSE4";
-            case VK_XBUTTON2: return "MOUSE5";
-            case 0:           return "NONE";
+            case VK_LBUTTON:  return "Mouse 1";
+            case VK_RBUTTON:  return "Mouse 2";
+            case VK_LEFT:     return "Left";
+            case VK_RIGHT:    return "Right";
+            case VK_DOWN:     return "Down";
+            case VK_UP:       return "Up";
+            case VK_MBUTTON:  return "Mouse 3";
+            case VK_XBUTTON1: return "Mouse 4";
+            case VK_XBUTTON2: return "Mouse 5";
+            case 0:           return "None";
             default:          break;
         }
 
@@ -58,8 +62,9 @@ void penumbra::hotkey::paint( ) {
     render::filled_rect( hotkey_rectangle_position.x, hotkey_rectangle_position.y, animation_lerp.value, hotkey_rectangle_dimensions.y, color{ 32, 32, 32, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 24, 24, 24, 200 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), 3.0f );
     render::rect( hotkey_rectangle_position.x, hotkey_rectangle_position.y, animation_lerp.value, hotkey_rectangle_dimensions.y, color{ 60, 60, 60, 100 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ 50, 50, 50, 100 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), 2.0f );
 
+
     render::scissor_rect( hotkey_rectangle_position.x, hotkey_rectangle_position.y, animation_lerp.value, hotkey_rectangle_dimensions.y, [ & ] {
-        render::string( fonts::visuals_segoe_ui, hotkey_rectangle_position.x + ( animation_lerp.value / 2 ) - hotkey_dimensions.x / 2, this->position.y - 2.0f, color{ 120, 120, 120, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ globals::theme_accent, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), this->_hotkey_text );
+        render::string( fonts::visuals_segoe_ui, hotkey_rectangle_position.x - 0.5f + ( animation_lerp.value / 2 ) - hotkey_dimensions.x / 2, this->position.y - 1.5f, color{ 120, 120, 120, 255 * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ globals::theme_accent, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), this->_hotkey_text );
     } );
 
     if ( this->focused_type == keybind_focus_type::FOCUS_SELECTION && animation_open_lerp.value > 0.08f ) {
@@ -70,13 +75,12 @@ void penumbra::hotkey::paint( ) {
         
         render::scissor_rect( hotkey_rectangle_position.x, this->position.y - 2.0f, hotkey_rectangle_dimensions.x, 5 + ( toggle_list.size( ) * 20.0f ) * animation_open_lerp.value, [ & ] {
             for ( int i = 0; i < toggle_list.size( ); i++ ) {
-                auto hovered_over_item = input::in_region( this->position.x - 23.0f - hotkey_dimensions.x, this->position.y - 2.0f + ( i * 20.0f ), selection_rectangle_dimension.x, 20.0f );
-
+                const auto hovered_over_item = input::in_region( this->position.x - 23.0f - hotkey_dimensions.x, this->position.y - 2.0f + ( i * 20.0f ), selection_rectangle_dimension.x, 20.0f );
                 const auto animation_fade = animations::get( HASH_CT( "selection__fade__" ) + HASH( toggle_list[ i ].c_str( ) ), 0.0f );
 
                 animations::lerp_to( HASH_CT( "selection__fade__" ) + HASH( toggle_list[ i ].c_str( ) ), hovered_over_item, 0.2f );
 
-                render::string( fonts::visuals_segoe_ui, this->position.x - 19 - hotkey_dimensions.x, this->position.y + ( i * 20.0f ), color{ 200, 200, 200, 255 * animation_open_lerp.value * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ globals::theme_accent, 255 * animation_open_lerp.value * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), toggle_list[ i ] );
+                render::string( fonts::visuals_segoe_ui, this->position.x - 15.0f - hotkey_dimensions.x, this->position.y + ( i * 20.0f ) + 2.0f, color{ 200, 200, 200, 255 * animation_open_lerp.value * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ globals::theme_accent, 255 * animation_open_lerp.value * globals::fade_opacity[ this->get_main_window( ) ] }, animation_fade.value ), toggle_list[ i ] );
             }
         } );
     }

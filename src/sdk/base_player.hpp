@@ -86,7 +86,6 @@ public:
     DATAMAP( current_command, c_user_cmd *, this->get_pred_desc_map( ), "m_nButtons", +0x4 );
     DATAMAP( eflags, int, this->get_pred_desc_map( ), "m_iEFlags" );
     DATAMAP( impulse, unsigned char, this->get_pred_desc_map( ), "m_nImpulse" );
-
     NETVAR( team, int, "DT_BasePlayer", "m_iTeamNum" );
     NETVAR( origin, vector_3d, "DT_BaseEntity", "m_vecOrigin" );
     NETVAR( health, int, "DT_BasePlayer", "m_iHealth" );
@@ -109,10 +108,23 @@ public:
     NETVAR( weapon_handle, uint32_t, "DT_BaseCombatCharacter", "m_hActiveWeapon" );
     NETVAR( next_attack, float, "DT_BaseCombatCharacter", "m_flNextAttack" );
     NETVAR( player_state, c_player_state, "DT_BasePlayer", "pl" );
+    OFFSET( bone_count, int, 0x2908 );
+    OFFSET( bone_cache, matrix_3x4 *, 0x28FC );
+
+    vector_3d &mins( ) {
+        auto offset = g_netvars.get_offset( HASH_CT( "DT_BaseEntity" ), HASH_CT( "m_Collision" ) );
+
+        return *reinterpret_cast< vector_3d * >( reinterpret_cast< uintptr_t >( this ) + offset + g_netvars.get_offset( HASH_CT( "DT_CollisionProperty" ), HASH_CT( "m_vecMins" ) ) );
+    }
+
+    vector_3d &maxs( ) {
+        auto offset = g_netvars.get_offset( HASH_CT( "DT_BaseEntity" ), HASH_CT( "m_Collision" ) );
+
+        return *reinterpret_cast< vector_3d * >( reinterpret_cast< uintptr_t >( this ) + offset + g_netvars.get_offset( HASH_CT( "DT_CollisionProperty" ), HASH_CT( "m_vecMaxs" ) ) );
+    }
 
     bool compute_hitbox_surrounding_box( vector_3d *world_min, vector_3d *world_max );
-
-    bool get_screen_bounding_box( entity_box &box_dimensions );
+    bool get_bounding_box( box_t &box_dimensions );
     bool is_player_on_steam_friends( ) const;
     void update_clientside_animation( );
     void select_item( const char *str, int subtype );

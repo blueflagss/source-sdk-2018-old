@@ -933,9 +933,6 @@
     <ClInclude Include="sdk\interfaces\mem_alloc.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\base_object.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="dependencies\threadutils\atomic_lock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1188,6 +1185,21 @@
     <ClInclude Include="hooks\in_prediction\in_prediction.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hooks\get_screen_aspect_ratio\get_screen_aspect_ratio.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\cl_dispatch_sound\cl_dispatch_sound.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="features\fake_latency\fake_latency.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\send_datagram\send_datagram.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="features\skin_changer\skin_changer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sdk\interfaces\cvar.cpp">
@@ -1383,9 +1395,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sdk\other\utlvector.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sdk\base_object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dependencies\threadutils\atomic_lock.cpp">
@@ -1605,6 +1614,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks\in_prediction\in_prediction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\get_screen_aspect_ratio\get_screen_aspect_ratio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\cl_dispatch_sound\cl_dispatch_sound.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\fake_latency\fake_latency.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\send_datagram\send_datagram.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\skin_changer\skin_changer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

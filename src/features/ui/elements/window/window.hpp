@@ -3,7 +3,8 @@
 enum form_flags : int {
     WINDOW_NONE = -1,
     WINDOW_MAIN,
-    WINDOW_INDICATOR
+    WINDOW_INDICATOR,
+    WINDOW_NO_RESIZE
 };
 
 namespace penumbra
@@ -51,9 +52,8 @@ namespace penumbra
         void handle_object( const std::shared_ptr< penumbra::object > &object );
 
         bool *opened = nullptr;
-
     private:
-        bool is_window_resizeable = false;
+  
         bool is_using_font = false;
         bool style_button = false;
         bool is_transparent = false;
@@ -68,7 +68,7 @@ namespace penumbra
         bool is_visible = false;
         bool is_hovered_in_rectangle = false;
         int current_page = 0;
-
+        bool is_window_resizeable = false;
         glm::vec2 _original_size;
         glm::vec2 titlebar_size, drag_delta = { };
         glm::vec2 resize_delta = { };

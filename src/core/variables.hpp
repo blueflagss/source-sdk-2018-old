@@ -52,7 +52,7 @@ namespace config
         CONFIG_VARIABLE( aimbot_delay_shot, bool, false );
         CONFIG_VARIABLE( aimbot_silent, bool, false );
         CONFIG_VARIABLE( aimbot_auto_stop, bool, true );
-        CONFIG_VARIABLE( aimbot_sort_by, int, 0 );
+        CONFIG_VARIABLE( aimbot_sort_by, int, 1 );
         CONFIG_VARIABLE( aimbot_maximum_fov, int, 180 );
         CONFIG_VARIABLE( aimbot_automatic_shoot, bool, false );
         CONFIG_VARIABLE( aimbot_resolver, bool, false );
@@ -78,11 +78,13 @@ namespace config
 #pragma endregion
 
 #pragma region exploits
+        CONFIG_VARIABLE( exploits_antiaim_static_legs_in_air, bool, false );
         CONFIG_VARIABLE( exploits_antiaim, bool, false );
         CONFIG_VARIABLE( exploits_antiaim_manual, bool, false );
         CONFIG_VARIABLE( exploits_antiaim_distortion, bool, false );
         CONFIG_VARIABLE( exploits_antiaim_distortion_speed, float, 0.0f ); 
         CONFIG_VARIABLE( exploits_antiaim_distortion_range, float, 0.0f );
+
         CONFIG_VARIABLE( exploits_antiaim_leg_movement, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_pitch_type, int, 0 );
         CONFIG_VARIABLE( exploits_antiaim_dir_type, int, 0 );
@@ -151,6 +153,7 @@ namespace config
         CONFIG_VARIABLE( visuals_player_flags_bot, bool, false );
         CONFIG_VARIABLE( visuals_player_flags_steam_friend, bool, false );
         CONFIG_VARIABLE( visuals_other_fov, float, 90.0f );
+        CONFIG_VARIABLE( visuals_other_scoped_fov, float, 90.0f );
         CONFIG_VARIABLE( visuals_render_player_glow, bool, false );
         CONFIG_VARIABLE( visuals_render_player_glow_color, color, color( 162, 56, 255, 180 ) );
         CONFIG_VARIABLE( visuals_other_modulate_world_color, color, color( 255, 255, 255, 255 ) );
@@ -159,6 +162,10 @@ namespace config
         CONFIG_VARIABLE( visuals_other_modulate_world, bool, false );
         CONFIG_VARIABLE( visuals_other_penetration_crosshair, bool, false );
         CONFIG_VARIABLE( visuals_other_skybox_selection, int, 0 );
+        CONFIG_VARIABLE( visual_weapon_dropped_name, bool, false );
+        CONFIG_VARIABLE( visual_weapon_dropped_box, bool, false );
+        CONFIG_VARIABLE( visual_weapon_dropped_ammo, bool, false );
+        CONFIG_VARIABLE( visual_weapon_dropped_ammo_color, color, color( 255, 77, 252 ) );
 
         CONFIG_VARIABLE( visuals_other_viewmodel_fov, float, 60.0f );
         CONFIG_VARIABLE( visuals_other_viewmodel_override, bool, false );
@@ -182,6 +189,7 @@ namespace config
         CONFIG_VARIABLE( visuals_other_thirdperson_enabled, bool, false );
         CONFIG_VARIABLE( visuals_other_local_blend_while_scoped, bool, false );
         CONFIG_VARIABLE( visuals_other_local_blend_transparency, float, 100.0f );
+        CONFIG_VARIABLE( visuals_other_aspect_ratio, float, 100.0f );
         CONFIG_VARIABLE( visuals_other_thirdperson_interpolate, bool, false );
         CONFIG_VARIABLE( visuals_other_thirdperson_bind, int, 0 );
         CONFIG_VARIABLE( visuals_other_thirdperson_toggle, int, 0 );
@@ -198,7 +206,11 @@ namespace config
         CONFIG_VARIABLE( visuals_render_player_chams_show_target, bool, false );
         CONFIG_VARIABLE( visuals_render_player_chams_lag_record, bool, false );
         CONFIG_VARIABLE( visuals_render_player_chams_lag_record_color, color, color( 238, 176, 255, 150 ) );
-
+        CONFIG_VARIABLE( visuals_other_client_bullet_impact_col, color, color( 238, 176, 255, 150 ) );
+        CONFIG_VARIABLE( visuals_other_server_bullet_impact_col, color, color( 238, 176, 255, 150 ) );
+        CONFIG_VARIABLE( visuals_other_bullet_impacts, bool, false );
+        CONFIG_VARIABLE( visuals_other_bullet_impacts_outline, bool, false );
+       
         CONFIG_VARIABLE( visuals_render_player_chams_material, int, 0 );
 #pragma endregion visual_features
 
@@ -222,6 +234,11 @@ namespace config
         CONFIG_VARIABLE( misc_hitmarker, bool, false );
         CONFIG_VARIABLE( misc_debug_local_overlays, int, 0 ); // local layers, queued layers, animated layers
 #pragma endregion miscellaneous_features
+
+#pragma region skinchanger_features
+        CONFIG_VARIABLE( skins_override_knife, bool, false );
+        CONFIG_VARIABLE( skins_override_knife_value, int, 0 );
+#pragma endregion
     };
 }// namespace config
 
