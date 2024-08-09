@@ -56,20 +56,14 @@ void sound_handler::update_position( c_cs_player *player ) {
     const auto &dormant_info = g_sound_handler.dormant_players[ player->index( ) ];
 
     if ( dormant_info.last_update_time == -1 ) {
-        player->set_abs_origin( player->get_render_origin( ) );
-        player->origin( ) = player->get_render_origin( );
-        player->rgfl_coordinate_frame( ).set_origin( player->get_render_origin( ) );
+        //player->set_abs_origin( player->get_render_origin( ) );
+        //player->origin( ) = player->get_render_origin( );
+        //player->rgfl_coordinate_frame( ).set_origin( player->get_render_origin( ) );
         return;
     }
 
     if ( !player->dormant( ) )
         return;
-
-    if ( dormant_info.origin != player->origin( ) || g_interfaces.global_vars->realtime != dormant_info.last_update_time ) {
-        player->set_abs_origin( dormant_info.origin );
-        player->origin( ) = dormant_info.origin;
-        player->rgfl_coordinate_frame( ).set_origin( dormant_info.origin );
-    }
 }
 
 void sound_handler::set_dormant_origin( sndinfo_t *sound ) {

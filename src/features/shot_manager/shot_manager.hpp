@@ -4,12 +4,12 @@
 
 struct shot_record_t {
 public:
-    shot_record_t( ) : target{ }, record{ }, time{ }, lat{ }, damage{ }, pos{ }, server_pos{ }, matched{ }, impacted{ }, hurt_player{ } {}
+    shot_record_t( ) : target{ }, record{ }, pred_time {}, time{ }, lat{ }, damage{ }, pos{ }, server_pos{ }, matched{ }, impacted{ }, hurt_player{ } {}
 
 public:
     c_cs_player *target;
     lag_record *record;
-    float time, lat, damage;
+    float time, pred_time, lat, damage;
     int lag;
     vector_3d pos;
     vector_3d server_pos;
@@ -65,6 +65,7 @@ public:
     void reset_data( );
     void on_round_start( event_t *evt );
     void process_shots( );
+    void on_fire( event_t *evt );
     void on_impact( event_t *evt );
     void on_hurt( event_t *evt );
 

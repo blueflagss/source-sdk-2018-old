@@ -18,21 +18,21 @@ bool resolver::anti_freestanding( lag_record &record ) {
     if ( !player_log )
         return false;
 
-    if ( player_log->anti_freestand_record.left_damage >= 20.0f && player_log->anti_freestand_record.right_damage >= 20.0f )
+    if ( player_log->direction_info.left_damage >= 20.0f && player_log->direction_info.right_damage >= 20.0f )
         return false;
 
     const float at_target_yaw = math::vector_angle( record.player->origin( ) - globals::local_player->origin( ) ).y;
 
-    if ( player_log->anti_freestand_record.left_damage <= 0.0f && player_log->anti_freestand_record.right_damage <= 0.0f ) {
-        if ( player_log->anti_freestand_record.right_fraction < player_log->anti_freestand_record.left_fraction )
-            record.eye_angles.y = at_target_yaw + 125.f;
+    if ( player_log->direction_info.left_damage <= 0.0f && player_log->direction_info.right_damage <= 0.0f ) {
+        if ( player_log->direction_info.right_fraction < player_log->direction_info.left_fraction )
+            record.player->eye_angles( ).y = at_target_yaw + 90.f;
         else
-            record.eye_angles.y = at_target_yaw - 73.f;
+            record.player->eye_angles( ).y = at_target_yaw - 90.f;
     } else {
-        if ( player_log->anti_freestand_record.left_damage > player_log->anti_freestand_record.right_damage )
-            record.eye_angles.y = at_target_yaw + 130.f;
+        if ( player_log->direction_info.left_damage > player_log->direction_info.right_damage )
+            record.player->eye_angles( ).y = at_target_yaw + 90.f;
         else
-            record.eye_angles.y = at_target_yaw - 49.f;
+            record.player->eye_angles( ).y = at_target_yaw - 90.f;
     }
 
     return true;
@@ -111,58 +111,68 @@ void resolver::start( c_cs_player *player, lag_record &record, lag_record *previ
 
     player_log->body = record.lower_body_yaw;
 
-    const auto moving = glm::length( record.velocity ) > 0.1f && !record.fake_walk;
+    const auto moving = glm::length( record.anim_velocity ) > 0.1f && !record.fake_walk;
     const auto diff = math::normalize_angle( player_log->body - player_log->walk_record.lower_body_yaw );
     const auto layer_activity = player->get_sequence_activity( record.layer_records[ ANIMATION_LAYER_ADJUST ].sequence );
-    const auto velyaw = math::rad_to_deg( std::atan2( record.velocity.y, record.velocity.x ) );
+    const auto velyaw = math::rad_to_deg( std::atan2( record.anim_velocity.y, record.anim_velocity.x ) );
     const auto away_target = math::normalize( math::angle_from_vectors( globals::local_player->origin( ), player->origin( ) ).y );
     const auto in_air = !record.on_ground;
-
-    player_log->anti_freestand_record.left_damage = 0.0f;
-    player_log->anti_freestand_record.right_damage = 0.0f;
-    player_log->anti_freestand_record.left_fraction = 0.0f;
-    player_log->anti_freestand_record.right_fraction = 0.0f;
 
     if ( moving && record.on_ground )
         std::memcpy( &player_log->walk_record, &record, sizeof( lag_record ) );
 
+    auto lby = player->lower_body_yaw_target( );
+
+    static float last_moving_lby[ 64 ];
+    last_moving_lby[ player->index( ) ] = 0.0f;
     if ( record.sim_time > 0.f ) {
         const auto delta = player_log->walk_record.origin - record.origin;
 
         if ( glm::length( delta ) <= 128.f ) {
             record.moved = true;
+            last_moving_lby[ player->index( ) ] = lby;
         }
     }
 
-    vector_3d direction_1, direction_2;
 
-    math::angle_vectors( vector_3d( 0.f, math::angle_vectors( record.origin - globals::local_player->origin( ) ).y - 90.f, 0.f ), &direction_1 );
-    math::angle_vectors( vector_3d( 0.f, math::angle_vectors( record.origin - globals::local_player->origin( ) ).y + 90.f, 0.f ), &direction_2 );
+    player_log->direction_info.left_damage = 0.0f;
+    player_log->direction_info.right_damage = 0.0f;
+    player_log->direction_info.left_fraction = 0.0f;
+    player_log->direction_info.right_fraction = 0.0f;
 
-    const auto left_eye_pos = record.origin + vector_3d( 0.f, 0.f, 64.f ) + ( direction_1 * 16.f );
-    const auto right_eye_pos = record.origin + vector_3d( 0.f, 0.f, 64.f ) + ( direction_2 * 16.f );
+    if ( !moving ) {
+        vector_3d direction_1, direction_2;
 
-    player_log->anti_freestand_record.left_damage = g_penetration.run( globals::local_player->get_shoot_position( ), left_eye_pos, player, record.bones, false ).out_damage;
-    player_log->anti_freestand_record.right_damage = g_penetration.run( globals::local_player->get_shoot_position( ), right_eye_pos, player, record.bones, false ).out_damage;
+        math::angle_vectors( vector_3d( 0.f, math::normalize( math::angle_vectors( record.origin - globals::local_player->origin( ) ).y ) - 90.f, 0.f ), &direction_1 );
+        math::angle_vectors( vector_3d( 0.f, math::normalize( math::angle_vectors( record.origin - globals::local_player->origin( ) ).y ) + 90.f, 0.f ), &direction_2 );
 
-    ray_t ray;
-    c_game_trace trace;
-    c_trace_filter_hitscan filter;
+        const auto left_eye_pos = record.origin + vector_3d( 0.f, 0.f, 64.f ) + ( direction_1 * 16.f );
+        const auto right_eye_pos = record.origin + vector_3d( 0.f, 0.f, 64.f ) + ( direction_2 * 16.f );
 
-    filter.player = globals::local_player;
+        player_log->direction_info.left_damage = g_penetration.run( globals::local_player->get_shoot_position( ), left_eye_pos, player, 0.0f, record.bones, false ).out_damage;
+        player_log->direction_info.right_damage = g_penetration.run( globals::local_player->get_shoot_position( ), right_eye_pos, player, 0.0f, record.bones, false ).out_damage;
 
-    ray.init( left_eye_pos, globals::local_player->get_shoot_position( ) );
-    g_interfaces.engine_trace->trace_ray( ray, mask_all, &filter, &trace );
-    player_log->anti_freestand_record.left_fraction = trace.fraction;
+        ray_t ray;
+        c_game_trace trace;
+        c_trace_filter_hitscan filter;
 
-    ray.init( right_eye_pos, globals::local_player->get_shoot_position( ) );
-    g_interfaces.engine_trace->trace_ray( ray, mask_all, &filter, &trace );
-    player_log->anti_freestand_record.right_fraction = trace.fraction;
+        filter.player = globals::local_player;
 
-    player_log->resolve_record.predicted_lby_flick = false;
-    player_log->resolve_record.lby_flick = false;
-    player_log->lby_updated = false;
+        ray.init( left_eye_pos, globals::local_player->get_shoot_position( ) );
+        g_interfaces.engine_trace->trace_ray( ray, mask_all, &filter, &trace );
+        player_log->direction_info.left_fraction = trace.fraction;
 
+        ray.init( right_eye_pos, globals::local_player->get_shoot_position( ) );
+        g_interfaces.engine_trace->trace_ray( ray, mask_all, &filter, &trace );
+        player_log->direction_info.right_fraction = trace.fraction;
+
+        player_log->resolve_record.predicted_lby_flick = false;
+        player_log->resolve_record.lby_flick = false;
+        player_log->lby_updated = false;
+
+        record.mode = resolve_mode::standing;
+    }
+   
     const auto delta_time = record.anim_time - player_log->walk_record.anim_time;
 
     //bool is_jittering_fake = false;
@@ -181,10 +191,11 @@ void resolver::start( c_cs_player *player, lag_record &record, lag_record *previ
     //    }
     //}
 
-    if ( !record.on_ground ) {
-        record.mode = resolve_mode::air;
-        player->eye_angles( ).y = velyaw;
+    if ( moving ) {
+ 
+    }
 
+    if ( !record.on_ground ) {
         if ( player_log->missed_shots > 0 ) {
             record.mode = resolve_mode::air_brute;
 
@@ -199,28 +210,40 @@ void resolver::start( c_cs_player *player, lag_record &record, lag_record *previ
                     player->eye_angles( ).y = velyaw + 90.f;
                     break;
             }
+        } else {
+            record.mode = resolve_mode::air;
+            player->eye_angles( ).y = velyaw;
         }
 
         return;
     }
 
-    //if ( record.moved ) {
-        if ( record.anim_time >= player_log->body_update_time ) {
+    if ( moving ) {
+        record.mode = resolve_mode::moving;
+
+        player_log->body_update_time = record.sim_time + 0.22f;
+        last_moving_lby[ player->index( ) ] = lby;
+        player->eye_angles( ).y = lby;
+        player_log->last_lby = lby;
+
+        return;
+    } else {
+        if ( record.sim_time >= player_log->body_update_time ) {
             record.mode = resolve_mode::lby_update;
 
             player_log->body_update_time = record.sim_time + 1.1f;
             player_log->lby_updated = true;
-            player->eye_angles( ).y = record.lower_body_yaw;
+            player->eye_angles( ).y = lby;
 
             return;
         }
 
         else if ( player->lower_body_yaw_target( ) != player_log->last_lby ) {
-            player->eye_angles( ).y = player_log->body;
+            player->eye_angles( ).y = lby;
             record.mode = resolve_mode::lby_update;
 
             player_log->lby_updated = true;
-            player_log->last_lby = player->lower_body_yaw_target( );
+            player_log->last_lby = lby;
 
             return;
         }
@@ -229,13 +252,13 @@ void resolver::start( c_cs_player *player, lag_record &record, lag_record *previ
             record.mode = resolve_mode::brute;
             switch ( player_log->missed_shots % 5 ) {
                 case 1:
-                    player->eye_angles( ).y = away_target;
+                    player->eye_angles( ).y = velyaw;
                     break;
                 case 2:
-                    player->eye_angles( ).y = velyaw - 90.0f;
+                    player->eye_angles( ).y = away_target;
                     break;
                 case 3:
-                    player->eye_angles( ).y = away_target + 180.0f;
+                    player->eye_angles( ).y = away_target - 90.0f;
                     break;
                 case 4:
                     player->eye_angles( ).y = record.fake_walk ? player_log->body - 110.f : velyaw + 180.0f;
@@ -247,18 +270,10 @@ void resolver::start( c_cs_player *player, lag_record &record, lag_record *previ
                     break;
             }
         } else {
-            if ( anti_freestanding( record ) ) {
-                record.mode = resolve_mode::freestand;
-                return;
-            }
+            player->eye_angles( ).y = last_moving_lby[ player->index( ) ];
+
+                anti_freestanding( record );
         }
-    if ( moving && !record.on_ground ) {
-        record.mode = resolve_mode::moving;
-        player_log->body_update_time = record.sim_time;
-        return;
-    } else if ( moving && record.on_ground ) {
-        player_log->body_update_time = record.sim_time + 0.22f;
-        player->eye_angles( ).y = player_log->body;
     }
 }
 

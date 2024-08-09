@@ -1,47 +1,27 @@
 #include "update_clientside_animations.hpp"
 #include <features/animations/animation_sync.hpp>
 
-void __fastcall hooks::update_clientside_animations::hook( REGISTERS ) {
+void __fastcall hooks::update_clientside_animation::hook( REGISTERS ) {
     const auto player = reinterpret_cast< c_cs_player * >( ecx );
 
-    if ( !player )
+    if ( !player || player != globals::local_player )
         return original.fastcall< void >( REGISTERS_OUT );
+    original.fastcall< void >( REGISTERS_OUT );
 
-    if ( player == globals::local_player ) {
-        const auto animstate = globals::local_player-> anim_state( );
+    std::memcpy( globals::local_player->pose_parameters( ).data( ), g_animations.pose_parameters.data( ), g_animations.pose_parameters.size( ) );
+    std::memcpy( globals::local_player->anim_overlays( ), g_animations.animation_layers.data( ), g_animations.animation_layers.size( ) );
+}
 
-        if ( globals::allow_animations[ globals::local_player->index( ) ] ) {
-            std::memcpy( globals::local_player->pose_parameters( ).data( ), g_animations.pose_parameters.data( ), g_animations.pose_parameters.size( ) );
-            std::memcpy( globals::local_player->anim_overlays( ), g_animations.animation_layers.data( ), g_animations.animation_layers.size( ) );
+void __stdcall hooks::update_clientside_animations::hook( ) {
 
-            /* fix viewmodel addons not updating. */
-            animstate->m_pPlayer = nullptr;
-            original.fastcall< void >( REGISTERS_OUT );
-            animstate->m_pPlayer = globals::local_player;
-        }
-    } 
-    else {
-        player->set_abs_origin( player->origin( ) );
+}
 
-        if ( globals::allow_animations[ player->index( ) ] ) {
-            /* @llama */
-            if ( player->anim_overlays( ) ) {
-                for ( int i = 0; i < ANIMATION_LAYER_COUNT; i++ )
-                    player->anim_overlays( )[ i ].owner = player;
-            }
-
-            int iEFlags = player->eflags( );
-
-            player->eflags( ) &= ~( 1 << 12 );
-
-            original.fastcall< void >( REGISTERS_OUT );
-
-            player->eflags( ) = iEFlags;
-        } 
-    }
+void hooks::update_clientside_animation::init( ) {
+    original = safetyhook::create_inline( signature::find( _xs( "client.dll" ), _xs( "55 8B EC 51 56 8B F1 80 BE ? ? ? ? ? 74" ) ).get< void * >( ),
+                                          update_clientside_animation::hook );
 }
 
 void hooks::update_clientside_animations::init( ) {
-    //original = safetyhook::create_inline( signature::find( _xs( "client.dll" ), _xs( "55 8B EC 51 56 8B F1 80 BE ? ? ? ? ? 74" ) ).get< void * >( ),
-    //                                      update_clientside_animations::hook );
+    original = safetyhook::create_inline( signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? 8B 0D ? ? ? ? 8B 01 FF 50 10" ) ).add( 0x1 ).rel32( ).get< void* >( ),
+                                          update_clientside_animations::hook );
 }

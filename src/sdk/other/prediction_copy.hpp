@@ -1,5 +1,4 @@
 #pragma once
-#include <globals.hpp>
 
 typedef void ( *FN_FIELD_COMPARE )( const char *classname, const char *fieldname, const char *fieldtype, bool networked, bool noterrorchecked, bool differs, bool withintolerance, const char *value );
 
@@ -18,12 +17,14 @@ typedef enum {
 
 class c_prediction_copy {
 public:
-    c_prediction_copy( int type, char *dest, bool dest_packed, const char *src, bool src_packed, optype_t optype, FN_FIELD_COMPARE func = NULL );
+    c_prediction_copy( ) = default;
+
+    c_prediction_copy( int type, uint8_t *dest, bool dest_packed, const uint8_t *src, bool src_packed, optype_t optype, FN_FIELD_COMPARE func = NULL );
 
     optype_t optype;
     int num_type;
-    char *dest;
-    const char *src;
+    uint8_t *dest;
+    const uint8_t *src;
     int destoffsetindex;
     int srcoffsetindex;
     int error_count;
@@ -31,9 +32,8 @@ public:
     FN_FIELD_COMPARE field_compare_fn;
     const typedescription_t *watch_field;
     char const *operation;
-    std::uintptr_t field_stack;
+    c_utl_stack< const typedescription_t * > field_stack;
 
     int transfer_data( const char *operation, int idx, datamap_t *dmap );
     typedescription_t *find_flat_field_by_name( const char *field_name, const datamap_t *datamap );
-    static bool prepare_datamap( datamap_t *dmap );
 };

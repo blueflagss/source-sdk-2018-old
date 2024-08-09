@@ -100,15 +100,19 @@ public:
     OFFSET( buttons, int, 0x31E8 );
     OFFSET( cstudio_hdr, c_studio_hdr *, 0x293C );
     NETVAR( immunity, bool, "DT_CSPlayer", "m_bGunGameImmunity" );
-    NETVAR( duck_amount, float, "DT_CSPlayer", "m_flDuckAmount" );
     NETVAR( ducked, bool, "DT_CSPlayer", "m_bDucked" );
     NETVAR( ducking, bool, "DT_CSPlayer", "m_bDucking" );
     NETVAR( in_duck_jump, bool, "DT_CSPlayer", "m_bInDuckJump" );
     NETVAR( max_speed, float, "DT_CSPlayer", "m_flMaxspeed" );
     NETVAR( owner, uint32_t, "DT_CSPlayer", "m_hOwnerEntity" );
+    NETVAR( observer_target, uint32_t, "DT_BasePlayer", "m_hObserverTarget" );
 
     void *get_view_model( ) {
         return g_interfaces.entity_list->get_client_entity_from_handle< void * >( this->viewmodel_handle( ) );
+    }
+
+    c_cs_player *get_observer_target( ) {
+        return g_interfaces.entity_list->get_client_entity_from_handle< c_cs_player * >( this->observer_target( ) );
     }
 
     std::array< float, 24 > &pose_parameters( ) {
@@ -140,7 +144,7 @@ public:
 
 class c_base_cs_grenade : public c_cs_player {
 public:
-NETVAR( redraw, bool, "DT_BaseCSGrenade", "m_bRedraw" );
+    NETVAR( redraw, bool, "DT_BaseCSGrenade", "m_bRedraw" );
     NETVAR( is_held_by_player, bool, "DT_BaseCSGrenade", "m_bIsHeldByPlayer" );
     NETVAR( pin_pulled, bool, "DT_BaseCSGrenade", "m_bPinPulled" );
     NETVAR( throw_time, float, "DT_BaseCSGrenade", "m_fThrowTime" );

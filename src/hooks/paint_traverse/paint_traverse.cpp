@@ -4,9 +4,21 @@
 void __fastcall hooks::paint_traverse::hook( REGISTERS, unsigned int panel, bool force_repaint, bool allow_force ) {
     const auto name = HASH( g_interfaces.panel->get_name( panel ) );
 
+    switch ( name ) {
+        case HASH_CT( "CompletionList" ):
+        case HASH_CT( "GameConsole" ): {
+            globals::is_console_toggled = true;
+        } break;
+    }
+
+    /* call original. */
     original.fastcall< void >( REGISTERS_OUT, panel, force_repaint, allow_force );
 
     switch ( name ) {
+        case HASH_CT( "CompletionList" ):
+        case HASH_CT( "GameConsole" ): {
+            globals::is_console_toggled = false;
+        } break;
         case HASH_CT( "MatSystemTopPanel" ): {
         } break;
         case HASH_CT( "FocusOverlayPanel" ): {

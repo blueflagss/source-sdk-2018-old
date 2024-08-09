@@ -1,5 +1,6 @@
 #pragma once
 #include <globals.hpp>
+#include <sdk/other/prediction_copy.hpp>
 
 struct prediction_data {
     int command_sequence;
@@ -13,6 +14,53 @@ struct prediction_data {
         int sent_commands = { };
         int choked_commands = { };
     } tickbase = { };
+};
+
+struct datamap_util {
+    datamap_util( ) = default;
+
+    datamap_util( c_base_entity *entity, const char* pre_action, const char* post_action ) {
+        if ( !entity )
+            return;
+
+        const auto desc_map = entity->get_pred_desc_map( );
+
+        if ( !desc_map )
+            return;
+
+        static auto datamap_size = std::max< int >( desc_map->packed_size, 4 );
+
+        if ( !this->data )
+            this->data = new uint8_t[ datamap_size ];
+
+        this->entity = entity;
+        this->datamap = entity->get_pred_desc_map( );
+        this->pre_action = pre_action;
+        this->post_action = post_action;
+    }
+
+    __inline void store( ) {
+        if ( !this->entity || !this->datamap )
+            return;
+
+        pred_copy = c_prediction_copy( PC_EVERYTHING, static_cast< uint8_t * >( this->data ), true, reinterpret_cast< const uint8_t * >( this->entity ), false, transferdata_copyonly );
+        pred_copy.transfer_data( this->pre_action, this->entity->index( ), this->datamap );
+    }
+
+    __inline void apply( ) {
+        if ( !this->entity || !this->datamap )
+            return;
+
+        pred_copy = c_prediction_copy( PC_EVERYTHING, reinterpret_cast< uint8_t * >( this->entity ), false, static_cast< const uint8_t * >( this->data ), true, transferdata_copyonly );
+        pred_copy.transfer_data( this->post_action, this->entity->index( ), this->datamap );
+    }
+
+    c_base_entity *entity;
+    static uint8_t *data;
+    datamap_t *datamap = nullptr;
+    c_prediction_copy pred_copy;
+    const char *pre_action;
+    const char *post_action;
 };
 
 class prediction_context {
@@ -43,6 +91,7 @@ public:
     int animation_parity = 0;
     float ideal_inaccuracy = 0.f;
 
+    c_user_cmd dummy_cmd;
     std::array< prediction_data, 90 > pred_data;
 
     vector_3d velocity = { };

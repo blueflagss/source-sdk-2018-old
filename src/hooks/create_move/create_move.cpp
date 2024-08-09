@@ -9,14 +9,14 @@
 #include <features/visuals/visuals.hpp>
 #include <features/fake_latency/fake_latency.hpp>
 
-float calculate_lerp( ) {
+__forceinline float calculate_lerp( ) {
     auto updaterate = std::clamp< float >( globals::cvars::cl_updaterate->get_float( ), globals::cvars::sv_minupdaterate->get_float( ), globals::cvars::sv_maxupdaterate->get_float( ) );
     auto lerp_ratio = std::clamp< float >( globals::cvars::cl_interp_ratio->get_float( ), globals::cvars::sv_client_min_interp_ratio->get_float( ), globals::cvars::sv_client_max_interp_ratio->get_float( ) );
 
     return std::clamp< float >( lerp_ratio / updaterate, globals::cvars::cl_interp->get_float( ), 1.0f );
 }
 
-void apply_leg_movement( c_user_cmd *cmd ) { /* premium */
+__forceinline void apply_leg_movement( c_user_cmd *cmd ) {
     float side_move;                         // xmm2_4
     int new_buttons;                         // eax
     float forward_move;                      // xmm1_4
@@ -92,7 +92,7 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
     std::uintptr_t *stack_ptr;
     __asm mov stack_ptr, ebp
 
-                                 globals::user_cmd = cmd;
+    globals::user_cmd = cmd;
     globals::packet = reinterpret_cast< bool * >( *reinterpret_cast< uintptr_t * >( stack_ptr ) - 0x1C );
 
     const auto net_channel = g_interfaces.engine_client->get_net_channel_info( );
@@ -138,6 +138,10 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         g_movement.on_create_move( cmd, globals::view_angles );
         g_antiaim.on_create_move( cmd, cmd->view_angles );
 
+        auto local_datamap = datamap_util( globals::local_player, _xs( "prediction_content::pre_cm" ), _xs( "prediction_content::post_cm" ) );
+
+        local_datamap.store( );
+
         g_prediction_context.start( cmd );
         {
             g_visuals.on_create_move( );
@@ -150,6 +154,8 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         }
         g_prediction_context.finish( cmd );
 
+        local_datamap.apply( );
+
         if ( g_vars.misc_fake_latency.value )
             g_fake_latency.update_latency_sequences( );
         else
@@ -160,12 +166,16 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         g_interfaces.engine_client->get_view_angles( engine_angles );
         g_interfaces.engine_client->set_view_angles( math::clamp_angle( engine_angles ) );
         g_movement.correct_movement( cmd, math::clamp_angle( globals::view_angles ) );
-        g_animations.update_local_animations( cmd );
         apply_leg_movement( cmd );
 
         globals::angles = cmd->view_angles;
-    } else {
+
+        g_animations.update_local_animations( cmd );
+    } 
+    
+    else {
         globals::local_weapon = nullptr;
+        g_animations.init_local_layers = false;
     }
 
     backup_players( true );

@@ -167,6 +167,7 @@ class c_base_entity : public c_base_player {
 public:
     DATAMAP( move_type, move_types, this->get_pred_desc_map( ), "m_MoveType" );
     DATAMAP( abs_rotation, vector_3d, this->get_pred_desc_map( ), "m_angAbsRotation" );
+    DATAMAP( duck_amount, float, this->get_pred_desc_map( ), "m_flDuckAmount" );
     OFFSET( think_tick, int, 0xF8 );
     NETVAR( model_index, int, "DT_BaseEntity", "m_nModelIndex" );
     NETVAR( hitbox_set, int, "DT_BaseAnimatingOverlay", "m_nHitboxSet" );

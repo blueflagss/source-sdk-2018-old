@@ -106,7 +106,7 @@ void visuals::on_create_move( ) {
         const auto end = start + ( forward * 8196.0f );
 
         /* store penetration crosshair data. */
-        auto results = g_penetration.run( start, end, globals::local_player, g_animations.animated_bones[ globals::local_player->index( ) ], false, nullptr );
+        auto results = g_penetration.run( start, end, globals::local_player, 0.0f, g_animations.animated_bones[ globals::local_player->index( ) ], false, nullptr );
 
         pen_data.damage = results.out_damage;
     }
@@ -247,7 +247,8 @@ void visuals::show_manual_indicators( ) {
         std::array< vector_2d, 3 > points = {
                 vector_2d( position.x + 7.0f + arrow_size, position.y + 7.0f + arrow_size ),
                 vector_2d( position.x - 7.0f - arrow_size, position.y ),
-                vector_2d( position.x + 7.0f + arrow_size, position.y - 7.0f - arrow_size ) };
+                vector_2d( position.x + 7.0f + arrow_size, position.y - 7.0f - arrow_size )
+        };
 
         rotate_point( { position.x, position.y }, points[ 0 ], rotation );
         rotate_point( { position.x, position.y }, points[ 1 ], rotation );
@@ -502,10 +503,23 @@ void visuals::render_offscreen( c_cs_player *player ) const {
     if ( player->dormant( ) )
         return;
 
+    auto local_player = globals::local_player;
+
     vector_3d forward;
     vector_3d origin, local_origin;
 
-    origin = player->origin( ), local_origin = globals::local_shoot_pos;
+    origin = player->origin( ), local_origin = local_player->get_shoot_position( );
+
+    if ( local_player->observer_target( ) ) {
+        auto target = local_player->get_observer_target( );
+
+        if ( target ) {
+            local_player = target;
+
+            local_origin = target->origin( ) + target->view_offset( );
+        }
+
+    }
 
     math::angle_vectors( globals::view_angles, &forward );
 

@@ -43,9 +43,9 @@ public:
             return;
 
         // store bone data.
-        std::memcpy( m_bones, cache, sizeof( matrix_3x4 ) * 128 );
+        //std::memcpy( m_bones, cache, sizeof( matrix_3x4 ) * 128 );
 
-        //m_bone_count = player->bone_count( );
+        m_bone_count = player->bone_count( );
         m_origin = player->origin( );
         m_mins = player->collideable( )->mins( );
         m_sim_time = player->simtime( );
@@ -62,13 +62,13 @@ public:
         if ( !cache )
             return;
 
-        std::memcpy( cache, m_bones, sizeof( matrix_3x4 ) * m_bone_count );
+        //std::memcpy( player->bone_cache( ), m_bones, sizeof( matrix_3x4 ) * m_bone_count );
 
-        player->bone_count( ) = m_bone_count;
+        //player->bone_count( ) = m_bone_count;
         player->origin( ) = m_origin;
         player->set_collision_bounds( m_mins, m_maxs );
-        player->set_abs_angles( m_abs_ang );
-        player->set_abs_origin( m_origin );
+        //layer->set_abs_angles( m_abs_ang );
+        //player->set_abs_origin( m_origin );
     }
 };
 
@@ -160,12 +160,18 @@ public:
     bool build_bones( c_cs_player *player, matrix_3x4 *out, std::array< float, 24 > &poses, float curtime );
     void update_land( c_cs_player *player, lag_record *record, lag_record *last_record );
     void update_velocity( c_cs_player *player, lag_record *record, lag_record *previous );
+    void copy_layers( c_animation_layer *dst, c_animation_layer *src );
     void update_lby_timer( c_csgo_player_animstate *state, c_user_cmd *user_cmd );
     void update_local_animations( c_user_cmd *user_cmd );
     void maintain_local_animations( );
     void update_player_animation( c_cs_player *player, lag_record &record, lag_record *previous, bool update = true );
 
     velocity_detail fix_velocity( c_animation_layer *animlayers, lag_record *previous, c_cs_player *player );
+ 
+    template< class T >
+    __forceinline T lerp( const T &current, const T &target, const int progress, const int max ) {
+        return current + ( ( ( target - current ) / max ) * progress );
+    }
 
     struct animation_info {
         util::circular_buffer< lag_record > anim_records;
@@ -195,7 +201,7 @@ public:
 
             float left_damage, right_damage;
             float left_fraction, right_fraction;
-        } anti_freestand_record;
+        } direction_info;
 
         struct resolve_record_t {
             void reset( ) {
@@ -222,7 +228,7 @@ public:
 
             walk_record.reset( entity );
             resolve_record.reset( );
-            anti_freestand_record.reset( );
+            direction_info.reset( );
         }
     };
 
@@ -232,6 +238,7 @@ public:
     float lower_body_realign_timer;
     float foot_yaw;
     float last_angle;
+    bool init_local_layers;
     vector_3d abs_rotation;
     float simtime;
     vector_3d radar_angle;

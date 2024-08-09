@@ -2,6 +2,8 @@
 #include <core/config.hpp>
 #include <features/animations/animation_sync.hpp>
 #include <features/movement/movement.hpp>
+#include <features/penetration/penetration.hpp>
+#include <features/ragebot/ragebot.hpp>
 #include <features/ui/input/input.hpp>
 #include <random>
 
@@ -13,9 +15,13 @@ void antiaim::update_manual_direction( ) {
     bool states[ 3 ] = {
             penumbra::input::key_pressed( g_vars.exploits_antiaim_manual_left.value ),
             penumbra::input::key_pressed( g_vars.exploits_antiaim_manual_right.value ),
-            penumbra::input::key_pressed( g_vars.exploits_antiaim_manual_back.value )
-    };
-    
+            penumbra::input::key_pressed( g_vars.exploits_antiaim_manual_back.value ) };
+
+    if ( g_vars.exploits_antiaim_dir_type.value != 2 ) {
+        using_manual_dir = false;
+        return;
+    }
+
     auto set_antiaim_dir = [ & ]( manual_direction state ) {
         if ( manual_dir == state ) {
             manual_dir = manual_direction::none;
@@ -43,8 +49,44 @@ void antiaim::update_manual_direction( ) {
         //globals::hotkeys::manual_back = false;
     }
 }
+bool antiaim::handle_auto_direction( c_user_cmd *cmd ) {
+    if ( direction_info.left_damage <= 0.0f && direction_info.right_damage <= 0.0f ) {
+        if ( direction_info.right_fraction < direction_info.left_fraction )
+            dir = cmd->view_angles.y + 90.0f;
+        else
+            dir = cmd->view_angles.y - 90.0f;
+    } else {
+        if ( direction_info.left_damage > direction_info.right_damage )
+            dir = cmd->view_angles.y - 90.0f;
+        else
+            dir = cmd->view_angles.y + 90.0f;
+    }
+
+    return true;
+}
 
 void antiaim::handle_direction( c_user_cmd *cmd ) {
+    auto get_closest_target = [ & ]( ) -> c_cs_player * {
+        float best_distance = std::numeric_limits< float >::max( );
+        c_cs_player *best_target = nullptr;
+
+        for ( int i = 1; i < g_interfaces.global_vars->max_clients; i++ ) {
+            auto player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
+
+            if ( !player || player == globals::local_player || player->team( ) == globals::local_player->team( ) || player->dormant( ) || !player->alive( ) )
+                continue;
+
+            auto distance = glm::length( player->origin( ) - globals::local_player->get_shoot_position( ) );
+
+            if ( distance < best_distance ) {
+                best_distance = distance;
+                best_target = player;
+            }
+        }
+
+        return best_target;
+    };
+
     switch ( g_vars.exploits_antiaim_dir_type.value ) {
         case 0:
             dir = cmd->view_angles.y;
@@ -53,22 +95,57 @@ void antiaim::handle_direction( c_user_cmd *cmd ) {
             dir = cmd->view_angles.y + 180.f;
             break;
         case 2: {
-            dir = cmd->view_angles.y + 180.f;
-
             if ( using_manual_dir ) {
                 if ( manual_dir == manual_direction::back )
                     dir = cmd->view_angles.y + 180.0f;
 
                 else if ( manual_dir == manual_direction::left )
-                        dir = cmd->view_angles.y + 90.0f;
+                    dir = cmd->view_angles.y + 90.0f;
 
                 else if ( manual_dir == manual_direction::right )
-                        dir = cmd->view_angles.y - 90.0f;
-                
+                    dir = cmd->view_angles.y - 90.0f;
             }
         } break;
         default:
             break;
+    }
+
+    if ( g_vars.exploits_antiaim_auto_direction.value ) {
+        auto closest_target = get_closest_target( );
+
+        direction_info.left_damage = 0.0f;
+        direction_info.right_damage = 0.0f;
+        direction_info.left_fraction = 0.0f;
+        direction_info.right_fraction = 0.0f;
+
+        if ( closest_target ) {
+            vector_3d direction_1, direction_2;
+
+            math::angle_vectors( vector_3d( 0.f, math::normalize( math::angle_vectors( globals::local_player->origin( ) - closest_target->origin( ) ).y ) - 90.f, 0.f ), &direction_1 );
+            math::angle_vectors( vector_3d( 0.f, math::normalize( math::angle_vectors( globals::local_player->origin( ) - closest_target->origin( ) ).y ) + 90.f, 0.f ), &direction_2 );
+
+            const auto left_eye_pos = closest_target->origin( ) + vector_3d( 0.f, 0.f, 64.f ) + ( direction_1 * 16.f );
+            const auto right_eye_pos = closest_target->origin( ) + vector_3d( 0.f, 0.f, 64.f ) + ( direction_2 * 16.f );
+
+            direction_info.left_damage = g_penetration.run( globals::local_player->get_shoot_position( ), left_eye_pos, closest_target, 0.0f, g_animations.animated_bones[ closest_target->index( ) ], false ).out_damage;
+            direction_info.right_damage = g_penetration.run( globals::local_player->get_shoot_position( ), right_eye_pos, closest_target, 0.0f, g_animations.animated_bones[ closest_target->index( ) ], false ).out_damage;
+
+            ray_t ray;
+            c_game_trace trace;
+            c_trace_filter_hitscan filter;
+
+            filter.player = globals::local_player;
+
+            ray.init( left_eye_pos, globals::local_player->get_shoot_position( ) );
+            g_interfaces.engine_trace->trace_ray( ray, mask_all, &filter, &trace );
+            direction_info.left_fraction = trace.fraction;
+
+            ray.init( right_eye_pos, globals::local_player->get_shoot_position( ) );
+            g_interfaces.engine_trace->trace_ray( ray, mask_all, &filter, &trace );
+            direction_info.right_fraction = trace.fraction;
+
+            handle_auto_direction( cmd );
+        }
     }
 
     dir = math::normalize( dir );
@@ -76,7 +153,7 @@ void antiaim::handle_direction( c_user_cmd *cmd ) {
 
 void antiaim::handle_fake( c_user_cmd *cmd ) {
     *globals::packet = true;
-    std::uniform_real_distribution gen( -90.f, 90.f );
+    std::uniform_real_distribution gen( -90.f, 305.f );
 
     switch ( g_vars.exploits_antiaim_fake_yaw_type.value ) {
         case 0:
@@ -105,25 +182,27 @@ void antiaim::handle_real( c_user_cmd *cmd ) {
 
         if ( !g_interfaces.client_state->choked_commands( ) && ( g_interfaces.global_vars->curtime > g_animations.lower_body_realign_timer ) && ( standing || air ) )
             cmd->view_angles.y += g_vars.exploits_antiaim_lby_break_delta.value;
-    }
 
-    if ( !using_manual_dir ) {
-        switch ( g_vars.exploits_antiaim_yaw_type.value ) {
-            case 1:
-                cmd->view_angles.y += gen( rng );
-                break;
-            case 2:
-                cmd->view_angles.y = ( dir - g_vars.exploits_antiaim_range.value / 2.f );
-                cmd->view_angles.y +=
-                        std::fmod( g_interfaces.global_vars->curtime * ( g_vars.exploits_antiaim_spin_speed.value * 100.f ),
-                                   g_vars.exploits_antiaim_range.value );
-                break;
-            default:
-                break;
+        else {
+            if ( !using_manual_dir ) {
+                switch ( g_vars.exploits_antiaim_yaw_type.value ) {
+                    case 1:
+                        cmd->view_angles.y += gen( rng );
+                        break;
+                    case 2:
+                        cmd->view_angles.y = ( dir - g_vars.exploits_antiaim_range.value / 2.f );
+                        cmd->view_angles.y +=
+                                std::fmod( g_interfaces.global_vars->curtime * ( g_vars.exploits_antiaim_spin_speed.value * 100.f ),
+                                           g_vars.exploits_antiaim_range.value );
+                        break;
+                    default:
+                        break;
+                }
+
+                distortion( cmd );
+                cmd->view_angles.y += g_vars.exploits_antiaim_yaw_offset.value;
+            }
         }
-
-        distortion( cmd );
-        cmd->view_angles.y += g_vars.exploits_antiaim_yaw_offset.value;
     }
 
     cmd->view_angles.y = math::normalize( cmd->view_angles.y );

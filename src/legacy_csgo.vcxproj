@@ -37,6 +37,7 @@
     <ClInclude Include="features\sound_handler\sound_handler.hpp" />
     <ClInclude Include="features\ui\elements\tooltip\tooltip.hpp" />
     <ClInclude Include="hooks\check_jump_button\check_jump_button.hpp" />
+    <ClInclude Include="hooks\draw_set_color\draw_set_color.hpp" />
     <ClInclude Include="hooks\game_animation_state\game_animation_state.hpp" />
     <ClInclude Include="hooks\base_interpolate_part1\base_interpolate_part1.hpp" />
     <ClInclude Include="hooks\build_transformations\build_transformations.hpp" />
@@ -432,6 +433,7 @@
     <ClCompile Include="features\sound_handler\sound_handler.cpp" />
     <ClCompile Include="features\ui\elements\tooltip\tooltip.cpp" />
     <ClCompile Include="hooks\check_jump_button\check_jump_button.cpp" />
+    <ClCompile Include="hooks\draw_set_color\draw_set_color.cpp" />
     <ClCompile Include="hooks\game_animation_state\game_animation_state.cpp" />
     <ClCompile Include="hooks\base_interpolate_part1\base_interpolate_part1.cpp" />
     <ClCompile Include="hooks\build_transformations\build_transformations.cpp" />

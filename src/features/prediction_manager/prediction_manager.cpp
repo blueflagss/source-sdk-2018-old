@@ -1,5 +1,55 @@
 #include "prediction_manager.hpp"
 #include <features/animations/animation_sync.hpp>
+#include <sdk/other/prediction_copy.hpp>
+
+uint8_t *datamap_util::data = nullptr;
+
+class player_backup {
+public:
+    inline void store( c_cs_player *player ) {
+        origin = player->origin( );
+        velocity = player->velocity( );
+        base_velocity = player->base_velocity( );
+        view_offset = player->view_offset( );
+        ground_entity = player->ground_entity( );
+        flags = player->flags( );
+        ducked = player->ducked( );
+        ducking = player->ducking( );
+        in_duck_jump = player->in_duck_jump( );
+        model_scale = player->model_scale( );
+        max_speed = player->max_speed( );
+    }
+
+    inline void restore( c_cs_player *player ) {
+        player->origin( ) = origin;
+        player->velocity( ) = velocity;
+        player->base_velocity( ) = base_velocity;
+        player->view_offset( ) = view_offset;
+        player->ground_entity( ) = ground_entity;
+        player->flags( ) = flags;
+        player->ducked( ) = ducked;
+        player->ducking( ) = ducking;
+        player->in_duck_jump( ) = in_duck_jump;
+        player->model_scale( ) = model_scale;
+        player->max_speed( ) = max_speed;
+    }
+
+public:
+    vector_3d origin;
+    vector_3d velocity;
+    vector_3d base_velocity;
+    vector_3d view_offset;
+    int ground_entity;
+    int flags;
+    float duck_time;
+    float duck_jump_time;
+    bool ducked;
+    bool ducking;
+    bool in_duck_jump;
+    float model_scale;
+    float max_speed;
+    datamap_util dt;
+};
 
 void prediction_context::post_think( c_base_entity *player ) {
     g_interfaces.model_cache->begin_lock( );
@@ -166,57 +216,6 @@ void prediction_context::finish( c_user_cmd *ucmd ) {
     g_interfaces.prediction->in_prediction = backup_in_prediction;
 }
 
-static c_user_cmd dummy_cmd = { };
-
-class player_backup {
-public:
-    inline void store( c_cs_player *player ) {
-        origin = player->origin( );
-        velocity = player->velocity( );
-        base_velocity = player->base_velocity( );
-        view_offset = player->view_offset( );
-        ground_entity = player->ground_entity( );
-        flags = player->flags( );
-        ducked = player->ducked( );
-        ducking = player->ducking( );
-        in_duck_jump = player->in_duck_jump( );
-        model_scale = player->model_scale( );
-        max_speed = player->max_speed( );
-        lower_body_yaw_target = player->lower_body_yaw_target( );
-    }
-
-    inline void restore( c_cs_player *player ) {
-        player->origin( ) = origin;
-        player->velocity( ) = velocity;
-        player->base_velocity( ) = base_velocity;
-        player->view_offset( ) = view_offset;
-        player->ground_entity( ) = ground_entity;
-        player->flags( ) = flags;
-        player->ducked( ) = ducked;
-        player->ducking( ) = ducking;
-        player->in_duck_jump( ) = in_duck_jump;
-        player->model_scale( ) = model_scale;
-        player->max_speed( ) = max_speed;
-        player->lower_body_yaw_target( ) = lower_body_yaw_target;
-    }
-
-public:
-    vector_3d origin;
-    vector_3d velocity;
-    vector_3d base_velocity;
-    vector_3d view_offset;
-    int ground_entity;
-    int flags;
-    float duck_time;
-    float duck_jump_time;
-    bool ducked;
-    bool ducking;
-    bool in_duck_jump;
-    float model_scale;
-    float max_speed;
-    float lower_body_yaw_target;
-};
-
 static player_backup backup_player_data = { };
 
 void prediction_context::setup_move_data( c_cs_player *player, c_move_data *move_data ) {
@@ -235,13 +234,13 @@ void prediction_context::setup_move_data( c_cs_player *player, c_move_data *move
     move_data->constraint_radius = 0.f;
     move_data->constraint_speed_factor = 0.f;
 
-    if ( backup_player_data.flags & player_flags::ducking )
-        move_data->max_speed *= 0.3333f;
+    //if ( backup_player_data.flags & player_flags::ducking )
+    //    move_data->max_speed *= 0.3333f;
 
     move_data->client_max_speed = move_data->max_speed;
 
-    vector_3d forward, right;
-    math::angle_vectors( move_data->view_angles, &forward, &right, nullptr );
+    //vector_3d forward, right;
+    //math::angle_vectors( move_data->view_angles, &forward, &right, nullptr );
 
     move_data->forward_move = 450.0f;
     move_data->side_move = 450.0f;
@@ -272,17 +271,6 @@ bool prediction_context::predict_player_entity( c_cs_player *player ) {
 
     if ( player != globals::local_player )
         player->ground_entity( ) = 0;
-
-    player->model_scale( ) -= 0.03125f;
-
-    if ( player->flags( ) & player_flags::on_ground )
-        player->origin( ).z += 0.03125f;
-
-    if ( fabsf( player->velocity( ).x ) < 0.01f )
-        player->velocity( ).x = 0.015f;
-
-    if ( fabsf( player->velocity( ).y ) < 0.01f )
-        player->velocity( ).y = 0.015f;
 
     setup_move_data( this->target, &this->move_data );
   
@@ -315,7 +303,6 @@ void prediction_context::simulate_tick( ) {
     g_interfaces.prediction->first_time_predicted = false;
     g_interfaces.global_vars->frametime = g_interfaces.prediction->engine_paused ? 0.0f : game::ticks_to_time( 1 );
 
-    /* run movement simulation. */
     g_interfaces.game_movement->process_movement( this->target, &this->move_data );
 }
 

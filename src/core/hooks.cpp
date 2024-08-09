@@ -10,6 +10,7 @@
 #include <hooks/lock_cursor/lock_cursor.hpp>
 #include <hooks/wnd_proc/wnd_proc.hpp>
 #include <hooks/override_view/override_view.hpp>
+#include <hooks/draw_set_color/draw_set_color.hpp>
 #include <hooks/get_screen_aspect_ratio/get_screen_aspect_ratio.hpp>
 #include <hooks/get_alpha_modulation/get_alpha_modulation.hpp>
 #include <hooks/is_using_static_props_debug_modes/is_using_static_props_debug_modes.hpp>
@@ -66,17 +67,19 @@ void hooks::impl::init( ) {
     level_init_pre_entity::init( );
     is_paused::init( );
     update_clientside_animations::init( );
+    update_clientside_animation::init( );
     paint_traverse::init( );
     level_shutdown::init( );
     lower_body_yaw_target_proxy::init( );
     get_screen_aspect_ratio::init( );
-    //check_jump_button::init( );
-    //anim_state::init( );
+    check_jump_button::init( );
+    draw_set_color::init( );
+    anim_state::init( );
     in_prediction::init( );
     get_eye_angles::init( );
-    cl_move::init( );
+    //cl_move::init( );
     cl_fire_events::init( );
-    packet_start::init( );
+    //packet_start::init( );
     physics_simulate::init( );
     update_animation_state::init( );
     do_procedural_footplant::init( );
@@ -127,6 +130,7 @@ void hooks::impl::remove( ) {
     is_paused::original = { };
     get_screen_aspect_ratio::original = { };
     update_clientside_animations::original = { };
+    update_clientside_animation::original = { };
     paint_traverse::original = { };
     level_shutdown::original = { };
     check_jump_button::original = { };

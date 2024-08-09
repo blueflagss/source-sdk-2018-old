@@ -18,7 +18,7 @@ void shot_manager::on_shot_fire( c_cs_player *target, float damage, int bullets,
         shot.impacted = false;
         shot.hurt_player = false;
         shot.pos = globals::local_player->get_shoot_position( );
-
+ 
         if ( target && i == 0 )
             ++log.shots;
 
@@ -69,101 +69,105 @@ void shot_manager::process_shots( ) {
 
     if ( shots.empty( ) ) return;
 
-    for ( int i = 0; i < shots.size( ); i++ ) {
-        auto shot = &shots[ i ];
+    auto &shot = shots.front( );
 
-        if ( !shot )
-            continue;
+    auto target = shot.target;
 
-        auto target = shot->target;
+    if ( !target )
+        return;
 
-        if ( !target )
-            continue;
+    auto player_log = &g_animations.player_log[ target->index( ) ];
 
-        if ( !shot->record->bones.data( ) )
-            continue;
+    if ( !player_log )
+        return;
 
-        auto player_log = &g_animations.player_log[ target->index( ) ];
+    if ( !shot.record )
+        return;
 
-        if ( !player_log )
-            continue;
+    if ( !target->collideable( ) )
+        return;
 
-        if ( !shot->record )
-            continue;
+        float predicted = shot.time;
+    float delta = std::fabs( g_interfaces.global_vars->curtime - predicted );
 
-        backup_record backup;
-        backup.store( target );
-
-        /* restore player data */
+    if ( shot.matched && shot.impacted && shot.time != -1.0f ) {
         const auto backup_origin = target->origin( );
         const auto backup_mins = target->collideable( )->mins( );
         const auto backup_maxs = target->collideable( )->maxs( );
-        const auto backup_angles = target->get_abs_angles( );
         const auto backup_bones = target->bone_cache( );
 
-        if ( shot->matched && shot->impacted ) {
-            shot->record->cache( );
+        shot.record->cache( );
 
-            if ( !shot->hurt_player && shot->time != 1.0f ) {
-                vector_3d pos, dir, start, end;
-                c_game_trace trace;
+        if ( !shot.hurt_player ) {
+            vector_3d pos, dir, start, end;
+            c_game_trace trace;
 
-                start = shot->pos;
-                dir = math::normalize_angle( shot->server_pos - start );
-                end = start + ( dir * 8192.f );
+            start = shot.pos;
+            dir = math::normalize_angle( shot.server_pos - start );
+            end = start + ( dir * 8192.f );
 
-                ray_t ray;
-                ray.init( start, end );
+            const auto had_prediction_error = globals::local_player->velocity_modifier( ) < 1.0f && g_interfaces.prediction->prev_ack_had_errors > 0;
+            const auto should_hit_player = g_ragebot.can_hit( target, start, end, shot.record, shot.record->bones.data( ) );
 
-                g_interfaces.engine_trace->clip_ray_to_entity( ray, mask_shot, target, &trace );
+            const auto get_missed_shot = [ & ]( ) -> const char * {
+                const char *missed_shot = _xs( "spread" );
 
-                const auto had_prediction_error = globals::local_player->velocity_modifier( ) < 1.0f && g_interfaces.prediction->prev_ack_had_errors > 0;
-                const auto should_hit_player = g_ragebot.can_hit( target, start, end, shot->record, shot->record->bones.data( ) );
-
-                const auto get_missed_shot = [ & ]( ) -> const char * {
-                    const char *missed_shot = _xs( "spread" );
-
-                    if ( player_log->player_info.fake_player )
-                        return missed_shot;
-
-                    else {
-                        if ( had_prediction_error )
-                            missed_shot = _xs( "prediction error" );
-
-                        else if ( !target->alive( ) )
-                            missed_shot = _xs( "death" );
-
-                        else if ( !globals::local_player->alive( ) )
-                            missed_shot = _xs( "local death" );
-
-                        if ( should_hit_player ) {
-                            missed_shot = _xs( "resolver" );
-
-                            /* increment missed shots on our current target. */
-                            ++player_log->missed_shots;
-                        }
-                    }
-
+                if ( player_log->player_info.fake_player )
                     return missed_shot;
-                };
 
-                g_notify.add( notify_type::none, false, fmt::format( _xs( "Missed shot due to {}" ), get_missed_shot( ) ) );
+                else {
+                    if ( had_prediction_error )
+                        missed_shot = _xs( "prediction error" );
 
-                if ( !player_log->player_info.fake_player )
-                    g_notify.add( notify_type::miss, true, fmt::format( _xs( "reason: {} | mode: {} | target: {} | hitgroup : {} | dmg : {} | lc : {} | lag: {}" ), get_missed_shot( ), static_cast< int >( shot->record->mode ), player_log->player_info.name, hitgroup_names[ shot->hurt_player ], shot->damage, shot->record->break_lc ? _xs( "false" ) : _xs( "true" ), shot->record->choked ) );
+                    else if ( !target->alive( ) )
+                        missed_shot = _xs( "enemy death" );
 
-                target->origin( ) = backup_origin;
-                target->set_collision_bounds( backup_mins, backup_maxs );
-                target->set_abs_angles( backup_angles );
-                target->bone_cache( ) = backup_bones;
+                    else if ( !globals::local_player->alive( ) )
+                        missed_shot = _xs( "local death" );
 
-                shots.erase( shots.begin( ) + i );
-            }
-            
+                    if ( should_hit_player ) {
+                        missed_shot = _xs( "resolver" );
+
+                        /* increment missed shots on our current target. */
+                        ++player_log->missed_shots;
+                    }
+                }
+
+                return missed_shot;
+            };
+
+            g_notify.add( notify_type::none, false, fmt::format( _xs( "Missed shot due to {}" ), get_missed_shot( ) ) );
+
+            if ( !player_log->player_info.fake_player )
+                g_notify.add( notify_type::miss, true, fmt::format( _xs( "reason: {} | mode: {} | target: {} | hitgroup : {} | dmg : {} | lc : {} | lag: {}" ), get_missed_shot( ), static_cast< int >( shot.record->mode ), player_log->player_info.name, hitgroup_names[ shot.hurt_player ], shot.damage, shot.record->break_lc ? _xs( "false" ) : _xs( "true" ), shot.record->choked ) );
         }
-  
-        backup.restore( target );    
+
+        target->origin( ) = backup_origin;
+        target->set_collision_bounds( backup_mins, backup_maxs );
+        target->bone_cache( ) = backup_bones;
+
+        shots.erase( shots.begin( ) );
     }
+}
+
+void shot_manager::on_fire( event_t* evt ) {
+    if ( !evt || !globals::local_player )
+        return;
+
+    auto attacker = g_interfaces.engine_client->get_player_for_user_id( evt->get_int( _xs( "userid" ) ) );
+
+    if ( attacker != g_interfaces.engine_client->get_local_player( ) )
+        return;
+
+        if ( shots.empty( ) )
+        return;
+
+    shot_record_t *shot = &shots.front( );
+
+    if ( !shot )
+        return;
+
+    shot->matched = true;
 }
 
 void shot_manager::on_impact( event_t *evt ) {
@@ -182,50 +186,23 @@ void shot_manager::on_impact( event_t *evt ) {
     pos = {
             evt->get_float( _xs( "x" ) ),
             evt->get_float( _xs( "y" ) ),
-            evt->get_float( _xs( "z" ) ) 
+            evt->get_float( _xs( "z" ) )
     };
 
     time = g_interfaces.global_vars->curtime;
 
     if ( g_vars.visuals_other_bullet_impacts.value )
         g_interfaces.debug_overlay->add_box_overlay( pos, vector_3d( -2.0f, -2.0f, -2.0f ), vector_3d( 2.0f, 2.0f, 2.0f ), vector_3d( 0.0f, 0.0f, 0.0f ), g_vars.visuals_other_server_bullet_impact_col.value.r, g_vars.visuals_other_server_bullet_impact_col.value.g, g_vars.visuals_other_server_bullet_impact_col.value.b, g_vars.visuals_other_server_bullet_impact_col.value.a, 7.0f );
-    
+
     if ( shots.empty( ) )
         return;
 
-    struct shot_match_t {
-        float delta;
-        shot_record_t *shot;
-    };
-
-    shot_match_t match;
-    match.delta = std::numeric_limits< float >::max( );
-    match.shot = nullptr;
-
-    for ( auto &s : shots ) {
-        if ( s.matched )
-            continue;
-
-        float predicted = s.time;
-        float delta = std::fabs( time - predicted );
-
-        if ( delta > 1.0f )
-            continue;
-
-        if ( delta < match.delta ) {
-            s.impacted = true;
-
-            match.delta = delta;
-            match.shot = &s;
-        }
-    }
-
-    shot_record_t *shot = match.shot;
+    shot_record_t *shot = &shots.front( );
 
     if ( !shot )
         return;
 
-    shot->matched = true;
+    shot->impacted = true;
 
     impact_record_t impact;
 
@@ -275,24 +252,24 @@ void shot_manager::on_hurt( event_t *evt ) {
     shot_record_t *matched_shot = nullptr;
     auto best_delta = std::numeric_limits< float >::max( );
 
-    for ( auto &shot : shots ) {
-        if ( shot.hurt_player )
-            continue;
+    if ( shots.empty( ) )
+        return;
 
-        float predicted = shot.time;
-        float delta = std::fabs( time - predicted );
+    auto &shot = shots.front( );
 
-        if ( delta > 1.0f )
-            continue;
+    if ( shot.hurt_player )
+        return;
 
-        if ( delta < best_delta ) {
-            best_delta = delta;
-            matched_shot = &shot;
-        }
+    float predicted = shot.time;
+    float delta = std::fabs( time - predicted );
+
+    if ( delta > 1.0f ) {
+        shots.erase( shots.begin( ) );
+        return;
     }
 
-    if ( matched_shot )
-        matched_shot->hurt_player = true;
+
+        shot.hurt_player = true;
 
     player_info_t info;
 
@@ -311,8 +288,7 @@ void shot_manager::on_hurt( event_t *evt ) {
     if ( g_vars.misc_events_log_damage.value )
         g_notify.add( notify_type::none, false, fmt::format( _xs( "Hit {} in the {} for {} ({} health remaining)" ), name, hitgroup_names[ group ], ( int ) damage, hp ) );
 
-    
-	if ( group == hitgroup_generic )
+    if ( group == hitgroup_generic )
         return;
 
     // if we hit a player, mark vis impacts.
@@ -331,7 +307,6 @@ void shot_manager::on_hurt( event_t *evt ) {
 
     // iterate stored impacts.
     for ( auto &i : impacts ) {
-
         if ( i.tick != globals::local_player->tick_base( ) )
             continue;
 

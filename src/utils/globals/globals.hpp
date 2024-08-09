@@ -105,6 +105,7 @@ namespace globals
     inline vector_3d local_shoot_pos{ };
     inline v_matrix view_matrix{ };
     inline bool lby_updating{ false };
+    inline bool is_console_toggled{ false };
     inline bool *packet{ nullptr };
     inline bool old_packet{ false };
     inline vector_2d screen_size{ };

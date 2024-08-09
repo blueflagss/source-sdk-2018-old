@@ -214,34 +214,10 @@ void c_animation_state_rebuilt::increment_layer_cycle_weight_rate_generic( c_csg
 }
 
 void c_animation_state_rebuilt::handle_animation_events( c_cs_player *player, c_csgo_player_animstate *animstate ) {
-}
-
-void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate *animstate, const vector_3d &angles, int tick, bool handle_events ) {
-    const auto backup_cur_time = g_interfaces.global_vars->curtime;
-    const auto backup_frametime = g_interfaces.global_vars->frametime;
-    const auto backup_framecount = g_interfaces.global_vars->framecount;
-
-    animstate->m_nLastUpdateFrame = 0;
-
-    if ( animstate->m_pPlayer == globals::local_player ) {
-        animstate->m_flLastUpdateTime = animstate->m_pPlayer->old_simtime( );
-
-        g_interfaces.global_vars->curtime = tick * g_interfaces.global_vars->interval_per_tick;
-        g_interfaces.global_vars->frametime = g_interfaces.global_vars->interval_per_tick;
-        g_interfaces.global_vars->framecount = tick;
-    }
-
-    const c_csgo_player_animstate backup_animstate = *animstate;
-
+    if ( !player || !animstate )
+        return;
     const bool on_ground = ( globals::local_player->flags( ) & player_flags::on_ground ) != 0;
     const bool landed_on_ground_this_frame = on_ground && !animstate->m_bOnGround;
-
-    bool &m_bJumping = animstate->m_bFlashed;
-
-    if ( animstate->m_pPlayer == globals::local_player && !on_ground && animstate->m_bOnGround && animstate->m_pPlayer->velocity( ).z > 0.0f ) {
-        m_bJumping = true;
-        set_sequence( animstate, ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL, select_weighted_sequence( animstate, ACT_CSGO_JUMP ) );
-    }
 
     /* rebuild some missing anim code */
     const bool stopped_moving_this_frame = animstate->m_flVelocityLengthXY <= 0.0f && animstate->m_flDurationStill <= 0.0f;
@@ -249,43 +225,6 @@ void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate 
     const bool on_ladder = animstate->m_pPlayer->move_type( ) == move_types::ladder;
     const bool started_laddering_this_frame = ( !previously_on_ladder && on_ladder );
     const bool stopped_laddering_this_frame = ( previously_on_ladder && !on_ladder );
-
-    /* CCSGOPlayerAnimState::SetupVelocity() ANIMATION_LAYER_ADJUST calculations */
-    if ( !animstate->m_bAdjustStarted && stopped_moving_this_frame && on_ground && !on_ladder && !animstate->m_bLanding && animstate->m_flStutterStep < 50.0f ) {
-        set_sequence( animstate, ANIMATION_LAYER_ADJUST, select_weighted_sequence( animstate, 980 ) );
-        animstate->m_bAdjustStarted = true;
-    }
-
-    const int adjust_activity = get_layer_activity( animstate, ANIMATION_LAYER_ADJUST );
-
-    if ( adjust_activity == 980 || adjust_activity == 979 ) {
-        if ( animstate->m_bAdjustStarted && animstate->m_flSpeedAsPortionOfCrouchTopSpeed <= 0.25f ) {
-            increment_layer_cycle_weight_rate_generic( animstate, ANIMATION_LAYER_ADJUST );
-            animstate->m_bAdjustStarted = !is_layer_sequence_completed( animstate, ANIMATION_LAYER_ADJUST );
-        } else {
-            animstate->m_bAdjustStarted = false;
-
-            auto &layer = animstate->m_pPlayer->anim_overlays( )[ ANIMATION_LAYER_ADJUST ];
-            const float weight = layer.weight;
-            layer.weight = valve_math::approach( 0.0f, weight, animstate->m_flLastUpdateIncrement * 5.0f );
-            set_weight_delta_rate( animstate, ANIMATION_LAYER_ADJUST, weight );
-        }
-    }
-
-    auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( animstate->m_pPlayer->weapon_handle( ) );
-
-    if ( !weapon )
-        return;
-
-    const auto max_speed_run = weapon ? std::max( weapon->get_weapon_data( )->max_speed, 0.001f ) : CS_PLAYER_SPEED_RUN;
-    const auto velocity = animstate->m_pPlayer->velocity( );
-
-    animstate->m_flVelocityLengthXY = std::min< float >( velocity.length( ), CS_PLAYER_SPEED_RUN );
-
-    if ( animstate->m_flVelocityLengthXY > 0.0f )
-        animstate->m_vecVelocityNormalizedNonZero = math::normalize_angle( velocity );
-
-    animstate->m_flSpeedAsPortionOfWalkTopSpeed = animstate->m_flVelocityLengthXY / ( max_speed_run * CS_PLAYER_SPEED_WALK_MODIFIER );
 
     /* only for localplayer (we dont have enemy usercmds) */
     if ( globals::local_player && animstate->m_pPlayer == globals::local_player ) {
@@ -360,6 +299,65 @@ void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate 
             increment_layer_cycle( animstate, ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL, false );
         }
     }
+}
+
+void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate *animstate, const vector_3d &angles, int tick, bool handle_events ) {
+    const c_csgo_player_animstate backup_animstate = *animstate;
+
+    const bool on_ground = ( globals::local_player->flags( ) & player_flags::on_ground ) != 0;
+    const bool landed_on_ground_this_frame = on_ground && !animstate->m_bOnGround;
+
+    bool &m_bJumping = animstate->m_bFlashed;
+
+    if ( animstate->m_pPlayer == globals::local_player && !on_ground && animstate->m_bOnGround && animstate->m_pPlayer->velocity( ).z > 0.0f ) {
+        m_bJumping = true;
+        set_sequence( animstate, ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL, select_weighted_sequence( animstate, ACT_CSGO_JUMP ) );
+    }
+
+    /* rebuild some missing anim code */
+    const bool stopped_moving_this_frame = animstate->m_flVelocityLengthXY <= 0.0f && animstate->m_flDurationStill <= 0.0f;
+    const bool previously_on_ladder = animstate->m_bOnLadder;
+    const bool on_ladder = animstate->m_pPlayer->move_type( ) == move_types::ladder;
+    const bool started_laddering_this_frame = ( !previously_on_ladder && on_ladder );
+    const bool stopped_laddering_this_frame = ( previously_on_ladder && !on_ladder );
+
+    /* CCSGOPlayerAnimState::SetupVelocity() ANIMATION_LAYER_ADJUST calculations */
+    if ( !animstate->m_bAdjustStarted && stopped_moving_this_frame && on_ground && !on_ladder && !animstate->m_bLanding && animstate->m_flStutterStep < 50.0f ) {
+        set_sequence( animstate, ANIMATION_LAYER_ADJUST, select_weighted_sequence( animstate, 980 ) );
+        animstate->m_bAdjustStarted = true;
+    }
+
+    const int adjust_activity = get_layer_activity( animstate, ANIMATION_LAYER_ADJUST );
+
+    if ( adjust_activity == 980 || adjust_activity == 979 ) {
+        if ( animstate->m_bAdjustStarted && animstate->m_flSpeedAsPortionOfCrouchTopSpeed <= 0.25f ) {
+            increment_layer_cycle_weight_rate_generic( animstate, ANIMATION_LAYER_ADJUST );
+            animstate->m_bAdjustStarted = !is_layer_sequence_completed( animstate, ANIMATION_LAYER_ADJUST );
+        } else {
+            animstate->m_bAdjustStarted = false;
+
+            auto &layer = animstate->m_pPlayer->anim_overlays( )[ ANIMATION_LAYER_ADJUST ];
+            const float weight = layer.weight;
+            layer.weight = valve_math::approach( 0.0f, weight, animstate->m_flLastUpdateIncrement * 5.0f );
+            set_weight_delta_rate( animstate, ANIMATION_LAYER_ADJUST, weight );
+        }
+    }
+
+    auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( animstate->m_pPlayer->weapon_handle( ) );
+
+    if ( !weapon )
+        return;
+
+    const auto max_speed_run = weapon ? std::max( weapon->get_weapon_data( )->max_speed, 0.001f ) : CS_PLAYER_SPEED_RUN;
+    const auto velocity = animstate->m_pPlayer->velocity( );
+
+    animstate->m_flVelocityLengthXY = std::min< float >( velocity.length( ), CS_PLAYER_SPEED_RUN );
+
+    if ( animstate->m_flVelocityLengthXY > 0.0f )
+        animstate->m_vecVelocityNormalizedNonZero = math::normalize_angle( velocity );
+
+    animstate->m_flSpeedAsPortionOfWalkTopSpeed = animstate->m_flVelocityLengthXY / ( max_speed_run * CS_PLAYER_SPEED_WALK_MODIFIER );
+
 
     std::array< c_animation_layer, 13 > backup_layers;
 
@@ -377,13 +375,6 @@ void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate 
         set_sequence( animstate, ANIMATION_LAYER_ADJUST, select_weighted_sequence( animstate, ACT_CSGO_IDLE_TURN_BALANCEADJUST ) );
         animstate->m_bAdjustStarted = true;
     }
-    /* restore client vars */
-    if ( animstate->m_pPlayer == globals::local_player ) {
-        g_interfaces.global_vars->curtime = backup_cur_time;
-        g_interfaces.global_vars->frametime = backup_frametime;
-        g_interfaces.global_vars->framecount = backup_framecount;
-    }
-    *animstate = backup_animstate;
 }
 
 void c_animation_state_rebuilt::set_weight( c_csgo_player_animstate *state, int layer_idx, float weight ) {

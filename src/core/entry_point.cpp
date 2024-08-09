@@ -56,6 +56,14 @@ int __stdcall cheat_main( void *loader_data ) {
     const auto end = std::chrono::high_resolution_clock::now( );
     const auto duration = std::chrono::duration_cast< std::chrono::milliseconds >( end - start ).count( );
 
+    ///* remove thread limit. */
+    //DWORD old_protect;
+    //char *thread_limit_count = signature::find( "datacache.dll", "7C F4" ).add( 0x2 ).get< char * >( );
+
+    //VirtualProtect( thread_limit_count, sizeof( char ), PAGE_EXECUTE_READWRITE, &old_protect );
+    //*thread_limit_count = ( char )24;
+    //VirtualProtect( thread_limit_count, sizeof( char ), old_protect, &old_protect );
+
     g_interfaces.init( );
     g_config.init( );
     g_netvars.init( );

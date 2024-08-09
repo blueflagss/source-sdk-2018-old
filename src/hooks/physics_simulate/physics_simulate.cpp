@@ -46,7 +46,6 @@ void __fastcall hooks::physics_simulate::hook( REGISTERS ) {
         //                    to[ i ].weight = from[ i ].weight;
         //                    to[ i ].playback_rate = from[ i ].playback_rate;
 
-
         //                    to[ i ].cycle = from[ i ].cycle;
 
         //                    to[ i ].owner = from[ i ].owner;
@@ -59,14 +58,12 @@ void __fastcall hooks::physics_simulate::hook( REGISTERS ) {
 
     original.fastcall< void >( REGISTERS_OUT );
 
-    if ( g_interfaces.client_state->choked_commands( ) ) {
-        if ( player == globals::local_player && player->viewmodel_handle( ) != 0xFFFFFFF ) {
-            const auto viewmodel = g_interfaces.entity_list->get_client_entity_from_handle< c_view_model * >( player->viewmodel_handle( ) );
+    if ( player == globals::local_player && player->viewmodel_handle( ) != 0xFFFFFFF ) {
+        const auto viewmodel = g_interfaces.entity_list->get_client_entity_from_handle< c_view_model * >( player->viewmodel_handle( ) );
 
-            if ( viewmodel ) {
-                g_prediction_context.weapon_cycle = viewmodel->cycle( );
-                g_prediction_context.weapon_sequence = viewmodel->sequence( );
-            }
+        if ( viewmodel ) {
+            g_prediction_context.weapon_cycle = viewmodel->cycle( );
+            g_prediction_context.weapon_sequence = viewmodel->sequence( );
         }
     }
 }

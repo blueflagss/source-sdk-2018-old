@@ -227,3 +227,318 @@ public:
 private:
     T m_Val;
 };
+
+template< class T, class M = c_utl_memory< T > >
+class c_utl_stack {
+public:
+    // constructor, destructor
+    c_utl_stack( int growSize = 0, int initSize = 0 );
+
+    void CopyFrom( const c_utl_stack< T, M > &from );
+
+    // element access
+    T &operator[]( int i );
+    T const &operator[]( int i ) const;
+    T &Element( int i );
+    T const &Element( int i ) const;
+
+    // Gets the base address (can change when adding elements!)
+    T *Base( );
+    T const *Base( ) const;
+
+    // Looks at the stack top
+    T &Top( );
+    T const &Top( ) const;
+
+    // Size
+    int Count( ) const;
+
+    // Is element index valid?
+    bool IsIdxValid( int i ) const;
+
+    // Adds an element, uses default constructor
+    int Push( );
+
+    // Adds an element, uses copy constructor
+    int Push( T const &src );
+
+    // Pops the stack
+    void Pop( );
+    void Pop( T &oldTop );
+    void PopMultiple( int num );
+
+    // Makes sure we have enough memory allocated to store a requested # of elements
+    void EnsureCapacity( int num );
+
+    // Clears the stack, no deallocation
+    void Clear( );
+
+    // Memory deallocation
+    void Purge( );
+
+private:
+    // Grows the stack allocation
+    void GrowStack( );
+
+    // For easier access to the elements through the debugger
+    void ResetDbgInfo( );
+
+    M m_Memory;
+    int m_Size;
+
+    // For easier access to the elements through the debugger
+    T *m_pElements;
+};
+
+//-----------------------------------------------------------------------------
+// For easier access to the elements through the debugger
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+inline void c_utl_stack< T, M >::ResetDbgInfo( ) {
+    m_pElements = m_Memory.Base( );
+}
+
+//-----------------------------------------------------------------------------
+// constructor, destructor
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+c_utl_stack< T, M >::c_utl_stack( int growSize, int initSize ) : m_Size( 0 ) {
+    ResetDbgInfo( );
+}
+
+
+//-----------------------------------------------------------------------------
+// copy into
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+void c_utl_stack< T, M >::CopyFrom( const c_utl_stack< T, M > &from ) {
+    //Purge( );
+    EnsureCapacity( from.Count( ) );
+    for ( int i = 0; i < from.Count( ); i++ ) {
+        Push( from[ i ] );
+    }
+}
+
+//-----------------------------------------------------------------------------
+// element access
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+inline T &c_utl_stack< T, M >::operator[]( int i ) {
+    // assert(IsIdxValid(i));
+    return m_Memory[ i ];
+}
+
+template< class T, class M >
+inline T const &c_utl_stack< T, M >::operator[]( int i ) const {
+    // assert(IsIdxValid(i));
+    return m_Memory[ i ];
+}
+
+template< class T, class M >
+inline T &c_utl_stack< T, M >::Element( int i ) {
+    // assert(IsIdxValid(i));
+    return m_Memory[ i ];
+}
+
+template< class T, class M >
+inline T const &c_utl_stack< T, M >::Element( int i ) const {
+    // assert(IsIdxValid(i));
+    return m_Memory[ i ];
+}
+
+//-----------------------------------------------------------------------------
+// Gets the base address (can change when adding elements!)
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+inline T *c_utl_stack< T, M >::Base( ) {
+    return m_Memory.Base( );
+}
+
+template< class T, class M >
+inline T const *c_utl_stack< T, M >::Base( ) const {
+    return m_Memory.Base( );
+}
+
+//-----------------------------------------------------------------------------
+// Returns the top of the stack
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+inline T &c_utl_stack< T, M >::Top( ) {
+    // assert(m_Size > 0);
+    return Element( m_Size - 1 );
+}
+
+template< class T, class M >
+inline T const &c_utl_stack< T, M >::Top( ) const {
+    // assert(m_Size > 0);
+    return Element( m_Size - 1 );
+}
+
+//-----------------------------------------------------------------------------
+// Size
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+inline int c_utl_stack< T, M >::Count( ) const {
+    return m_Size;
+}
+
+//-----------------------------------------------------------------------------
+// Is element index valid?
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+inline bool c_utl_stack< T, M >::IsIdxValid( int i ) const {
+    return ( i >= 0 ) && ( i < m_Size );
+}
+
+//-----------------------------------------------------------------------------
+// Grows the stack
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+void c_utl_stack< T, M >::GrowStack( ) {
+    if ( m_Size >= m_Memory.NumAllocated( ) )
+        m_Memory.Grow( );
+
+    ++m_Size;
+
+    ResetDbgInfo( );
+}
+
+//-----------------------------------------------------------------------------
+// Makes sure we have enough memory allocated to store a requested # of elements
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+void c_utl_stack< T, M >::EnsureCapacity( int num ) {
+    m_Memory.EnsureCapacity( num );
+    ResetDbgInfo( );
+}
+
+//-----------------------------------------------------------------------------
+// Adds an element, uses default constructor
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+int c_utl_stack< T, M >::Push( ) {
+    GrowStack( );
+    Construct( &Element( m_Size - 1 ) );
+    return m_Size - 1;
+}
+
+//-----------------------------------------------------------------------------
+// Adds an element, uses copy constructor
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+int c_utl_stack< T, M >::Push( T const &src ) {
+    GrowStack( );
+    CopyConstruct( &Element( m_Size - 1 ), src );
+    return m_Size - 1;
+}
+
+//-----------------------------------------------------------------------------
+// Pops the stack
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+void c_utl_stack< T, M >::Pop( ) {
+    // assert(m_Size > 0);
+    Destruct( &Element( m_Size - 1 ) );
+    --m_Size;
+}
+
+template< class T, class M >
+void c_utl_stack< T, M >::Pop( T &oldTop ) {
+    // assert(m_Size > 0);
+    oldTop = Top( );
+    Pop( );
+}
+
+template< class T, class M >
+void c_utl_stack< T, M >::PopMultiple( int num ) {
+    // assert(m_Size >= num);
+    for ( int i = 0; i < num; ++i )
+        Destruct( &Element( m_Size - i - 1 ) );
+    m_Size -= num;
+}
+
+//-----------------------------------------------------------------------------
+// Element removal
+//-----------------------------------------------------------------------------
+
+template< class T, class M >
+void c_utl_stack< T, M >::Clear( ) {
+    for ( int i = m_Size; --i >= 0; )
+        Destruct( &Element( i ) );
+
+    m_Size = 0;
+}
+
+//-----------------------------------------------------------------------------
+// Memory deallocation
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// forward declarations
+//-----------------------------------------------------------------------------
+class CUtlSymbolTable;
+class CUtlSymbolTableMT;
+
+//-----------------------------------------------------------------------------
+// This is a symbol, which is a easier way of dealing with strings.
+//-----------------------------------------------------------------------------
+typedef unsigned short UtlSymId_t;
+
+#define UTL_INVAL_SYMBOL ( ( UtlSymId_t ) ~0 )
+
+class c_utl_symbol {
+public:
+    // constructor, destructor
+    c_utl_symbol( ) : m_Id( UTL_INVAL_SYMBOL ) {
+    }
+    c_utl_symbol( UtlSymId_t id ) : m_Id( id ) {
+    }
+
+    c_utl_symbol( c_utl_symbol const &sym ) : m_Id( sym.m_Id ) {
+    }
+
+    // operator=
+    c_utl_symbol &operator=( c_utl_symbol const &src ) {
+        m_Id = src.m_Id;
+        return *this;
+    }
+
+    // operator==
+    bool operator==( c_utl_symbol const &src ) const {
+        return m_Id == src.m_Id;
+    }
+
+    // Is valid?
+    bool IsValid( ) const {
+        return m_Id != UTL_INVAL_SYMBOL;
+    }
+
+    // Gets at the symbol
+    operator UtlSymId_t( ) const {
+        return m_Id;
+    }
+
+protected:
+    UtlSymId_t m_Id;
+
+    /*
+    // The standard global symbol table
+    static CUtlSymbolTableMT* s_pSymbolTable;
+
+    static bool s_bAllowStaticSymbolTable;
+
+    friend class CCleanupUtlSymbolTable;*/
+};

@@ -70,6 +70,8 @@ private:
     void adjust_speed( c_user_cmd *ucmd );
     bool get_hitbox_data( vector_3d start, hitbox_data *rtn, c_cs_player *player, int hitbox, matrix_3x4 *matrix );
 
+    bool calculate_hitchance( lag_record *record, const int &hitbox, const vector_3d &angle, const float &htc );
+
 public:
     c_fire_bullet_data bullet_data;
     bool found_point = false;
@@ -82,8 +84,6 @@ public:
     std::vector< int > get_hitboxes( );
     void reset( );
     bool can_hit( c_cs_player *player, vector_3d start, vector_3d end, lag_record *record, matrix_3x4 *matrix );
-
-    bool calculate_hitchance( c_cs_player *player, const int &hitbox, const vector_3d &angle, lag_record *record );
     void on_create_move( c_user_cmd *cmd );
     bool get_hitbox_position( c_cs_player *player, matrix_3x4 *bones, int hitbox, vector_3d &position );
 };

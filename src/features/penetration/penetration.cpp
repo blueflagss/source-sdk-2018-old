@@ -29,7 +29,7 @@ enum {
     char_tex_warpshield = 'Z'
 };
 
-c_fire_bullet_data penetration_system::run( const vector_3d src, const vector_3d end, c_cs_player *ent, const std::array< matrix_3x4, 128 > &bones, bool is_zeus, c_cs_weapon_info *info_override ) {
+c_fire_bullet_data penetration_system::run( const vector_3d src, const vector_3d end, c_cs_player *ent, const float &in_damage, const std::array< matrix_3x4, 128 > &bones, bool is_zeus, c_cs_weapon_info *info_override ) {
     c_fire_bullet_data info{ };
 
     if ( !ent )
@@ -44,8 +44,11 @@ c_fire_bullet_data penetration_system::run( const vector_3d src, const vector_3d
         return { };
 
     info.damage = data->damage;
+    info.in_damage = in_damage;
 
     c_trace_filter_hitscan filter{ };
+
+    vector_3d origin;
 
     bool result = simulate_fire_bullet( data, src, end, info, bones, is_zeus, ent );
 
@@ -56,6 +59,9 @@ c_fire_bullet_data penetration_system::run( const vector_3d src, const vector_3d
 }
 
 bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vector_3d src, vector_3d pos, c_fire_bullet_data &fire_info, const std::array< matrix_3x4, 128 > &bones, bool is_zeus, c_cs_player *ent ) {
+    if ( !bones.data( ) )
+        return false;
+    
     vector_3d direction = math::normalize_angle( pos - src );
 
     fire_info.penetrate_count = 4;
@@ -74,19 +80,22 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
     tr.start_pos = r.start + r.start_offset;
     tr.end_pos = tr.start_pos + r.delta;
 
-    //for ( int i = 0; i < bones.size( ); i++ )
-    //    temp_mat[ i ] = const_cast< matrix_3x4 * >( &bones[ i ] );
+    //clip_trace_to_player( ent, src, pos, mask_shot | contents_hitbox, &filter, &tr );
 
-    //const auto ret = proxy_trace_to_studio_csgo_hitgroups_priority( ent, mask_shot | contents_hitbox, &ent->origin( ), &tr, &r, temp_mat );
+  /*  for ( int i = 0; i < bones.size( ); i++ )
+        temp_mat[ i ] = const_cast< matrix_3x4 * >( &bones.data( )[ i ] );
 
-    //fire_info.did_hit = ret;
+   
+    const auto ret = proxy_trace_to_studio_csgo_hitgroups_priority( ent, mask_shot | contents_hitbox, &origin, &tr, &r, temp_mat );
 
-    //final_trace = tr;
+    fire_info.did_hit = ret;
 
-    //if ( !fire_info.did_hit )
-    //    return false;
+    final_trace = tr;
 
-    fire_info.did_hit = false;
+    if ( !fire_info.did_hit )
+        return false;*/
+
+    auto origin = ent->origin( );
 
     while ( fire_info.penetrate_count > 0 && fire_info.damage > 0.0f ) {
         const auto length_remaining = data->range - length;
@@ -99,8 +108,7 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
         r.init( src, end );
         g_interfaces.engine_trace->trace_ray( r, mask_shot, &filter, &enter_trace );
 
-        if ( !fire_info.did_hit ) {
-            const auto dist = glm::length( src - ent->origin( ) );
+            const auto dist = glm::length( src - origin );
             const auto behind = glm::length( src - enter_trace.end_pos ) > dist;
 
             if ( behind || enter_trace.fraction == 1.f ) {
@@ -115,17 +123,19 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
                 if ( final_length >= data->range )
                     break;
 
-                const auto final_damage = fire_info.damage * std::powf( data->range_modifier, final_length * 0.002f );
+                auto final_damage = fire_info.damage * std::powf( data->range_modifier, final_length * 0.002f );
+                auto scaled_damage = scale_damage( ent, final_damage, data->armor_ratio, enter_trace.hit_group, is_zeus );
 
-                fire_info.did_hit = true;
-                fire_info.bullet_end = enter_trace.end_pos;
-                fire_info.impacts[ fire_info.impact_count++ ] = enter_trace.end_pos;
-                fire_info.out_damage = scale_damage( ent, final_damage, data->armor_ratio, enter_trace.hit_group, is_zeus );
-                fire_info.out_hitgroup = enter_trace.hit_group;
+                    fire_info.did_hit = true;
+                    fire_info.bullet_end = enter_trace.end_pos;
+                    fire_info.impacts[ fire_info.impact_count++ ] = enter_trace.end_pos;
+                    fire_info.out_damage = scaled_damage;
+                    fire_info.out_hitgroup = enter_trace.hit_group;
 
-                break;
+                                    break;
+                
             }
-        }
+        
 
         length += enter_trace.fraction * length_remaining;
         fire_info.damage *= std::powf( data->range_modifier, length * 0.002f );
@@ -406,6 +416,37 @@ void penetration_system::clip_trace_to_players( const vector_3d &start, const ve
     }
 }
 
+bool penetration_system::proxy_trace_to_studio_csgo_hitgroups_priority( c_cs_player *ent, uint32_t contents_mask, vector_3d *origin, c_game_trace *tr, ray_t *ray, matrix_3x4 **mat ) {
+    const auto studio_model = ent->cstudio_hdr( )->studio_hdr;
+    const auto r_ = uintptr_t( ray );
+    const auto tr_ = uintptr_t( tr );
+    const auto scale_ = ent->model_scale( );
+    const auto origin_ = uintptr_t( origin );
+    const auto mat_ = uintptr_t( mat );
+    const auto set_ = uintptr_t( studio_model->hitbox_set( ent->hitbox_set( ) ) );
+    const auto fn_ = g_addresses.trace_to_studio_csgo_hitgroups_priority.get< uintptr_t >( );
+    const auto chdr_ = uintptr_t( ent->get_model_ptr( ) );
+
+    auto rval = false;
+    __asm
+    {
+			mov edx, r_
+			push tr_
+			push scale_
+			push origin_
+			push contents_mask
+			push mat_
+			push set_
+			push chdr_
+			mov eax, [fn_]
+			call eax
+			add esp, 0x1C
+			mov rval, al
+    }
+
+    return rval;
+}
+
 bool penetration_system::trace_ray( const vector_3d &min, const vector_3d &max, const matrix_3x4 &mat, float r, const vector_3d &src, const vector_3d &dst ) {
     static auto vector_rotate = []( const vector_3d &in1, const matrix_3x4 &in2, vector_3d &out ) {
         out[ 0 ] = in1[ 0 ] * in2[ 0 ][ 0 ] + in1[ 1 ] * in2[ 1 ][ 0 ] + in1[ 2 ] * in2[ 2 ][ 0 ];
@@ -517,34 +558,4 @@ bool penetration_system::trace_ray( const vector_3d &min, const vector_3d &max, 
     }
 
     return false;
-}
-bool penetration_system::proxy_trace_to_studio_csgo_hitgroups_priority( c_cs_player *ent, uint32_t contents_mask, vector_3d *origin, c_game_trace *tr, ray_t *ray, matrix_3x4 **mat ) {
-    const auto studio_model = ent->cstudio_hdr( )->studio_hdr;
-    const auto r_ = uintptr_t( ray );
-    const auto tr_ = uintptr_t( tr );
-    const auto scale_ = ent->model_scale( );
-    const auto origin_ = uintptr_t( origin );
-    const auto mat_ = uintptr_t( mat );
-    const auto set_ = uintptr_t( studio_model->hitbox_set( ent->hitbox_set( ) ) );
-    const auto fn_ = g_addresses.trace_to_studio_csgo_hitgroups_priority.get< uintptr_t >( );
-    const auto chdr_ = uintptr_t( ent->get_model_ptr( ) );
-
-    auto rval = false;
-    __asm
-    {
-			mov edx, r_
-			push tr_
-			push scale_
-			push origin_
-			push contents_mask
-			push mat_
-			push set_
-			push chdr_
-			mov eax, [fn_]
-			call eax
-			add esp, 0x1C
-			mov rval, al
-    }
-
-    return rval;
 }

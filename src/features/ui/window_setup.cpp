@@ -140,6 +140,7 @@ void menu::init( ) {
                 antiaim->add_object< penumbra::checkbox >( "Fake yaw", &g_vars.exploits_antiaim_fake.value );
                 antiaim->add_object< penumbra::combobox >( "Pitch", &g_vars.exploits_antiaim_pitch_type.value, std::deque< std::string >{ "Down", "Up", "Zero" } );
                 antiaim->add_object< penumbra::combobox >( "Direction", &g_vars.exploits_antiaim_dir_type.value, std::deque< std::string >{ "None", "Backwards", "Manual" } );
+                antiaim->add_object< penumbra::checkbox >( "Auto direction", &g_vars.exploits_antiaim_auto_direction.value );
                 antiaim->add_object< penumbra::slider< float > >( "Offset", &g_vars.exploits_antiaim_yaw_offset.value, -180.f, 180.f, " deg" );
                 antiaim->add_object< penumbra::combobox >( "Yaw", &g_vars.exploits_antiaim_yaw_type.value, std::deque< std::string >{ "Direction", "Jitter", "Spin" } );
                 antiaim->add_object< penumbra::slider< float > >( "Jitter/Spin range", &g_vars.exploits_antiaim_range.value, 0.f, 360.f, " deg" );
@@ -301,7 +302,8 @@ void menu::init( ) {
                       { _xs( "Flash overlay" ), &g_vars.visuals_other_remove_flash_overlay.value 
                 } } );
 
-                effects->add_object< penumbra::slider< float > >( _xs( "Field of view#camera" ), &g_vars.visuals_other_fov.value, 60.0f, 180.f, " FOV" );
+                effects->add_object< penumbra::slider< float > >( _xs( "FOV#camera" ), &g_vars.visuals_other_fov.value, 0.0f, 180.f, " FOV" );
+                effects->add_object< penumbra::slider< float > >( _xs( "Scope FOV#camera" ), &g_vars.visuals_other_scoped_fov.value, 0.0f, 180.f, " FOV" );
 
                 auto thirdperson = effects->add_object< penumbra::checkbox >( "Third person", &g_vars.visuals_other_thirdperson_enabled.value );
                 {
@@ -349,6 +351,12 @@ void menu::init( ) {
             auto misc = miscellaneous->add_child( "Miscellaneous", 0, false );
             {
                 misc->add_object< penumbra::checkbox >( "Bypass sv_pure", &g_vars.misc_bypass_sv_pure.value );
+
+                auto modulate_console = misc->add_object< penumbra::checkbox >( "Modulate console", &g_vars.misc_modulate_console.value );
+                {
+                    modulate_console->add_object< penumbra::colorpicker >( "modulate_clr", &g_vars.misc_console_modulation_color.value, false );
+                }
+
                 misc->add_object< penumbra::checkbox >( "Fast stop", &g_vars.misc_fast_stop.value );
                 misc->add_object< penumbra::checkbox >( "Auto bunny hop", &g_vars.misc_bunny_hop.value );
                 misc->add_object< penumbra::combobox >( "Strafe assist", &g_vars.misc_auto_strafe_type.value, std::deque< std::string >{ "None", "View angles", "Movement keys" } );

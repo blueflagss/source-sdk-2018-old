@@ -11,6 +11,7 @@ enum class manual_direction : int {
 class antiaim {
 public:
     void update_manual_direction( );
+    bool handle_auto_direction( c_user_cmd *cmd );
     void handle_direction( c_user_cmd *cmd );
     void handle_fake( c_user_cmd *cmd );
     void handle_real( c_user_cmd *cmd );
@@ -19,6 +20,20 @@ public:
     void handle_pitch( c_user_cmd *cmd );
     void distortion( c_user_cmd *cmd );
     void on_create_move( c_user_cmd *cmd, vector_3d vangle );
+
+    struct freestand_record_t {
+        void reset( ) {
+            this->left_damage = this->right_damage = 0.0f;
+            this->left_fraction = this->right_fraction = 0.0f;
+        }
+
+        freestand_record_t( ) {
+            reset( );
+        }
+
+        float left_damage, right_damage;
+        float left_fraction, right_fraction;
+    } direction_info;
 
     float dir;
     manual_direction manual_dir;

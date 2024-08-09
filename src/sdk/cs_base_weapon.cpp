@@ -89,6 +89,9 @@ float c_cs_weapon_base::get_spread( ) {
 }
 
 bool c_cs_weapon_base::is_base_combat_weapon( ) {
+    if ( !this )
+        return false;
+
     return utils::get_method< bool( __thiscall * )( void * ) >( this, 160 )( this );
 }
 

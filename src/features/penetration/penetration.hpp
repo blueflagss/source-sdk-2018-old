@@ -6,6 +6,7 @@ public:
     int penetrate_count{ };
     int impact_count{ };
     float damage{ };
+    float in_damage{ };
     float out_damage{ };
     int out_hitgroup{ };
     std::array< vector_3d, 6 > impacts{ };
@@ -17,7 +18,7 @@ class penetration_system {
 public:
     inline static constexpr auto ray_extension = 40.f;
 
-    c_fire_bullet_data run( const vector_3d src, const vector_3d end, c_cs_player *ent, const std::array< matrix_3x4, 128 > &bones, bool is_zeus = false, c_cs_weapon_info *info_override = nullptr );
+    c_fire_bullet_data run( const vector_3d src, const vector_3d end, c_cs_player *ent, const float &in_damage, const std::array< matrix_3x4, 128 > &bones, bool is_zeus = false, c_cs_weapon_info *info_override = nullptr );
     bool simulate_fire_bullet( const c_cs_weapon_info *data, vector_3d src, vector_3d pos, c_fire_bullet_data &fire_info, const std::array< matrix_3x4, 128 > &bones, bool is_zeus = false, c_cs_player *ent = nullptr );
     bool is_breakable_entity( c_cs_player *ent );
     bool trace_to_exit( c_game_trace &enter_trace, c_game_trace &exit_trace, vector_3d start_pos, vector_3d direction );

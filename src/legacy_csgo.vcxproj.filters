@@ -1176,9 +1176,6 @@
     <ClInclude Include="features\grenade_prediction\grenade_prediction.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="features\animations\animation_state.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="hooks\level_init_pre_entity\level_init_pre_entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1198,6 +1195,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="features\skin_changer\skin_changer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\draw_set_color\draw_set_color.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="features\animations\animation_state.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1607,9 +1610,6 @@
     <ClCompile Include="features\grenade_prediction\grenade_prediction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="features\animations\animation_state.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="hooks\level_init_pre_entity\level_init_pre_entity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1629,6 +1629,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="features\skin_changer\skin_changer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\draw_set_color\draw_set_color.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\animations\animation_state.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

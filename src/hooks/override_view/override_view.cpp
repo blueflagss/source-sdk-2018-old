@@ -55,12 +55,15 @@ void __fastcall hooks::override_view::hook( REGISTERS, c_view_setup *setup ) {
         globals::hotkeys::thirdperson = false;
     }
 
-    if ( g_vars.visuals_other_fov.value > 0 )
-        setup->fov = g_vars.visuals_other_fov.value;
+    if ( g_vars.visuals_other_fov.value > 0 ) {
+        if ( globals::local_weapon ) {
+            setup->fov = (  globals::local_player->scoped( ) ) ? g_vars.visuals_other_scoped_fov.value : g_vars.visuals_other_fov.value;
+        }
+    }
 
     auto origin = setup->origin;
 
-                g_grenade_prediction.simulate_path( globals::local_player, origin );
+    g_grenade_prediction.simulate_path( globals::local_player, origin );
 
     return original.fastcall< void >( REGISTERS_OUT, setup );
 }

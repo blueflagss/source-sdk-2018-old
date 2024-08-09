@@ -80,6 +80,7 @@ namespace config
 #pragma region exploits
         CONFIG_VARIABLE( exploits_antiaim_static_legs_in_air, bool, false );
         CONFIG_VARIABLE( exploits_antiaim, bool, false );
+        CONFIG_VARIABLE( exploits_antiaim_auto_direction, bool, false );
         CONFIG_VARIABLE( exploits_antiaim_manual, bool, false );
         CONFIG_VARIABLE( exploits_antiaim_distortion, bool, false );
         CONFIG_VARIABLE( exploits_antiaim_distortion_speed, float, 0.0f ); 
@@ -216,6 +217,8 @@ namespace config
 
 #pragma region miscellaneous_features
         CONFIG_VARIABLE( misc_bypass_sv_pure, bool, true );
+        CONFIG_VARIABLE( misc_modulate_console, bool, true );
+        CONFIG_VARIABLE( misc_console_modulation_color, color, color( 31, 31, 31 ) );
         CONFIG_VARIABLE( misc_events_log_damage, bool, false );
         CONFIG_VARIABLE( misc_events_log_buy, bool, false );
         CONFIG_VARIABLE( misc_events_log_bomb, bool, false );

@@ -18,7 +18,7 @@ void ragebot::search_targets( ) {
     for ( int i = 1; i <= g_interfaces.entity_list->get_highest_entity_index( ); ++i ) {
         const auto entity = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
 
-        if ( !entity || !entity->is_player( ) || !entity->alive( ) || entity->dormant( ) || entity->team( ) == globals::local_player->team( ) || entity == globals::local_player )
+        if ( !entity || entity == globals::local_player || entity->team( ) == globals::local_player->team( ) || !entity->is_player( ) || !entity->alive( ) || entity->dormant( ) )
             continue;
 
         if ( g_animations.player_log[ entity->index( ) ].anim_records.empty( ) )
@@ -36,16 +36,15 @@ void ragebot::search_targets( ) {
                 return lhs.distance < rhs.distance;
             case 1:
                 return lhs.fov < rhs.fov;
-            default:
-                return lhs.distance < rhs.distance;
         }
     } );
 }
 
-
 bool ragebot::can_hit( c_cs_player *player, vector_3d start, vector_3d end, lag_record *record, matrix_3x4 *matrix ) {
     if ( !record || !matrix )
         return false;
+
+    bool found = false;
 
     for ( int i = 0; i < hitbox_max; i++ ) {
         const auto hdr = g_interfaces.model_info->get_studio_model( player->get_model( ) );
@@ -54,7 +53,7 @@ bool ragebot::can_hit( c_cs_player *player, vector_3d start, vector_3d end, lag_
             return false;
 
         const auto set = hdr->hitbox_set( 0 );
-        
+
         if ( !set )
             return false;
 
@@ -68,11 +67,13 @@ bool ragebot::can_hit( c_cs_player *player, vector_3d start, vector_3d end, lag_
         math::vector_transform( bbox->min, matrix[ bbox->bone ], min );
         math::vector_transform( bbox->max, matrix[ bbox->bone ], max );
 
-        if ( g_penetration.trace_ray( min, max, matrix[ bbox->bone ], bbox->radius, start, end ) )
-            return true;
+        if ( g_penetration.trace_ray( min, max, matrix[ bbox->bone ], bbox->radius, start, end ) ) {
+            found = true;
+            break;
+        }
     }
 
-    return false;
+    return found;
 }
 
 bool ragebot::get_hitbox_data( vector_3d start, hitbox_data *rtn, c_cs_player *player, int hitbox, matrix_3x4 *matrix ) {
@@ -83,17 +84,17 @@ bool ragebot::get_hitbox_data( vector_3d start, hitbox_data *rtn, c_cs_player *p
         return false;
 
     auto model = player->get_model( );
-    
+
     if ( !model )
         return false;
 
     const auto hdr = g_interfaces.model_info->get_studio_model( model );
-    
+
     if ( !hdr )
         return false;
 
     const auto set = hdr->hitbox_set( 0 );
-    
+
     if ( !set )
         return false;
 
@@ -124,11 +125,11 @@ bool ragebot::get_hitbox_data( vector_3d start, hitbox_data *rtn, c_cs_player *p
     return true;
 }
 
-bool ragebot::calculate_hitchance( c_cs_player *player, const int &hitbox, const vector_3d &angle, lag_record *record ) {
-    if ( !globals::local_weapon_data )
+bool ragebot::calculate_hitchance( lag_record *record, const int &hitbox, const vector_3d &angle, const float &htc ) {
+    if ( !record || !globals::local_weapon_data )
         return false;
 
-    const auto studio_model = g_interfaces.model_info->get_studio_model( player->get_model( ) );
+    const auto studio_model = g_interfaces.model_info->get_studio_model( record->player->get_model( ) );
 
     if ( !studio_model )
         return false;
@@ -170,7 +171,7 @@ bool ragebot::calculate_hitchance( c_cs_player *player, const int &hitbox, const
 
     auto total_hits = static_cast< float >( needed_hits ) / 256.0f * 100.0f;
 
-    if ( total_hits < g_vars.aimbot_hit_chance.value )
+    if ( total_hits < htc )
         return false;
 
     return true;
@@ -228,7 +229,9 @@ bool ragebot::scan_target( c_cs_player *player, lag_record *record, aim_player &
     Threading::QueueJobRef( hitscan_thread, ( void * ) &args );
     //run_hitscan( &args );
     Threading::FinishQueue( true );
-    best = hitscan_info::best;
+
+    if ( hitscan_info::best.damage >= g_vars.aimbot_min_damage.value )
+        best = hitscan_info::best;
 
     return true;
 }
@@ -350,32 +353,30 @@ void ragebot::hitscan_thread( hitscan_data *data ) {
         if ( data->points.empty( ) )
             continue;
 
-        for ( auto &p : data->points ) {
-            auto bullet_data = g_penetration.run( globals::local_player->get_shoot_position( ), p.first, player, record->bones );
+        for ( const auto &p : data->points ) {
+            auto bullet_data = g_penetration.run( globals::local_player->get_shoot_position( ), p.first, player, g_vars.aimbot_min_damage.value, record->bones );
 
-            if ( bullet_data.did_hit ) {
-                if ( bullet_data.out_damage > hitscan_info::best.damage ) {
-                    hitscan_info::best.damage = bullet_data.out_damage;
-                    hitscan_info::best.hitbox = hitbox;
-                    hitscan_info::best.best_point = p.first;
-                    hitscan_info::best.record = record;
-                    hitscan_info::best.target = player;
-                    data->done = true;
-                }
-
-                if ( data->done && bullet_data.out_damage >= hitscan_info::best.damage ) {
-                    hitscan_info::best.damage = bullet_data.out_damage;
-                    hitscan_info::best.record = record;
-                    hitscan_info::best.target = player;
-                    data->done = true;
-                    break;
-                }
+            if ( bullet_data.out_damage > hitscan_info::best.damage ) {
+                hitscan_info::best.damage = bullet_data.out_damage;
+                hitscan_info::best.hitbox = hitbox;
+                hitscan_info::best.best_point = p.first;
+                hitscan_info::best.record = record;
+                hitscan_info::best.target = player;
+                data->done = true;
             }
 
-            if ( data->done ) {
-                g_ragebot.should_continue_thread = false;
+            if ( data->done && bullet_data.out_damage >= hitscan_info::best.damage ) {
+                hitscan_info::best.damage = bullet_data.out_damage;
+                hitscan_info::best.record = record;
+                hitscan_info::best.target = player;
+                data->done = true;
                 break;
             }
+        }
+
+        if ( data->done ) {
+            g_ragebot.should_continue_thread = false;
+            break;
         }
     }
 
@@ -467,10 +468,10 @@ void ragebot::on_create_move( c_user_cmd *cmd ) {
 
         auto &info = g_animations.player_log[ target.entity->index( ) ];
 
-        if ( info.anim_records.empty( ) )
+        if ( info.lag_records.empty( ) )
             continue;
 
-        const auto front = &g_animations.player_log[ target.entity->index( ) ].anim_records.front( );
+        const auto front = g_animations.player_log[ target.entity->index( ) ].lag_records.front( );
         const auto bot = info.player_info.fake_player;
 
         if ( front ) {
@@ -483,57 +484,60 @@ void ragebot::on_create_move( c_user_cmd *cmd ) {
                 if ( target.delay_shot && g_vars.aimbot_delay_shot.value )
                     continue;
 
-                if ( !scan_target( target.entity, front, target ) )
-                    continue;
-
-                auto last_record = g_resolver.find_last_record( target.entity );
+                                auto last_record = g_resolver.find_last_record( target.entity );
 
                 if ( !last_record )
                     continue;
 
                 if ( !scan_target( target.entity, last_record, target ) )
                     continue;
+
+                if ( !scan_target( target.entity, front, target ) )
+                    continue;
             }
         }
     }
 
-    if ( !best.record || !best.target || !best.damage )
+    if ( !best.record && !best.target )
         return;
 
-    adjust_speed( cmd );
+    if ( best.damage > 0.0f ) {
 
-    bool should_target = g_vars.aimbot_automatic_shoot.value;
+        adjust_speed( cmd );
 
-    const auto backup_origin = best.target->origin( );
-    const auto backup_mins = best.target->collideable( )->mins( );
-    const auto backup_maxs = best.target->collideable( )->maxs( );
-    const auto backup_angles = best.target->get_abs_angles( );
-    const auto backup_bones = best.target->bone_cache( );
+        bool should_target = g_vars.aimbot_automatic_shoot.value;
 
-    best.record->cache( );
+        const auto backup_origin = best.target->origin( );
+        const auto backup_mins = best.target->collideable( )->mins( );
+        const auto backup_maxs = best.target->collideable( )->maxs( );
+        const auto backup_angles = best.target->get_abs_angles( );
+        const auto backup_bones = best.target->bone_cache( );
 
-    const auto targetting_record = ( best.target && best.target->alive( ) && best.record );
-    const auto calc_pos = math::vector_angle( best.best_point - globals::local_player->get_shoot_position( ) );
+        best.record->cache( );
 
-    if ( should_target && calculate_hitchance( best.target, best.hitbox, calc_pos, best.record ) ) {
-        globals::target_index = best.target->index( );
+        const auto targetting_record = ( best.target && best.target->alive( ) && best.record );
+        const auto calc_pos = math::vector_angle( best.best_point - globals::local_player->get_shoot_position( ) );
 
-        cmd->tick_count = game::time_to_ticks( best.record->sim_time + globals::lerp_amount );
-        cmd->view_angles = math::clamp_angle( calc_pos - globals::local_player->aim_punch( ) * globals::cvars::weapon_recoil_scale->get_float( ) );
+        if ( should_target && calculate_hitchance( best.record, best.hitbox, calc_pos, g_vars.aimbot_hit_chance.value ) ) {
+            globals::target_index = best.target->index( );
 
-        if ( g_vars.aimbot_automatic_shoot.value )
-            cmd->buttons |= buttons::attack;
+            cmd->tick_count = game::time_to_ticks( best.record->sim_time + globals::lerp_amount );
+            cmd->view_angles = math::clamp_angle( calc_pos - globals::local_player->aim_punch( ) * globals::cvars::weapon_recoil_scale->get_float( ) );
 
-        if ( !g_vars.aimbot_silent.value )
-            g_interfaces.engine_client->set_view_angles( cmd->view_angles );
+            if ( g_vars.aimbot_automatic_shoot.value )
+                cmd->buttons |= buttons::attack;
 
-        g_shot_manager.on_shot_fire( best.target ? best.target : nullptr, best.target ? best.damage : -1.f, globals::local_weapon->get_weapon_data( )->bullets, best.target ? best.record : nullptr );
+            if ( !g_vars.aimbot_silent.value )
+                g_interfaces.engine_client->set_view_angles( cmd->view_angles );
 
-        *globals::packet = true;
+            g_shot_manager.on_shot_fire( best.target ? best.target : nullptr, best.target ? best.damage : -1.f, globals::local_weapon->get_weapon_data( )->bullets, best.target ? best.record : nullptr );
+
+            *globals::packet = true;
+        }
+
+        best.target->origin( ) = backup_origin;
+        best.target->set_collision_bounds( backup_mins, backup_maxs );
+        best.target->set_abs_angles( backup_angles );
+        best.target->bone_cache( ) = backup_bones;
     }
-
-    best.target->origin( ) = backup_origin;
-    best.target->set_collision_bounds( backup_mins, backup_maxs );
-    best.target->set_abs_angles( backup_angles );
-    best.target->bone_cache( ) = backup_bones;
 }

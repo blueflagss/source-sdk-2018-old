@@ -1,16 +1,16 @@
 #include "prediction_copy.hpp"
 
-c_prediction_copy::c_prediction_copy( int type, char *dest, bool dest_packed, const char *src, bool src_packed, optype_t optype, FN_FIELD_COMPARE func /*= NULL*/ ) {
-    optype = optype;
-    num_type = type;
-    dest = dest;
-    src = src;
-    destoffsetindex = dest_packed ? TD_OFFSET_PACKED : TD_OFFSET_NORMAL;
-    srcoffsetindex = src_packed ? TD_OFFSET_PACKED : TD_OFFSET_NORMAL;
-    error_count = 0;
-    entindex = -1;
-    watch_field = 0;
-    field_compare_fn = func;
+c_prediction_copy::c_prediction_copy( int type, uint8_t *dest, bool dest_packed, const uint8_t *src, bool src_packed, optype_t optype, FN_FIELD_COMPARE func /*= NULL*/ ) {
+    this->optype = optype;
+    this->num_type = type;
+    this->dest = dest;
+    this->src = src;
+    this->destoffsetindex = dest_packed ? TD_OFFSET_PACKED : TD_OFFSET_NORMAL;
+    this->srcoffsetindex = src_packed ? TD_OFFSET_PACKED : TD_OFFSET_NORMAL;
+    this->error_count = 0;
+    this->entindex = -1;
+    this->watch_field = 0;
+    this->field_compare_fn = func;
 }
 
 int c_prediction_copy::transfer_data( const char *operation, int idx, datamap_t *dmap ) {
