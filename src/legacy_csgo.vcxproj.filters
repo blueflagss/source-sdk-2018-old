@@ -1203,6 +1203,12 @@
     <ClInclude Include="features\animations\animation_state.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hooks\post_data_update\post_data_update.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\sequence_proxy\sequence_proxy.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sdk\interfaces\cvar.cpp">
@@ -1635,6 +1641,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="features\animations\animation_state.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\post_data_update\post_data_update.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\sequence_proxy\sequence_proxy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

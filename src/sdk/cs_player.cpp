@@ -192,6 +192,25 @@ void c_cs_player::update_collision_bounds( ) {
     return utils::get_method< void( __thiscall * )( void * ) >( this, 329 )( this );
 }
 
+std::deque< c_base_attribute_item * > c_cs_player::weapons( ) {
+    static auto offset = g_netvars.get_offset( HASH_CT( "DT_BaseCombatCharacter" ), HASH_CT( "m_hMyWeapons" ) );
+
+    std::deque< c_base_attribute_item * > ret{ };
+
+    const auto my_weapons = reinterpret_cast< uint32_t * >( reinterpret_cast< uintptr_t >( this ) + offset );
+
+    for ( auto i = 0; my_weapons[ i ] != 0xFFFFFFFF; i++ ) {
+        const auto weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_base_attribute_item * >( my_weapons[ i ] );
+
+        if ( !weapon )
+            continue;
+
+        ret.push_back( weapon );
+    }
+
+    return ret;
+}
+
 vector_3d c_cs_player::get_shoot_position( ) {
     auto pos = origin( );
 

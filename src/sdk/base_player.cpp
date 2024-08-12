@@ -78,6 +78,10 @@ bool c_base_player::is_player_on_steam_friends( ) const {
     return false;
 }
 
+void c_base_player::set_model_index( const int index ) {
+    return utils::get_method< void( __thiscall * )( void *, int ) >( this, 75 )( this, index );
+}
+
 void c_base_player::update_clientside_animation( ) {
     return utils::get_method< void( __thiscall * )( void * ) >( this, 218 )( this );
 }

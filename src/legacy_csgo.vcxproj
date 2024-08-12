@@ -74,6 +74,7 @@
     <ClInclude Include="hooks\packet_start\packet_start.hpp" />
     <ClInclude Include="hooks\paint_traverse\paint_traverse.hpp" />
     <ClInclude Include="hooks\physics_simulate\physics_simulate.hpp" />
+    <ClInclude Include="hooks\post_data_update\post_data_update.hpp" />
     <ClInclude Include="hooks\post_network_data_received\post_network_data_received.hpp" />
     <ClInclude Include="hooks\pre_entity_packet_received\pre_entity_packet_received.hpp" />
     <ClInclude Include="hooks\process_interpolated_list\process_interpolated_list.hpp" />
@@ -81,6 +82,7 @@
     <ClInclude Include="hooks\render_smoke_overlay\render_smoke_overlay.hpp" />
     <ClInclude Include="hooks\run_command\run_command.hpp" />
     <ClInclude Include="hooks\send_datagram\send_datagram.hpp" />
+    <ClInclude Include="hooks\sequence_proxy\sequence_proxy.hpp" />
     <ClInclude Include="hooks\setup_bones\setup_bones.hpp" />
     <ClInclude Include="hooks\should_skip_animation_frame\should_skip_animation_frame.hpp" />
     <ClInclude Include="hooks\standard_blending_rules\standard_blending_rules.hpp" />
@@ -470,6 +472,7 @@
     <ClCompile Include="hooks\packet_start\packet_start.cpp" />
     <ClCompile Include="hooks\paint_traverse\paint_traverse.cpp" />
     <ClCompile Include="hooks\physics_simulate\physics_simulate.cpp" />
+    <ClCompile Include="hooks\post_data_update\post_data_update.cpp" />
     <ClCompile Include="hooks\post_network_data_received\post_network_data_received.cpp" />
     <ClCompile Include="hooks\pre_entity_packet_received\pre_entity_packet_received.cpp" />
     <ClCompile Include="hooks\process_interpolated_list\process_interpolated_list.cpp" />
@@ -477,6 +480,7 @@
     <ClCompile Include="hooks\render_smoke_overlay\render_smoke_overlay.cpp" />
     <ClCompile Include="hooks\run_command\run_command.cpp" />
     <ClCompile Include="hooks\send_datagram\send_datagram.cpp" />
+    <ClCompile Include="hooks\sequence_proxy\sequence_proxy.cpp" />
     <ClCompile Include="hooks\setup_bones\setup_bones.cpp" />
     <ClCompile Include="hooks\should_skip_animation_frame\should_skip_animation_frame.cpp" />
     <ClCompile Include="hooks\standard_blending_rules\standard_blending_rules.cpp" />

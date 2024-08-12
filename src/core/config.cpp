@@ -26,6 +26,57 @@ void config::impl::init( ) {
     }
 }
 
+void config::impl::load_skins( ) {
+    nlohmann::json j;
+
+    std::ifstream file{ this->folder_path + "skins.json" };
+
+    if ( !file.is_open( ) )
+        return;
+
+    file >> j;
+
+    for ( auto &weapon : g_skin_vars ) {
+        for ( auto &item : weapon.second ) {
+            switch ( item.second.t ) {
+                case config_data_type::data_bool:
+                    item.second.b = j[ item.first ][ weapon.first ];
+                    break;
+                case config_data_type::data_int:
+                    item.second.i = j[ item.first ][ weapon.first ];
+                    break;
+            }
+        }
+    }
+
+    file.close( );
+}
+
+void config::impl::save_skins( ) {
+    nlohmann::json j;
+
+    std::ofstream file{ this->folder_path + "skins.json" };
+
+    if ( !file.is_open( ) )
+        return;
+
+    for ( const auto &weapon : g_skin_vars ) {
+        for ( const auto &item : weapon.second ) {
+            switch ( item.second.t ) {
+                case config_data_type::data_bool:
+                    j[ item.first ][ weapon.first ] = item.second.b;
+                    break;
+                case config_data_type::data_int:
+                    j[ item.first ][ weapon.first ] = item.second.i;
+                    break;
+            }
+        }
+    }
+
+    file << std::setw( 4 ) << j << std::endl;
+    file.close( );
+}
+
 bool config::impl::get_hotkey( const config_int &virtual_key, int key_type ) {
     if ( hotkey_states.find( virtual_key.name ) == hotkey_states.end( ) )
         hotkey_states[ virtual_key.name ] = penumbra::input::key_down( virtual_key.value );

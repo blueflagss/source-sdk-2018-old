@@ -13,6 +13,8 @@ namespace config
     class impl {
     public:
         void init( );
+        void load_skins( );
+        void save_skins( );
         bool get_hotkey( const config_int &virtual_key, int key_type );
         bool save( const std::string &name );
         bool remove( const std::string &name );

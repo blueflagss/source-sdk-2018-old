@@ -59,10 +59,14 @@
 #include <hooks/in_prediction/in_prediction.hpp>
 #include <hooks/cl_dispatch_sound/cl_dispatch_sound.hpp>
 #include <hooks/send_datagram/send_datagram.hpp>
+#include <hooks/post_data_update/post_data_update.hpp>
+#include <hooks/sequence_proxy/sequence_proxy.hpp>
 
 std::unique_ptr< event_handler > game_event_handler = nullptr;
 
 void hooks::impl::init( ) {
+    sequence_proxy::init( );
+    post_data_update::init( );
     cl_dispatch_sound::init( );
     level_init_pre_entity::init( );
     is_paused::init( );
@@ -125,6 +129,7 @@ void hooks::impl::init( ) {
 }
 
 void hooks::impl::remove( ) {
+    post_data_update::original = { };
     send_datagram::original = { };
     cl_dispatch_sound::original = { };
     is_paused::original = { };

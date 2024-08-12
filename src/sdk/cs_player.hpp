@@ -65,6 +65,8 @@ enum pose_param : int {
     death_yaw
 };
 
+class c_base_attribute_item;
+
 class c_cs_player : public c_base_entity {
 public:
     OFFSET( button_forced, int, 0x3310 );
@@ -106,9 +108,12 @@ public:
     NETVAR( max_speed, float, "DT_CSPlayer", "m_flMaxspeed" );
     NETVAR( owner, uint32_t, "DT_CSPlayer", "m_hOwnerEntity" );
     NETVAR( observer_target, uint32_t, "DT_BasePlayer", "m_hObserverTarget" );
+ 
+    c_base_view_model *get_view_model( ) {
+        if ( !this || this->viewmodel_handle( ) == -1 )
+            return nullptr;
 
-    void *get_view_model( ) {
-        return g_interfaces.entity_list->get_client_entity_from_handle< void * >( this->viewmodel_handle( ) );
+        return g_interfaces.entity_list->get_client_entity_from_handle< c_base_view_model * >( this->viewmodel_handle( ) );
     }
 
     c_cs_player *get_observer_target( ) {
@@ -139,6 +144,7 @@ public:
     bool can_attack( );
     bool get_aim_matrix( vector_3d angle, matrix_3x4 *bones );
     void update_collision_bounds( );
+    std::deque< c_base_attribute_item * > weapons( );
     vector_3d get_shoot_position( );
 };
 

@@ -81,6 +81,8 @@ public:
     }
 
 public:
+    NETVAR( owner_entity, uint32_t, "DT_BaseEntity", "m_hOwnerEntity" );
+    NETVAR( model_index, int, "DT_BaseEntity", "m_nModelIndex" );
     OFFSET( rgfl_coordinate_frame, matrix_3x4, 0x440 );
     DATAMAP( surface_friction, float, this->get_pred_desc_map( ), "m_surfaceFriction" );
     DATAMAP( current_command, c_user_cmd *, this->get_pred_desc_map( ), "m_nButtons", +0x4 );
@@ -126,6 +128,7 @@ public:
     bool compute_hitbox_surrounding_box( vector_3d *world_min, vector_3d *world_max );
     bool get_bounding_box( box_t &box_dimensions );
     bool is_player_on_steam_friends( ) const;
+    void set_model_index( const int index );
     void update_clientside_animation( );
     void select_item( const char *str, int subtype );
     void update_button_state( int button_mask );
@@ -138,13 +141,4 @@ public:
     }
 
     vector_3d world_space_center( );
-};
-
-class c_base_view_model : public c_base_player {
-public:
-    NETVAR( sequence, int, "DT_BaseViewModel", "m_nSequence" );
-
-    c_base_player *owner( ) {
-        return utils::get_method< c_base_player *( __thiscall * ) ( void * ) >( this, 214 )( this );
-    }
 };

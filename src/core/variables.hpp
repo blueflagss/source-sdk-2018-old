@@ -243,8 +243,23 @@ namespace config
         CONFIG_VARIABLE( skins_override_knife_value, int, 0 );
 #pragma endregion
     };
+    
+    enum class config_data_type : int {
+        none = 0,
+        data_int,
+        data_bool
+    };
+
+    struct config_data {
+        config_data_type t;
+        bool b;
+        float fl;
+        int i;
+    };
+
 }// namespace config
 
+inline std::unordered_map< int, std::unordered_map< std::string, config::config_data > > g_skin_vars = { };
 inline config::variables g_vars = { };
 
 static_assert( ( sizeof( config::variables ) % sizeof( config_bool ) ) == 0, "Config class isn't aligned properly" );

@@ -13,7 +13,7 @@ void __fastcall hooks::update_clientside_animation::hook( REGISTERS ) {
 }
 
 void __stdcall hooks::update_clientside_animations::hook( ) {
-
+    return original.stdcall< void >( );
 }
 
 void hooks::update_clientside_animation::init( ) {

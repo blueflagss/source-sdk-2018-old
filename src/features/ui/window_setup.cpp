@@ -2,8 +2,9 @@
 #include "animations/animations.hpp"
 #include "notifications/notifications.hpp"
 #include <core/config.hpp>
-#include <features/skin_changer/skin_changer.hpp>
 #include <features/exploits/exploits.hpp>
+#include <features/skin_changer/skin_changer.hpp>
+#include <globals.hpp>
 #include <icons_fa.hpp>
 
 std::shared_ptr< penumbra::window > indicators = nullptr;
@@ -34,8 +35,7 @@ void menu::on_screen_size_updated( int width, int height ) {
     for ( auto &window : penumbra::windows ) {
         window->position *= glm::vec2{
                 std::clamp< float >( globals::ui::screen_size.x / globals::ui::old_screen_size.x, 0.0f, globals::ui::screen_size.x ),
-                std::clamp< float >( globals::ui::screen_size.y / globals::ui::old_screen_size.y, 0.0f, globals::ui::screen_size.y )
-        };
+                std::clamp< float >( globals::ui::screen_size.y / globals::ui::old_screen_size.y, 0.0f, globals::ui::screen_size.y ) };
     }
 
     /* set last screen size. */
@@ -44,42 +44,72 @@ void menu::on_screen_size_updated( int width, int height ) {
     /* clear animation map. */
     animations::clear_map( );
 }
-int alol = 0;
-void menu::init_skins( ) {
-    std::deque< std::string > knife_items;
-    std::deque< std::string > paintkits;
 
-    for ( auto &item : g_skin_changer.knife_names )
-        knife_items.emplace_back( item.name );
-
-    for ( auto &item : g_skin_changer.skin_kits )
-        paintkits.emplace_back( item.name );
-
-    skinchanger = this->add_window( "Skin changer", "", nullptr, { 100, 150 }, { 380, 400 }, WINDOW_MAIN );
-    {
-        auto s = skinchanger->add_tab( " ", " ", 2 );
-        {
-            auto knifes = s->add_child( "Knifes", 0, false );
-            {
-                knifes->add_object< penumbra::checkbox >( "Override knife", &g_vars.skins_override_knife.value );
-                knifes->add_object< penumbra::combobox >( "Knife", &g_vars.skins_override_knife_value.value, knife_items );
-            }
-
-            auto skins = s->add_child( "Skins", 1, false );
-            {
-                skins->add_object< penumbra::combobox >( "Paint kit", &alol, paintkits );
-            }
-        }
-    }
-
-    skinchanger->is_window_resizeable = false;
-}
+std::deque< std::string > knives;
+std::deque< std::string > paint_kits;
+std::array< int, 517 > weapon_list = { };
 
 void menu::init( ) {
     auto window_center = vector_2d( ( globals::ui::screen_size.x - this->main_window_dimensions.x ) / 2, ( globals::ui::screen_size.y - this->main_window_dimensions.y ) / 2 );
 
-    /* initialize menu. */
-    init_skins( );
+    for ( auto &item : g_skin_changer.knife_names )
+        knives.emplace_back( item.name );
+
+    for ( auto &item : g_skin_changer.skin_kits )
+        paint_kits.emplace_back( item.name );
+
+    skinchanger = this->add_window( "Skins", "", nullptr, { 100, 150 }, { 380, 400 }, WINDOW_MAIN );
+    {
+        auto s = skinchanger->add_tab( " ", " ", 2 );
+        {
+            auto knifes = s->add_child( "Knife", 0, false );
+            {
+                knifes->add_object< penumbra::checkbox >( "Override knife", &knife_override );
+                knifes->add_object< penumbra::combobox >( "Knife model", &knife_model, knives );
+            }
+
+            auto settings = s->add_child( "Settings", 1, false );
+            {
+                settings->add_object< penumbra::button >( "Load", [ & ] {
+                    this->mutex.lock( );
+
+                    g_config.load_skins( );
+
+                    for ( int i = 0; i < weapons::knife_shadow_daggers; i++ )
+                        paintkit_item[ i ] = g_skin_vars[ i ][ "paintkit" ].i;
+
+                    knife_model = g_skin_vars[ 0 ][ "knife_model" ].i;
+                    knife_override = g_skin_vars[ 0 ][ "knife_override_model" ].b;
+
+                    this->mutex.unlock( );
+
+                    g_notify.add( notify_type::info, false, "Loaded skins config" );
+                } );
+
+                settings->add_object< penumbra::button >( "Save", [ & ] {
+                    this->mutex.lock( );
+
+                    for ( int i = 0; i < weapons::knife_shadow_daggers; i++ )
+                        g_skin_vars[ i ][ "paintkit" ].i = paintkit_item[ i ];
+
+                    g_config.save_skins( );
+                    this->mutex.unlock( );
+
+                    g_notify.add( notify_type::info, false, "Saved skins config" );
+                } );
+            }
+
+            auto skins = s->add_child( "Options", 1, false );
+            {
+                this->paint_kit = skins->add_object< penumbra::combobox >( "Paintkit", &paintkit_item[ this->weapon ], paint_kits );
+
+                skins->add_object< penumbra::button >( "Force full update", [ & ] {
+                } );
+            }
+        }
+
+        skinchanger->is_window_resizeable = false;
+    }
 
     main_window = this->add_window( _xs( "Penumbra" ), _xs( "" ), nullptr, window_center, this->main_window_dimensions, WINDOW_MAIN );
     {
@@ -98,7 +128,7 @@ void menu::init( ) {
             {
                 lag_compensation->add_object< penumbra::checkbox >( "Delay shot", &g_vars.aimbot_delay_shot.value );
                 lag_compensation->add_object< penumbra::checkbox >( "Predict fakelag", &g_vars.aimbot_fix_fakelag.value );
-                
+
                 auto fake_latency = lag_compensation->add_object< penumbra::checkbox >( "Fake ping", &g_vars.misc_fake_latency.value );
                 {
                     fake_latency->add_object< penumbra::hotkey >( "Fake ping key", &g_vars.misc_fake_latency_key.value, &g_vars.misc_fake_latency_key_toggle.value );
@@ -111,25 +141,21 @@ void menu::init( ) {
             {
                 weapon->add_object< penumbra::slider< int > >( _xs( "Hitchance" ), &g_vars.aimbot_hit_chance.value, 0, 100, "%" );
                 weapon->add_object< penumbra::slider< int > >( _xs( "Minimum damage" ), &g_vars.aimbot_min_damage.value, 0, 100, " hp" );
-                weapon->add_object< penumbra::multi_combobox >( _xs( "Hitbox" ), 
-                std::deque< std::pair< std::string, bool * > >
-                {
-                    { _xs( "Head" ), &g_vars.aimbot_hitboxes_head.value },
-                    { _xs( "Chest" ), &g_vars.aimbot_hitboxes_chest.value },
-                    { _xs( "Arms" ), &g_vars.aimbot_hitboxes_arms.value },
-                    { _xs( "Stomach" ), &g_vars.aimbot_hitboxes_stomach.value },
-                    { _xs( "Legs" ), &g_vars.aimbot_hitboxes_legs.value } 
-                } );
+                weapon->add_object< penumbra::multi_combobox >( _xs( "Hitbox" ),
+                                                                std::deque< std::pair< std::string, bool * > >{
+                                                                        { _xs( "Head" ), &g_vars.aimbot_hitboxes_head.value },
+                                                                        { _xs( "Chest" ), &g_vars.aimbot_hitboxes_chest.value },
+                                                                        { _xs( "Arms" ), &g_vars.aimbot_hitboxes_arms.value },
+                                                                        { _xs( "Stomach" ), &g_vars.aimbot_hitboxes_stomach.value },
+                                                                        { _xs( "Legs" ), &g_vars.aimbot_hitboxes_legs.value } } );
 
-                weapon->add_object< penumbra::multi_combobox >( _xs( "Multipoint" ), 
-                std::deque< std::pair< std::string, bool * > >
-                {
-                    { _xs( "Head" ), &g_vars.aimbot_multipoints_head.value },
-                    { _xs( "Chest" ), &g_vars.aimbot_multipoints_chest.value },
-                    { _xs( "Arms" ), &g_vars.aimbot_multipoints_arms.value },
-                    { _xs( "Stomach" ), &g_vars.aimbot_multipoints_stomach.value },
-                    { _xs( "Legs" ), &g_vars.aimbot_multipoints_legs.value } 
-                } );
+                weapon->add_object< penumbra::multi_combobox >( _xs( "Multipoint" ),
+                                                                std::deque< std::pair< std::string, bool * > >{
+                                                                        { _xs( "Head" ), &g_vars.aimbot_multipoints_head.value },
+                                                                        { _xs( "Chest" ), &g_vars.aimbot_multipoints_chest.value },
+                                                                        { _xs( "Arms" ), &g_vars.aimbot_multipoints_arms.value },
+                                                                        { _xs( "Stomach" ), &g_vars.aimbot_multipoints_stomach.value },
+                                                                        { _xs( "Legs" ), &g_vars.aimbot_multipoints_legs.value } } );
 
                 weapon->add_object< penumbra::slider< int > >( _xs( "Point scale" ), &g_vars.aimbot_multipoint_scale.value, 0, 100, "%" );
             }
@@ -158,14 +184,14 @@ void menu::init( ) {
             {
                 exploits->add_object< penumbra::checkbox >( "Fakelag", &g_vars.exploits_fakelag.value );
                 exploits->add_object< penumbra::slider< int > >( "Limit#fakelag", &g_vars.exploits_fakelag_limit.value, 0, 16, " ticks" );
-                                
+
                 auto fake_walk = exploits->add_object< penumbra::checkbox >( "Fake walk", &g_vars.misc_fake_walk.value );
                 {
                     fake_walk->add_object< penumbra::hotkey >( "Fake walk key", &g_vars.misc_fake_walk_key.value, &g_vars.misc_fake_walk_key_toggle.value );
                 }
 
                 exploits->add_object< penumbra::slider< int > >( "Ticks#Fakewalk", &g_vars.misc_fake_walk_value.value, 0, 16, " ticks" );
-                exploits->add_object< penumbra::combobox >( "Leg movement", &g_vars.exploits_antiaim_leg_movement.value, std::deque< std::string >{ "None", "Slide", "Never slide" } ); 
+                exploits->add_object< penumbra::combobox >( "Leg movement", &g_vars.exploits_antiaim_leg_movement.value, std::deque< std::string >{ "None", "Slide", "Never slide" } );
                 exploits->add_object< penumbra::checkbox >( "Static legs in air", &g_vars.exploits_antiaim_static_legs_in_air.value );
             }
 
@@ -202,25 +228,22 @@ void menu::init( ) {
                 general->add_object< penumbra::checkbox >( "Custom health color", &g_vars.visuals_player_health_override.value )->add_object< penumbra::colorpicker >( "Health bar color", &g_vars.visuals_health_override_color.value, false );
                 general->add_object< penumbra::checkbox >( "Box", &g_vars.visuals_player_box.value )->add_object< penumbra::colorpicker >( "Box color", &g_vars.visuals_box_color.value, false );
 
-                general->add_object< penumbra::multi_combobox >( _xs( "Weapon" ), std::deque< std::pair< std::string, bool * > >
-                {
-                     { _xs( "Text" ), &g_vars.visuals_player_weapon_text.value },
-                     { _xs( "Icon" ), &g_vars.visuals_player_weapon_icon.value },
-                } );
+                general->add_object< penumbra::multi_combobox >( _xs( "Weapon" ), std::deque< std::pair< std::string, bool * > >{
+                                                                                          { _xs( "Text" ), &g_vars.visuals_player_weapon_text.value },
+                                                                                          { _xs( "Icon" ), &g_vars.visuals_player_weapon_icon.value },
+                                                                                  } );
 
                 general->add_object< penumbra::checkbox >( "Skeleton", &g_vars.visuals_player_skeleton.value )->add_object< penumbra::colorpicker >( "Skeleton color", &g_vars.visuals_skeleton_color.value, false );
                 general->add_object< penumbra::checkbox >( "Skeleton history", &g_vars.visuals_player_skeleton_history.value )->add_object< penumbra::colorpicker >( "Skeleton history color", &g_vars.visuals_skeleton_history_color.value, false );
                 general->add_object< penumbra::checkbox >( "LBY timer", &g_vars.visuals_player_lby_timer.value )->add_object< penumbra::colorpicker >( "LBY timer color", &g_vars.visuals_lby_timer_color.value, false );
 
-                general->add_object< penumbra::multi_combobox >( "Flags", std::deque< std::pair< std::string, bool * > >
-                {
-                    { "Armor", &g_vars.visuals_player_flags_armor.value },
-                    { "Distance", &g_vars.visuals_player_distance.value },
-                    { "Money", &g_vars.visuals_player_flags_money.value },
-                    { "Bot", &g_vars.visuals_player_flags_bot.value },
-                    { "Scoped", &g_vars.visuals_player_flags_scoped.value },
-                    { "Lag", &g_vars.visuals_player_flags_lag_amount.value } 
-                } );
+                general->add_object< penumbra::multi_combobox >( "Flags", std::deque< std::pair< std::string, bool * > >{
+                                                                                  { "Armor", &g_vars.visuals_player_flags_armor.value },
+                                                                                  { "Distance", &g_vars.visuals_player_distance.value },
+                                                                                  { "Money", &g_vars.visuals_player_flags_money.value },
+                                                                                  { "Bot", &g_vars.visuals_player_flags_bot.value },
+                                                                                  { "Scoped", &g_vars.visuals_player_flags_scoped.value },
+                                                                                  { "Lag", &g_vars.visuals_player_flags_lag_amount.value } } );
 
                 general->add_object< penumbra::checkbox >( "Glow", &g_vars.visuals_render_player_glow.value )->add_object< penumbra::colorpicker >( "Glow color", &g_vars.visuals_render_player_glow_color.value, true );
                 general->add_object< penumbra::checkbox >( "Offscreen arrows", &g_vars.visuals_other_oof_arrows.value )->add_object< penumbra::colorpicker >( "Offscreen arrows color", &g_vars.visuals_other_oof_arrows_color.value );
@@ -239,7 +262,6 @@ void menu::init( ) {
                 models->add_object< penumbra::checkbox >( "History", &g_vars.visuals_render_player_chams_lag_record.value )->add_object< penumbra::colorpicker >( "Lag record color", &g_vars.visuals_render_player_chams_lag_record_color.value, true );
 
                 models->add_object< penumbra::combobox >( "Material", &g_vars.visuals_render_player_chams_material.value, std::deque< std::string >{ "Flat", "Textured" } );
-  
             }
 
             auto local_model = visuals->add_child( "Local", 1, false );
@@ -262,45 +284,41 @@ void menu::init( ) {
 
             auto world = visuals->add_child( "Material", 1, false );
             {
-
                 world->add_object< penumbra::checkbox >( "Full bright", &g_vars.visuals_other_fullbright.value );
                 world->add_object< penumbra::checkbox >( "World modulation", &g_vars.visuals_other_modulate_world.value )->add_object< penumbra::colorpicker >( "Modulation color", &g_vars.visuals_other_modulate_world_color.value, false );
                 world->add_object< penumbra::checkbox >( "Transparent props", &g_vars.visuals_other_transparent_props.value );
                 world->add_object< penumbra::slider< float > >( "Transparency#t", &g_vars.visuals_other_prop_transparency.value, 0.0f, 100.0f, "%" );
                 world->add_object< penumbra::checkbox >( "Skybox changer", &g_vars.visuals_other_skybox_changer.value );
                 world->add_object< penumbra::combobox >( "Skybox name", &g_vars.visuals_other_skybox_selection.value, std::deque< std::string >{
-                                                                                                                           _xs( "cs_baggage_skybox" ),
-                                                                                                                           _xs( "cs_tibet" ),
-                                                                                                                           _xs( "vietnam" ),
-                                                                                                                           _xs( "sky_lunacy" ),
-                                                                                                                           _xs( "embassy" ),
-                                                                                                                           _xs( "italy" ),
-                                                                                                                           _xs( "jungle" ),
-                                                                                                                           _xs( "office" ),
-                                                                                                                           _xs( "sky_cs15_daylight01_hdr" ),
-                                                                                                                           _xs( "sky_cs15_daylight02_hdr" ),
-                                                                                                                           _xs( "sky_day02_05" ),
-                                                                                                                           _xs( "sky_csgo_cloudy01" ),
-                                                                                                                           _xs( "sky_csgo_night02" ),
-                                                                                                                           _xs( "sky_csgo_night02b" ),
-                                                                                                                   } );
+                                                                                                                              _xs( "cs_baggage_skybox" ),
+                                                                                                                              _xs( "cs_tibet" ),
+                                                                                                                              _xs( "vietnam" ),
+                                                                                                                              _xs( "sky_lunacy" ),
+                                                                                                                              _xs( "embassy" ),
+                                                                                                                              _xs( "italy" ),
+                                                                                                                              _xs( "jungle" ),
+                                                                                                                              _xs( "office" ),
+                                                                                                                              _xs( "sky_cs15_daylight01_hdr" ),
+                                                                                                                              _xs( "sky_cs15_daylight02_hdr" ),
+                                                                                                                              _xs( "sky_day02_05" ),
+                                                                                                                              _xs( "sky_csgo_cloudy01" ),
+                                                                                                                              _xs( "sky_csgo_night02" ),
+                                                                                                                              _xs( "sky_csgo_night02b" ),
+                                                                                                                      } );
             }
 
             auto effects = visuals->add_child( "Effects#visuals", 2, false );
             {
                 effects->add_object< penumbra::slider< float > >( _xs( "Aspect ratio" ), &g_vars.visuals_other_aspect_ratio.value, 0.0f, 100.0f, "%" );
 
-
-                effects->add_object< penumbra::multi_combobox >( "Removals", std::deque< std::pair< std::string, bool * > >
-                {
-                      { _xs( "Viewmodel bob" ), &g_vars.visuals_other_remove_view_bob.value },
-                      { _xs( "Scope overlay" ), &g_vars.visuals_other_remove_scope_overlay.value },
-                      { _xs( "Post processing" ), &g_vars.visuals_other_remove_post_processing.value },
-                      { _xs( "No visual punch" ), &g_vars.visuals_other_remove_aim_punch.value },
-                      { _xs( "No visual kick" ), &g_vars.visuals_other_remove_view_punch.value },
-                      { _xs( "Smoke" ), &g_vars.visuals_other_remove_smoke.value },
-                      { _xs( "Flash overlay" ), &g_vars.visuals_other_remove_flash_overlay.value 
-                } } );
+                effects->add_object< penumbra::multi_combobox >( "Removals", std::deque< std::pair< std::string, bool * > >{
+                                                                                     { _xs( "Viewmodel bob" ), &g_vars.visuals_other_remove_view_bob.value },
+                                                                                     { _xs( "Scope overlay" ), &g_vars.visuals_other_remove_scope_overlay.value },
+                                                                                     { _xs( "Post processing" ), &g_vars.visuals_other_remove_post_processing.value },
+                                                                                     { _xs( "No visual punch" ), &g_vars.visuals_other_remove_aim_punch.value },
+                                                                                     { _xs( "No visual kick" ), &g_vars.visuals_other_remove_view_punch.value },
+                                                                                     { _xs( "Smoke" ), &g_vars.visuals_other_remove_smoke.value },
+                                                                                     { _xs( "Flash overlay" ), &g_vars.visuals_other_remove_flash_overlay.value } } );
 
                 effects->add_object< penumbra::slider< float > >( _xs( "FOV#camera" ), &g_vars.visuals_other_fov.value, 0.0f, 180.f, " FOV" );
                 effects->add_object< penumbra::slider< float > >( _xs( "Scope FOV#camera" ), &g_vars.visuals_other_scoped_fov.value, 0.0f, 180.f, " FOV" );
@@ -360,12 +378,10 @@ void menu::init( ) {
                 misc->add_object< penumbra::checkbox >( "Fast stop", &g_vars.misc_fast_stop.value );
                 misc->add_object< penumbra::checkbox >( "Auto bunny hop", &g_vars.misc_bunny_hop.value );
                 misc->add_object< penumbra::combobox >( "Strafe assist", &g_vars.misc_auto_strafe_type.value, std::deque< std::string >{ "None", "View angles", "Movement keys" } );
-                misc->add_object< penumbra::multi_combobox >( "Events", std::deque< std::pair< std::string, bool * > >
-                {
-                    { "Planted C4", &g_vars.misc_events_log_bomb.value },
-                    { "Player hurt", &g_vars.misc_events_log_damage.value },
-                    { "Purchased weapons", &g_vars.misc_events_log_buy.value } 
-                } );
+                misc->add_object< penumbra::multi_combobox >( "Events", std::deque< std::pair< std::string, bool * > >{
+                                                                                { "Planted C4", &g_vars.misc_events_log_bomb.value },
+                                                                                { "Player hurt", &g_vars.misc_events_log_damage.value },
+                                                                                { "Purchased weapons", &g_vars.misc_events_log_buy.value } } );
 
                 misc->add_object< penumbra::checkbox >( "Hit notify", &g_vars.misc_hitmarker.value );
 
@@ -475,16 +491,27 @@ void menu::render( ) {
     if ( !this->is_initialized )
         return;
 
-    //if ( !penumbra::focus_items.empty( ) ) { /* was making a better focusing system but ehhh. */
-    //    for ( auto& item : penumbra::focus_items ) {
-    //        auto object = reinterpret_cast< penumbra::object * >( item );
+    if ( ::globals::local_player && ::globals::local_weapon ) {
+        int item_definition_index = ::globals::local_weapon->item_definition_index( );
 
-    //        if ( !object ) continue;
+        if ( weapon_list[ this->weapon ] != *this->paint_kit->value )
+            weapon_list[ this->weapon ] = *this->paint_kit->value;
 
-    //        if ( object->opened )
-    //            penumbra::focused = object;
-    //    }
-    //}
+        if ( this->weapon != item_definition_index ) {
+            this->weapon = item_definition_index;
+            *this->paint_kit->value = weapon_list[ this->weapon ];
+        }
+    }
+
+    for ( int i = 0; i < weapons::knife_shadow_daggers; i++ )
+        g_skin_vars[ i ][ "paintkit" ].t = config::config_data_type::data_int;
+
+    g_skin_vars[ 0 ][ "knife_override_model" ].t = config::config_data_type::data_bool;
+    g_skin_vars[ 0 ][ "knife_model" ].t = config::config_data_type::data_int;
+
+    g_skin_vars[ 0 ][ "paintkit" ].i = weapon_list[ this->weapon ];
+    g_skin_vars[ 0 ][ "knife_override_model" ].b = knife_override;
+    g_skin_vars[ 0 ][ "knife_model" ].i = knife_model;
 
     this->handle_hotkeys( );
 

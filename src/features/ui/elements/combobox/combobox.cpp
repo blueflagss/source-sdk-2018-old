@@ -69,24 +69,28 @@ void penumbra::combobox::paint( )
         const auto max_height = dropdown_height > this->offset ? dropdown_height : this->offset;
         const auto percentage_scrolled = selection_scroll_lerp.value / ( max_height - this->dropdown_height );
 
-        for ( int i = { }; i < this->items.size( ); i++ ) {
-            std::vector< std::string > id_split = utils::split_str( this->items[ i ], '#' );
-            std::string id = "";
+        for ( int i = 0; i < this->items.size( ); i++ ) {
+            const auto item_vertical_position = dropdown_position.y + ( this->size.y * i ) - selection_scroll_lerp.value;
 
-            if ( id_split.size( ) == 2 )
-                id = id_split.at( 1 );
+            if ( item_vertical_position >= ( dropdown_position.y - 10 ) && item_vertical_position <= ( dropdown_position.y + this->dropdown_height ) ) {
+                std::vector< std::string > id_split = utils::split_str( this->items[ i ], '#' );
+                std::string id = "";
 
-            const auto item_name = id_split.at( 0 );
-            const auto selection_animation = animations::get( HASH_CT( "combobox__active__" ) + HASH( ( this->name + this->element_id + id ).c_str( ) ) + HASH( std::to_string( i ).c_str( ) ), 0.0f );
-            auto hovered_over_item = input::in_region( dropdown_position + glm::vec2{ 0.f, ( this->size.y * i ) - selection_scroll_lerp.value }, this->size );
+                if ( id_split.size( ) == 2 )
+                    id = id_split.at( 1 );
 
-            auto per_item_dimensions = render::get_text_size( fonts::visuals_segoe_ui, this->items[ i ] );
-            auto item_position = glm::vec2{ dropdown_position.x + 8.0f, dropdown_position.y + ( this->size.y * i ) - selection_scroll_lerp.value - 1.5f + ( this->size.y / 2 ) - per_item_dimensions.y / 2 };
-            bool item_selected = hovered_over_item || *this->value == i;
+                const auto item_name = id_split.at( 0 );
+                const auto selection_animation = animations::get( HASH_CT( "combobox__active__" ) + HASH( ( this->name + this->element_id + id ).c_str( ) ) + HASH( std::to_string( i ).c_str( ) ), 0.0f );
+                auto hovered_over_item = input::in_region( dropdown_position + glm::vec2{ 0.f, ( this->size.y * i ) - selection_scroll_lerp.value }, this->size );
 
-            animations::lerp_to( HASH_CT( "combobox__active__" ) + HASH( ( this->name + this->element_id + id ).c_str( ) ) + HASH( std::to_string( i ).c_str( ) ), item_selected, 0.14f );
+                auto per_item_dimensions = render::get_text_size( fonts::visuals_segoe_ui, this->items[ i ] );
+                auto item_position = glm::vec2{ dropdown_position.x + 8.0f, dropdown_position.y + ( this->size.y * i ) - selection_scroll_lerp.value - 1.5f + ( this->size.y / 2 ) - per_item_dimensions.y / 2 };
+                bool item_selected = hovered_over_item || *this->value == i;
 
-            render::string( fonts::visuals_segoe_ui, item_position, color{ 200, 200, 200, 255 * animation_active.value * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ globals::theme_accent, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, selection_animation.value ), this->items[ i ] );
+                animations::lerp_to( HASH_CT( "combobox__active__" ) + HASH( ( this->name + this->element_id + id ).c_str( ) ) + HASH( std::to_string( i ).c_str( ) ), item_selected, 0.14f );
+
+                render::string( fonts::visuals_segoe_ui, item_position, color{ 200, 200, 200, 255 * animation_active.value * globals::fade_opacity[ this->get_main_window( ) ] }.lerp( color{ globals::theme_accent, 255 * globals::fade_opacity[ this->get_main_window( ) ] }, selection_animation.value ), this->items[ i ] );
+            }
         }
   
         render::filled_rect( dropdown_position.x + this->size.x - 3, dropdown_position.y + percentage_scrolled * this->dropdown_height - scrollbar_area, 3, scrollbar_area, globals::theme_accent );    
@@ -130,7 +134,8 @@ void penumbra::combobox::input( )
 
     if ( get_focused< object >( ) == this && !this->items.empty( ) ) {
         for ( int i = { }; i < this->items.size( ); i++ ) {
-            auto hovered_over_item = input::in_region( dropdown_position + glm::vec2{ 0.f, ( this->size.y * i ) - selection_scroll_lerp.value }, this->size );
+            auto item_position = dropdown_position + glm::vec2{ 0.f, ( this->size.y * i ) - selection_scroll_lerp.value };
+            auto hovered_over_item = input::in_region( item_position, this->size );
 
             if ( this->hovered_in_dropdown ) {
                 globals::should_scroll_window = false;
@@ -146,7 +151,7 @@ void penumbra::combobox::input( )
             int max_height = dropdown_height > this->offset ? dropdown_height : this->offset;
 
             if ( this->hovered_in_dropdown && globals::scroll_delta != 0.0 ) {
-                this->scroll_offset += globals::scroll_delta * 20.f;
+                this->scroll_offset += globals::scroll_delta * 25.f;
             }
 
             this->scroll_offset = std::clamp< float >( this->scroll_offset, 0, max_height - dropdown_height );

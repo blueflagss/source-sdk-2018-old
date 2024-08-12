@@ -87,6 +87,7 @@ public:
     float weapon_cycle;
     float weapon_sequence;
     float weapon_animtime;
+    int weapon_model_index = 0;
     int sequence = 0;
     int animation_parity = 0;
     float ideal_inaccuracy = 0.f;

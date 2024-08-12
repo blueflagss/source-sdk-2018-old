@@ -19,7 +19,6 @@ public:
     void hide_ui( );
     void handle_hotkeys( );
     void on_screen_size_updated( int width, int height );
-    void init_skins( );
     void init( );
     void refresh_config_items( );
     void display_watermark( );
@@ -28,8 +27,17 @@ public:
 public:
     std::shared_ptr< penumbra::window > main_window = nullptr;
     std::shared_ptr< penumbra::window > skinchanger = nullptr;
+    std::shared_ptr< penumbra::combobox > paint_kit = nullptr;
 
     bool is_initialized = false;
+    bool init_skins = false;
+
+    int knife_model = 0;
+    bool knife_override = false;
+    int weapon = 0;
+
+    std::unordered_map< int , int > paintkit_item;
+
     bool is_opened( );
 
     std::shared_ptr< penumbra::combobox > config_list = nullptr; // g_vars.exploits_double_tap_limit.value

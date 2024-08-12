@@ -169,7 +169,6 @@ public:
     DATAMAP( abs_rotation, vector_3d, this->get_pred_desc_map( ), "m_angAbsRotation" );
     DATAMAP( duck_amount, float, this->get_pred_desc_map( ), "m_flDuckAmount" );
     OFFSET( think_tick, int, 0xF8 );
-    NETVAR( model_index, int, "DT_BaseEntity", "m_nModelIndex" );
     NETVAR( hitbox_set, int, "DT_BaseAnimatingOverlay", "m_nHitboxSet" );
     NETVAR( simtime, float, "DT_BaseEntity", "m_flSimulationTime" );
     NETVAR( animtime, float, "DT_BaseEntity", "m_flAnimTime" );
@@ -178,7 +177,7 @@ public:
     NETVAR( cycle, float, "DT_BaseAnimating", "m_flCycle" );
     NETVAR( model_scale, float, "DT_BaseAnimating", "m_flModelScale" );
     OFFSET( old_origin, vector_3d, 0x3A8 );
-
+    
     bool is_player( ) {
         return utils::get_method< bool( __thiscall * )( void * ) >( this, 152 )( this );
     }
@@ -211,7 +210,7 @@ public:
     void *get_predicted_frame( int framenumber );
 };
 
-class c_view_model : public c_base_entity {
+class c_base_view_model : public c_base_entity {
 public:
     NETVAR( model_index, int, "DT_BaseViewModel", "m_nModelIndex" );
     NETVAR( sequence, int, "DT_BaseViewModel", "m_nSequence" );

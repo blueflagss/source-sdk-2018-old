@@ -59,11 +59,13 @@ void __fastcall hooks::physics_simulate::hook( REGISTERS ) {
     original.fastcall< void >( REGISTERS_OUT );
 
     if ( player == globals::local_player && player->viewmodel_handle( ) != 0xFFFFFFF ) {
-        const auto viewmodel = g_interfaces.entity_list->get_client_entity_from_handle< c_view_model * >( player->viewmodel_handle( ) );
+        const auto viewmodel = player->get_view_model( );
 
         if ( viewmodel ) {
             g_prediction_context.weapon_cycle = viewmodel->cycle( );
-            g_prediction_context.weapon_sequence = viewmodel->sequence( );
+            g_prediction_context.weapon_animtime = viewmodel->animtime( );
+            g_prediction_context.weapon_model_index = viewmodel->model_index( );
+            //g_prediction_context.weapon_sequence = viewmodel->sequence( );
         }
     }
 }
