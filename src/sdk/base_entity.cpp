@@ -32,6 +32,22 @@ c_base_entity *c_base_entity::get_move_parent( ) {
     return g_interfaces.entity_list->get_client_entity_from_handle< c_base_entity * >( *reinterpret_cast< uint32_t * >( reinterpret_cast< uintptr_t >( this ) + offset ) );
 }
 
+bool c_base_entity::update_dispatch_layer( c_animation_layer *layer, c_studio_hdr *weapon_studio_hdr, int sequence ) {
+    return utils::get_method < bool( __thiscall * )( void *, c_animation_layer *, c_studio_hdr *, int ) >( this, 241 )( this, layer, weapon_studio_hdr, sequence );
+}
+
+void c_base_entity::calculate_ik_locks( float time ) {
+    using CalculateIKLocks_t = void( __thiscall * )( decltype( this ), float );
+
+#if 1
+    static auto CalculateIKLocks = signature::find( _xs( "client.dll" ), _xs( "55 8B EC 83 E4 F8 81 ? ? ? ? ? 56 57 8B F9 89 7C 24 18" ) ).get< CalculateIKLocks_t >( );
+#else
+    static auto CalculateIKLocks = signature::find( _xs( "server.dll" ), _xs( "55 8B EC 83 E4 F8 81 ? ? ? ? ? 56 57 8B F9 89 7C 24 18" ) ).get< CalculateIKLocks_t >( );
+#endif
+
+    CalculateIKLocks( this, time );
+}
+
 bool c_base_entity::get_hitbox_position( const int hit_group, vector_3d &position ) {
     auto model = this->get_model( );
 
@@ -96,7 +112,7 @@ void c_base_entity::set_abs_angles( const vector_3d &angles ) {
 
 void c_base_entity::set_collision_bounds( const vector_3d &mins, const vector_3d &maxs ) {
     static auto set_collision_bound = signature::find( "client.dll", "53 8B DC 83 EC 08 83 E4 F8 83 C4 04 55 8B 6B 04 89 6C 24 04 8B EC 83 EC 10 56 57 8B 7B" ).get< void( __thiscall * )( void *, const vector_3d &, const vector_3d & ) >( );
-    
+
     return set_collision_bound( this->collideable( ), mins, maxs );
 }
 

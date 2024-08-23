@@ -96,6 +96,20 @@ private:
     mstudioseqdesc_t( const mstudioseqdesc_t &vOther );
 };
 
+struct c_animation_layer {
+    PAD( 16 );
+    int priority;
+    int order;
+    int sequence;
+    float previous_cycle;
+    float weight;
+    float weight_delta_rate;
+    float playback_rate;
+    float cycle;
+    void *owner;
+    PAD( 4 );
+};
+
 enum class move_types : uint8_t {
     none = 0,
     isometric,
@@ -116,6 +130,8 @@ enum invalidate_physics_bits : int {
     angles_changed = 0x2,
     velocity_changed = 0x4,
     animation_changed = 0x8,
+    bounds_changed = 0x10,
+    sequence_changed = 0x20
 };
 
 class var_map_entry_t {
@@ -156,12 +172,13 @@ enum csgo_hitbox : int {
     hitbox_max
 };
 
-inline static const csgo_hitbox player_hitboxes[] = {
+inline static const csgo_hitbox player_hitboxes[ ] = {
         hitbox_head, hitbox_neck, hitbox_pelvis, hitbox_body,
         hitbox_thorax, hitbox_chest, hitbox_upper_chest, hitbox_r_thigh,
         hitbox_l_thigh, hitbox_r_calf, hitbox_l_calf, hitbox_r_foot,
         hitbox_l_foot, hitbox_r_hand, hitbox_l_hand, hitbox_r_upper_arm,
-        hitbox_r_forearm, hitbox_l_upper_arm, hitbox_l_forearm };
+        hitbox_r_forearm, hitbox_l_upper_arm, hitbox_l_forearm 
+};
 
 class c_base_entity : public c_base_player {
 public:
@@ -207,6 +224,8 @@ public:
     vector_3d get_bone_position( const int bone, matrix_3x4 *bone_matrix );
     c_base_entity *get_root_move_parent( );
     c_base_entity *get_move_parent( );
+    bool update_dispatch_layer( c_animation_layer *layer, c_studio_hdr *weapon_studio_hdr, int sequence );
+    void calculate_ik_locks( float time );
     void *get_predicted_frame( int framenumber );
 };
 

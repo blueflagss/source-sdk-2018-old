@@ -54,6 +54,6 @@ void hooks::cvar_get_bool::init( ) {
     net_showfragments::original = safetyhook::create_inline( utils::get_method< void * >( g_interfaces.cvar->find_var( HASH_CT( "net_showfragments" ) ), 13 ),
                                                              net_showfragments::hook );
 
-    //net_earliertempents::original = safetyhook::create_inline( utils::get_method< void * >( g_interfaces.cvar->find_var( HASH_CT( "net_earliertempents" ) ), 12 ),
-    //                                                           net_earliertempents::hook );
+    net_earliertempents::original = safetyhook::create_inline( utils::get_method< void * >( g_interfaces.cvar->find_var( HASH_CT( "net_earliertempents" ) ), 12 ),
+                                                               net_earliertempents::hook );
 }

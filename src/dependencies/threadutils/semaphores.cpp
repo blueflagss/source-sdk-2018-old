@@ -70,7 +70,7 @@ unsigned long Semaphore::Count()
 #else
 
 Semaphore::Semaphore(bool shared) {
-	//Unnamed shared semaphores do not work on windows
+	// Unnamed shared semaphores do not work on windows
 	if (shared)
 #if defined(__cpp_exceptions) || defined(_CPPUNWIND)
 		throw;

@@ -1,5 +1,7 @@
 #include "visuals.hpp"
 #include <features/features.hpp>
+#include <features/grenade/grenade_prediction.hpp>
+#include <features/grenade/grenade_warning.hpp>
 
 void visuals::render( ) {
     if ( !g_interfaces.engine_client->is_in_game( ) || !g_interfaces.engine_client->is_connected( ) )
@@ -48,35 +50,55 @@ void visuals::render( ) {
 
                 render_weapon( weapon );
             } break;
+            case HASH_CT( "CInferno" ):
+            case HASH_CT( "CMolotovProjectile" ):
+            case HASH_CT( "CSensorGrenadeProjectile" ):
+            case HASH_CT( "CBaseCSGrenadeProjectile" ):
+            case HASH_CT( "CDecoyProjectile" ):
+            case HASH_CT( "CSmokeGrenadeProjectile" ): {
+                const auto weapon = entity->get< c_base_cs_grenade * >( );
+
+                if ( !weapon )
+                    break;
+
+                render_grenade( weapon );
+            } break;
         }
     }
 
-    render_scope_lines( );
-    show_manual_indicators( );
+    render_grenade_trail( );
+    scope_lines( );
+    manual_arrows( );
     hitmarker( );
     indicators( );
-    penetration_crosshair( );
+    autowall_crosshair( );
 }
 
-void visuals::render_scope_lines( ) {
+void visuals::render_grenade_trail( ) {
+    if ( !globals::local_player || !globals::local_weapon || !globals::local_weapon_data )
+        return;
+
+    g_grenade_prediction.render_path( );
+}
+
+void visuals::scope_lines( ) {
     if ( !g_vars.visuals_other_remove_scope_overlay.value )
         return;
 
-    if ( !globals::local_player->scoped( ) )
+    if ( !globals::local_player || !globals::local_player->scoped( ) )
         return;
 
     vector_4d area = {
             globals::ui::screen_size.x,
             globals::ui::screen_size.y,
             globals::ui::screen_size.x / 2.0f,
-            globals::ui::screen_size.y / 2.0f
-    };
+            globals::ui::screen_size.y / 2.0f };
 
     render::filled_rect( area.z, 0, 1.0f, area.y, color::black( ) );
     render::filled_rect( 0, area.w, area.x, 1.0f, color::black( ) );
 }
 
-void visuals::penetration_crosshair( ) {
+void visuals::autowall_crosshair( ) {
     if ( !g_vars.visuals_other_penetration_crosshair.value )
         return;
 
@@ -228,7 +250,7 @@ void visuals::render_weapon( c_cs_weapon_base *weapon ) {
     }
 }
 
-void visuals::show_manual_indicators( ) {
+void visuals::manual_arrows( ) {
     if ( g_vars.exploits_antiaim_dir_type.value != 2 || !g_vars.exploits_antiaim_manual_show_indicators.value )
         return;
 
@@ -247,8 +269,7 @@ void visuals::show_manual_indicators( ) {
         std::array< vector_2d, 3 > points = {
                 vector_2d( position.x + 7.0f + arrow_size, position.y + 7.0f + arrow_size ),
                 vector_2d( position.x - 7.0f - arrow_size, position.y ),
-                vector_2d( position.x + 7.0f + arrow_size, position.y - 7.0f - arrow_size )
-        };
+                vector_2d( position.x + 7.0f + arrow_size, position.y - 7.0f - arrow_size ) };
 
         rotate_point( { position.x, position.y }, points[ 0 ], rotation );
         rotate_point( { position.x, position.y }, points[ 1 ], rotation );
@@ -260,9 +281,9 @@ void visuals::show_manual_indicators( ) {
             render::triangle( points, color{ g_vars.exploits_antiaim_manual_indicators_color.value, 255 } );
     };
 
-    auto position_1 = vector_2d{ ( ( globals::ui::screen_size.x / 2 ) - arrow_size * 2.0f ) + 21.0f, 30.0f + ( globals::ui::screen_size.y / 2 ) + arrow_size * 4.0f };
-    auto position_2 = vector_2d{ ( ( globals::ui::screen_size.x / 2 ) - arrow_size * 10.0f ) + 21.0f, 30.0f + ( globals::ui::screen_size.y / 2 ) - arrow_size * 3.0f };
-    auto position_3 = vector_2d{ ( ( globals::ui::screen_size.x / 2 ) + arrow_size * 6.0f ) + 21.0f, 30.0f + ( globals::ui::screen_size.y / 2 ) - arrow_size * 3.0f };
+    auto position_1 = vector_2d{ ( ( globals::ui::screen_size.x / 2 ) - arrow_size * 2.0f ) + 17.0f, 24.0f + ( globals::ui::screen_size.y / 2 ) + arrow_size * 4.0f };
+    auto position_2 = vector_2d{ ( ( globals::ui::screen_size.x / 2 ) - arrow_size * 10.0f ) + 17.0f, 24.0f + ( globals::ui::screen_size.y / 2 ) - arrow_size * 3.0f };
+    auto position_3 = vector_2d{ ( ( globals::ui::screen_size.x / 2 ) + arrow_size * 6.0f ) + 17.0f, 24.0f + ( globals::ui::screen_size.y / 2 ) - arrow_size * 3.0f };
 
     switch ( g_antiaim.manual_dir ) {
         case manual_direction::left: {
@@ -275,6 +296,48 @@ void visuals::show_manual_indicators( ) {
             render_arrow( position_1, -90.0f );
         } break;
     }
+}
+
+void visuals::render_grenade( c_base_cs_grenade *grenade ) {
+    auto world_space_center = grenade->world_space_center( );
+
+    vector_2d space_screen;
+
+    if ( !render::world_to_screen( world_space_center, space_screen ) )
+        return;
+
+    auto index = weapons::molotov;
+
+    switch ( HASH( grenade->get_client_class( )->network_name ) ) {
+        case HASH_CT( "CMolotovProjectile" ): {
+            index = weapons::molotov;
+        } break;
+        case HASH_CT( "CInferno" ): {
+            index = weapons::firebomb;
+        } break;
+        case HASH_CT( "CSmokeGrenadeProjectile" ): {
+            index = weapons::smoke;
+        } break;
+        default: {
+            index = weapons::hegrenade;
+        } break;
+    }
+
+    auto thrower_handle = grenade->thrower( );
+    auto thrower = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_player * >( thrower_handle );
+
+    if ( !thrower )
+        return;
+
+    predicted_grenades[ thrower_handle ] = grenade_warning( grenade, grenade->velocity( ), index );
+    predicted_grenades[ thrower_handle ].simulate_path( );
+
+    auto icon = csgo_hud_icons[ index ];
+    auto text_dimensions = render::get_text_size( fonts::csgo_icons, icon );
+
+    render::string( fonts::csgo_icons, space_screen.x - text_dimensions.x / 2, space_screen.y - text_dimensions.y / 2, color( 255, 255, 255, 200 ), icon, false, false );
+
+    predicted_grenades[ thrower_handle ].render_path( );
 }
 
 void visuals::render_player( c_cs_player *player ) {
@@ -441,7 +504,6 @@ void visuals::render_player( c_cs_player *player ) {
 
 void visuals::world_modulation( ) {
     static auto load_named_sky = signature::find( "engine.dll", _xs( "55 8B EC 81 ? ? ? ? ? 56 57 8B F9 C7" ) ).get< bool( __thiscall * )( const char * ) >( );
-
     static auto last_world_color = g_vars.visuals_other_modulate_world_color.value;
     static auto last_alive = false;
     static auto last_skybox = g_vars.visuals_other_skybox_selection.value;
@@ -454,10 +516,10 @@ void visuals::world_modulation( ) {
         last_fullbright_enable = g_vars.visuals_other_fullbright.value;
     }
 
-    if ( last_alive != globals::local_player->alive( ) || last_world_color.r != g_vars.visuals_other_modulate_world_color.value.r || last_world_color.g != g_vars.visuals_other_modulate_world_color.value.g || last_world_color.b != g_vars.visuals_other_modulate_world_color.value.b || last_skybox != g_vars.visuals_other_skybox_selection.value || last_modulate_world_enable != g_vars.visuals_other_modulate_world.value ) {
+    if ( last_alive != globals::local_player->alive( ) || last_modulate_world_enable != g_vars.visuals_other_modulate_world.value ) {
         load_named_sky( globals::sky_names[ g_vars.visuals_other_skybox_selection.value ] );
 
-        if ( g_vars.visuals_other_modulate_world.value || last_world_color != g_vars.visuals_other_modulate_world.value ) {
+        if ( g_vars.visuals_other_modulate_world.value || last_world_color != g_vars.visuals_other_modulate_world_color.value ) {
             for ( uint16_t h = g_interfaces.material_system->first_material( ); h != g_interfaces.material_system->invalid_material( ); h = g_interfaces.material_system->next_material( h ) ) {
                 auto mat = g_interfaces.material_system->get_material( h );
 
@@ -515,10 +577,8 @@ void visuals::render_offscreen( c_cs_player *player ) const {
 
         if ( target ) {
             local_player = target;
-
             local_origin = target->origin( ) + target->view_offset( );
         }
-
     }
 
     math::angle_vectors( globals::view_angles, &forward );
@@ -547,8 +607,7 @@ void visuals::render_offscreen( c_cs_player *player ) const {
         std::array< vector_2d, 3 > points = {
                 vector_2d( position.x + 7.0f + size, position.y + 7.0f + size ),
                 vector_2d( position.x - 7.0f - size, position.y ),
-                vector_2d( position.x + 7.0f + size, position.y - 7.0f - size )
-        };
+                vector_2d( position.x + 7.0f + size, position.y - 7.0f - size ) };
 
         rotate_point( { position.x, position.y }, points[ 0 ], rotation );
         rotate_point( { position.x, position.y }, points[ 1 ], rotation );

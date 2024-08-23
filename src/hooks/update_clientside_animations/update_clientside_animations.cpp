@@ -6,14 +6,12 @@ void __fastcall hooks::update_clientside_animation::hook( REGISTERS ) {
 
     if ( !player || player != globals::local_player )
         return original.fastcall< void >( REGISTERS_OUT );
-    original.fastcall< void >( REGISTERS_OUT );
 
-    std::memcpy( globals::local_player->pose_parameters( ).data( ), g_animations.pose_parameters.data( ), g_animations.pose_parameters.size( ) );
-    std::memcpy( globals::local_player->anim_overlays( ), g_animations.animation_layers.data( ), g_animations.animation_layers.size( ) );
+    original.fastcall< void >( REGISTERS_OUT );
 }
 
 void __stdcall hooks::update_clientside_animations::hook( ) {
-    return original.stdcall< void >( );
+    //return original.stdcall< void >( );
 }
 
 void hooks::update_clientside_animation::init( ) {

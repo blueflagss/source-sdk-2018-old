@@ -6,6 +6,18 @@ void math::matrix_get_column( const matrix_3x4 &in, int column, vector_3d &out )
     out.z = in[ 2 ][ column ];
 }
 
+void math::vector_scale( const float *in, float scale, float *out ) {
+    out[ 0 ] = in[ 0 ] * scale;
+    out[ 1 ] = in[ 1 ] * scale;
+    out[ 2 ] = in[ 2 ] * scale;
+}
+
+void math::matrix_set_column( const vector_3d &in, int column, matrix_3x4 &out ) {
+    out[ 0 ][ column ] = in.x;
+    out[ 1 ][ column ] = in.y;
+    out[ 2 ][ column ] = in.z;
+}
+
 void math::matrix_copy( const matrix_3x4 &in, matrix_3x4 &out ) {
     std::memcpy( out.base( ), in.base( ), sizeof( matrix_3x4 ) );
 }
@@ -24,6 +36,11 @@ vector_3d math::vector_rotate( const vector_3d &in1, const vector_3d &in2 ) {
     vector_rotate( in1, matrix, out );
 
     return out;
+}
+
+void math::angle_matrix( const vector_3d &ang, const vector_3d &pos, matrix_3x4 &out ) {
+    angle_matrix( ang, out );
+    out.set_origin( pos );
 }
 
 bool math::intersect_ray_with_box( const vector_3d &rayStart, const vector_3d &rayDelta, const vector_3d &boxMins, const vector_3d &boxMaxs, float epsilon, c_game_trace *pTrace, float *pFractionLeftSolid ) {
@@ -149,6 +166,49 @@ float math::segment_to_segment( const vector_3d &s1, const vector_3d &s2, const 
     n.f[ 0 ] = glm::dot( dp, dp );
     const auto calc = sqrt_ps( n.v );
     return reinterpret_cast< const m128 * >( &calc )->f[ 0 ];
+}
+
+void math::quaternion_matrix( const vector_4d &q, const vector_3d &pos, matrix_3x4 &matrix ) {
+    quaternion_matrix( q, matrix );
+
+    matrix[ 0 ][ 3 ] = pos.x;
+    matrix[ 1 ][ 3 ] = pos.y;
+    matrix[ 2 ][ 3 ] = pos.z;
+}
+
+void math::quaternion_matrix( const vector_4d &q, const vector_3d &pos, const vector_3d &vScale, matrix_3x4 &mat ) {
+    quaternion_matrix( q, mat );
+
+    mat[ 0 ][ 0 ] *= vScale.x;
+    mat[ 1 ][ 0 ] *= vScale.x;
+    mat[ 2 ][ 0 ] *= vScale.x;
+    mat[ 0 ][ 1 ] *= vScale.y;
+    mat[ 1 ][ 1 ] *= vScale.y;
+    mat[ 2 ][ 1 ] *= vScale.y;
+    mat[ 0 ][ 2 ] *= vScale.z;
+    mat[ 1 ][ 2 ] *= vScale.z;
+    mat[ 2 ][ 2 ] *= vScale.z;
+    mat[ 0 ][ 3 ] = pos.x;
+    mat[ 1 ][ 3 ] = pos.y;
+    mat[ 2 ][ 3 ] = pos.z;
+}
+
+void math::quaternion_matrix( const vector_4d &q, matrix_3x4 &matrix ) {
+    matrix[ 0 ][ 0 ] = 1.0 - 2.0 * q.y * q.y - 2.0 * q.z * q.z;
+    matrix[ 1 ][ 0 ] = 2.0 * q.x * q.y + 2.0 * q.w * q.z;
+    matrix[ 2 ][ 0 ] = 2.0 * q.x * q.z - 2.0 * q.w * q.y;
+
+    matrix[ 0 ][ 1 ] = 2.0f * q.x * q.y - 2.0f * q.w * q.z;
+    matrix[ 1 ][ 1 ] = 1.0f - 2.0f * q.x * q.x - 2.0f * q.z * q.z;
+    matrix[ 2 ][ 1 ] = 2.0f * q.y * q.z + 2.0f * q.w * q.x;
+
+    matrix[ 0 ][ 2 ] = 2.0f * q.x * q.z + 2.0f * q.w * q.y;
+    matrix[ 1 ][ 2 ] = 2.0f * q.y * q.z - 2.0f * q.w * q.x;
+    matrix[ 2 ][ 2 ] = 1.0f - 2.0f * q.x * q.x - 2.0f * q.y * q.y;
+
+    matrix[ 0 ][ 3 ] = 0.0f;
+    matrix[ 1 ][ 3 ] = 0.0f;
+    matrix[ 2 ][ 3 ] = 0.0f;
 }
 
 bool math::intersect( vector_3d &start, vector_3d &end, vector_3d &a, vector_3d &b, float radius ) {
@@ -300,11 +360,11 @@ float math::distance_to_ray( const vector_3d &pos, const vector_3d &ray_start, c
     float range;
 
     if ( range_along < 0.0f )
-        range = -( to ).length( );
+        range = -glm::length( to );
     else if ( range_along > length )
-        range = -( pos - ray_end ).length( );
+        range = -glm::length( pos - ray_end );
     else
-        range = ( pos - ( dir * range_along + ray_start ) ).length( );
+        range = glm::length( pos - ( dir * range_along + ray_start ) );
 
     return range;
 }
@@ -480,12 +540,7 @@ void math::angle_normalize( float &angle ) {
 }
 
 vector_3d math::normalize_angle( vector_3d angle ) {
-    auto l = glm::length( angle );
-
-    if ( l != 0.0f )
-        angle /= l;
-    else
-        angle.x = angle.y = angle.z = 0.0f;
+    angle /= ( glm::length( angle ) + std::numeric_limits< float >::epsilon( ) );
 
     return angle;
 }

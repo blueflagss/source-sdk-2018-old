@@ -78,12 +78,18 @@ namespace math
     float calculate_fov( const vector_3d &start, const vector_3d &destination );
     void matrix_position( const matrix_3x4 &matrix, vector_3d &position );
     void matrix_get_column( const matrix_3x4 &in, int column, vector_3d &out );
+    void vector_scale( const float *in, float scale, float *out );
+    void matrix_set_column( const vector_3d &in, int column, matrix_3x4 &out );
     void matrix_copy( const matrix_3x4 &in, matrix_3x4 &out );
     void vector_rotate( const vector_3d &in1, matrix_3x4 in2, vector_3d &out );
     vector_3d vector_rotate( const vector_3d &in1, const vector_3d &in2 );
+    void angle_matrix( const vector_3d &ang, const vector_3d &pos, matrix_3x4 &out );
     bool intersect_ray_with_box( const vector_3d &rayStart, const vector_3d &rayDelta, const vector_3d &boxMins, const vector_3d &boxMaxs, float epsilon, c_game_trace *pTrace, float *pFractionLeftSolid );
     bool intersect_bb( vector_3d &start, vector_3d &delta, vector_3d &min, vector_3d &max );
     float segment_to_segment( const vector_3d &s1, const vector_3d &s2, const vector_3d &k1, const vector_3d &k2 );
+    void quaternion_matrix( const vector_4d &q, const vector_3d &pos, matrix_3x4 &matrix );
+    void quaternion_matrix( const vector_4d &q, const vector_3d &pos, const vector_3d &vScale, matrix_3x4 &mat );
+    void quaternion_matrix( const vector_4d &q, matrix_3x4 &matrix );
     bool intersect( vector_3d &start, vector_3d &end, vector_3d &a, vector_3d &b, float radius );
     void vector_irotate( const vector_3d &in1, const matrix_3x4 &in2, vector_3d &out );
     void concat_transforms( const matrix_3x4 &in1, const matrix_3x4 &in2, matrix_3x4 &out );

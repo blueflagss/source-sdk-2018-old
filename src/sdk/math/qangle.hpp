@@ -3,16 +3,16 @@
 class qangle {
 public:
     qangle( void ) {
-        Init( );
+        init( );
     }
     qangle( float X, float Y, float Z ) {
-        Init( X, Y, Z );
+        init( X, Y, Z );
     }
     qangle( const float *clr ) {
-        Init( clr[ 0 ], clr[ 1 ], clr[ 2 ] );
+        init( clr[ 0 ], clr[ 1 ], clr[ 2 ] );
     }
 
-    void Init( float ix = 0.0f, float iy = 0.0f, float iz = 0.0f ) {
+    void init( float ix = 0.0f, float iy = 0.0f, float iz = 0.0f ) {
         pitch = ix;
         yaw = iy;
         roll = iz;

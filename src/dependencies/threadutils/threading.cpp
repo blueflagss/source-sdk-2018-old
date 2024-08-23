@@ -1,5 +1,6 @@
 #include "threading.h"
 #include <thread>
+#include <utils/threading/dispatch.hpp>
 
 static LList< struct Job > jobs;
 
@@ -61,9 +62,21 @@ static void InitThread( struct JobThread *thread, int id ) {
     *( thread_t * ) thread->handle = handle;
 }
 
+size_t calculate_used_threads( ) {
+    static constexpr auto max_threads = 32;
+
+    // really shitty hack, but works good so we don't steal threads from csgo
+
+    auto highest_index = 1;
+    while ( highest_index < 128 && g_addresses.tier0_allocated_thread_ids.get< uint8_t * >( )[ highest_index ] )
+        highest_index++;
+
+    return std::clamp( max_threads - highest_index, 0, max_threads );
+}
+
 void Threading::InitThreads( ) {
     //MTR_META_THREAD_NAME("main thread");
-    numThreads = std::thread::hardware_concurrency( );
+    numThreads = min( std::thread::hardware_concurrency( ) - 1, calculate_used_threads( ) );
     //numThreads = NUM_THREADS;
     if ( numThreads < 2 )
         numThreads = 2;

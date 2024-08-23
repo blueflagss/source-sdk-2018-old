@@ -37,3 +37,4 @@ class Semaphore
 };
 
 #endif
+

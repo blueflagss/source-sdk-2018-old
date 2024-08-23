@@ -61,10 +61,12 @@
 #include <hooks/send_datagram/send_datagram.hpp>
 #include <hooks/post_data_update/post_data_update.hpp>
 #include <hooks/sequence_proxy/sequence_proxy.hpp>
+#include <hooks/cl_read_packets/cl_read_packets.hpp>
 
 std::unique_ptr< event_handler > game_event_handler = nullptr;
 
 void hooks::impl::init( ) {
+    cl_read_packets::init( );
     sequence_proxy::init( );
     post_data_update::init( );
     cl_dispatch_sound::init( );
@@ -81,9 +83,9 @@ void hooks::impl::init( ) {
     anim_state::init( );
     in_prediction::init( );
     get_eye_angles::init( );
-    //cl_move::init( );
+    cl_move::init( );
     cl_fire_events::init( );
-    //packet_start::init( );
+    packet_start::init( );
     physics_simulate::init( );
     update_animation_state::init( );
     do_procedural_footplant::init( );
@@ -129,6 +131,7 @@ void hooks::impl::init( ) {
 }
 
 void hooks::impl::remove( ) {
+    cl_read_packets::original = { };
     post_data_update::original = { };
     send_datagram::original = { };
     cl_dispatch_sound::original = { };

@@ -57,7 +57,7 @@ public:
 
 	servernetadr_t() : m_usConnectionPort( 0 ), m_usQueryPort( 0 ), m_unIP( 0 ) {}
 	
-	void	Init( unsigned int ip, uint16 usQueryPort, uint16 usConnectionPort );
+	void	init( unsigned int ip, uint16 usQueryPort, uint16 usConnectionPort );
 	
 	// Access the query port.
 	uint16	GetQueryPort() const;
@@ -93,7 +93,7 @@ private:
 };
 
 
-inline void	servernetadr_t::Init( unsigned int ip, uint16 usQueryPort, uint16 usConnectionPort )
+inline void	servernetadr_t::init( unsigned int ip, uint16 usQueryPort, uint16 usConnectionPort )
 {
 	m_unIP = ip;
 	m_usQueryPort = usQueryPort;

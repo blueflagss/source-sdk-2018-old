@@ -212,31 +212,7 @@ std::vector< int > ragebot::get_hitboxes( ) {
     return hitboxes;
 }
 
-bool ragebot::scan_target( c_cs_player *player, lag_record *record, aim_player &target ) {
-    hitscan_data args;
-
-    args.record = record;
-    args.target = player;
-    args.done = false;
-    args.valid = true;
-    args.points = { };
-    args.hb = hitbox_l_foot;
-
-    should_continue_thread = true;
-    best.target = player;
-    best.record = record;
-
-    Threading::QueueJobRef( hitscan_thread, ( void * ) &args );
-    //run_hitscan( &args );
-    Threading::FinishQueue( true );
-
-    if ( hitscan_info::best.damage >= g_vars.aimbot_min_damage.value )
-        best = hitscan_info::best;
-
-    return true;
-}
-
-void ragebot::hitscan_thread( hitscan_data *data ) {
+void hitscan_thread( hitscan_data *data ) {
     if ( !data || !data->valid || reinterpret_cast< uintptr_t >( data->target ) == 0xCCCCCCCC || data->hb > hitbox_max )
         return;
 
@@ -244,6 +220,7 @@ void ragebot::hitscan_thread( hitscan_data *data ) {
     const auto player = data->target;
 
     if ( !g_ragebot.should_continue_thread ) {
+        data->done = false;
         return;
     }
 
@@ -293,10 +270,12 @@ void ragebot::hitscan_thread( hitscan_data *data ) {
 
         vector_3d center_transformed;
         math::vector_transform( center, record->bones[ bbox->bone ], center_transformed );
+
         data->points.push_back( std::make_pair( center_transformed, false ) );
+        data->hb = hitbox;
 
         if ( ps <= 0.0f )
-            return;
+            continue;
 
         if ( bbox->radius <= 0.0f ) {
             if ( hitbox == csgo_hitbox::hitbox_r_foot || hitbox == csgo_hitbox::hitbox_l_foot ) {
@@ -369,7 +348,6 @@ void ragebot::hitscan_thread( hitscan_data *data ) {
                 hitscan_info::best.damage = bullet_data.out_damage;
                 hitscan_info::best.record = record;
                 hitscan_info::best.target = player;
-                data->done = true;
                 break;
             }
         }
@@ -382,6 +360,27 @@ void ragebot::hitscan_thread( hitscan_data *data ) {
 
     if ( data->done )
         g_ragebot.should_continue_thread = false;
+}
+
+bool ragebot::scan_target( c_cs_player *player, lag_record *record, aim_player &target ) {
+    hitscan_data args;
+
+    args.record = record;
+    args.target = player;
+    args.done = false;
+    args.valid = true;
+    args.points = { };
+    args.hb = hitbox_l_foot;
+
+    should_continue_thread = true;
+    best.target = player;
+    best.record = record;
+
+    Threading::QueueJobRef( hitscan_thread, ( void * ) &args );
+    //run_hitscan( &args );
+    Threading::FinishQueue( true );
+
+    return true;
 }
 
 void ragebot::adjust_speed( c_user_cmd *cmd ) {
@@ -484,44 +483,42 @@ void ragebot::on_create_move( c_user_cmd *cmd ) {
                 if ( target.delay_shot && g_vars.aimbot_delay_shot.value )
                     continue;
 
-                                auto last_record = g_resolver.find_last_record( target.entity );
+                auto ideal = g_resolver.find_ideal_record( target.entity );
 
-                if ( !last_record )
+                if ( !ideal )
                     continue;
 
-                if ( !scan_target( target.entity, last_record, target ) )
-                    continue;
-
-                if ( !scan_target( target.entity, front, target ) )
+                if ( !scan_target( target.entity, ideal, target ) )
                     continue;
             }
         }
     }
 
-    if ( !best.record && !best.target )
+    if ( !hitscan_info::best.record && !hitscan_info::best.target )
         return;
 
-    if ( best.damage > 0.0f ) {
+    if (hitscan_info::best.damage >= g_vars.aimbot_min_damage.value ) {
 
         adjust_speed( cmd );
 
         bool should_target = g_vars.aimbot_automatic_shoot.value;
 
-        const auto backup_origin = best.target->origin( );
-        const auto backup_mins = best.target->collideable( )->mins( );
-        const auto backup_maxs = best.target->collideable( )->maxs( );
-        const auto backup_angles = best.target->get_abs_angles( );
-        const auto backup_bones = best.target->bone_cache( );
+        const auto backup_origin = hitscan_info::best.target->origin( );
+        const auto backup_mins = hitscan_info::best.target->collideable( )->mins( );
+        const auto backup_maxs = hitscan_info::best.target->collideable( )->maxs( );
+        const auto backup_angles = hitscan_info::best.target->get_abs_angles( );
+        const auto backup_bones = hitscan_info::best.target->bone_cache( );
+        //const auto backup_poses = hitscan_info::best.target->pose_parameters( );
 
-        best.record->cache( );
+        hitscan_info::best.record->cache( );
 
-        const auto targetting_record = ( best.target && best.target->alive( ) && best.record );
-        const auto calc_pos = math::vector_angle( best.best_point - globals::local_player->get_shoot_position( ) );
+        const auto targetting_record = ( hitscan_info::best.target && hitscan_info::best.target->alive( ) && hitscan_info::best.record );
+        const auto calc_pos = math::vector_angle( hitscan_info::best.best_point - globals::local_player->get_shoot_position( ) );
 
-        if ( should_target && calculate_hitchance( best.record, best.hitbox, calc_pos, g_vars.aimbot_hit_chance.value ) ) {
-            globals::target_index = best.target->index( );
+        if ( should_target && calculate_hitchance( hitscan_info::best.record, hitscan_info::best.hitbox, calc_pos, g_vars.aimbot_hit_chance.value ) ) {
+            globals::target_index = hitscan_info::best.target->index( );
 
-            cmd->tick_count = game::time_to_ticks( best.record->sim_time + globals::lerp_amount );
+            cmd->tick_count = game::time_to_ticks( hitscan_info::best.record->sim_time + globals::lerp_amount );
             cmd->view_angles = math::clamp_angle( calc_pos - globals::local_player->aim_punch( ) * globals::cvars::weapon_recoil_scale->get_float( ) );
 
             if ( g_vars.aimbot_automatic_shoot.value )
@@ -530,14 +527,15 @@ void ragebot::on_create_move( c_user_cmd *cmd ) {
             if ( !g_vars.aimbot_silent.value )
                 g_interfaces.engine_client->set_view_angles( cmd->view_angles );
 
-            g_shot_manager.on_shot_fire( best.target ? best.target : nullptr, best.target ? best.damage : -1.f, globals::local_weapon->get_weapon_data( )->bullets, best.target ? best.record : nullptr );
+            g_shot_manager.on_shot_fire( hitscan_info::best.target ? hitscan_info::best.target : nullptr, hitscan_info::best.target ? hitscan_info::best.damage : -1.f, globals::local_weapon->get_weapon_data( )->bullets, hitscan_info::best.target ? hitscan_info::best.record : nullptr );
 
             *globals::packet = true;
         }
 
-        best.target->origin( ) = backup_origin;
-        best.target->set_collision_bounds( backup_mins, backup_maxs );
-        best.target->set_abs_angles( backup_angles );
-        best.target->bone_cache( ) = backup_bones;
+        hitscan_info::best.target->origin( ) = backup_origin;
+        hitscan_info::best.target->set_collision_bounds( backup_mins, backup_maxs );
+        hitscan_info::best.target->set_abs_angles( backup_angles );
+        hitscan_info::best.target->bone_cache( ) = backup_bones;
+        //hitscan_info::best.target->pose_parameters( ) = backup_poses;
     }
 }

@@ -6,7 +6,7 @@ void globals::cvars::init( ) {
 
     cl_predict = g_interfaces.cvar->find_var( HASH_CT( "cl_predict" ) );
     cl_extrapolate = g_interfaces.cvar->find_var( HASH_CT( "cl_extrapolate" ) );
-  
+
     cl_extrapolate->remove_callbacks( );
     cl_extrapolate->set_int( 0 );
 
@@ -14,6 +14,8 @@ void globals::cvars::init( ) {
     cam_ideallag->remove_callbacks( );
     cam_ideallag->set_int( 0 );
 
+    molotov_throw_detonate_time = g_interfaces.cvar->find_var( HASH_CT( "molotov_throw_detonate_time" ) );
+    weapon_molotov_maxdetonateslope = g_interfaces.cvar->find_var( HASH_CT( "weapon_molotov_maxdetonateslope" ) );
     cl_cmdrate = g_interfaces.cvar->find_var( HASH_CT( "cl_cmdrate" ) );
     sv_jump_impulse = g_interfaces.cvar->find_var( HASH_CT( "sv_jump_impulse" ) );
     sv_gravity = g_interfaces.cvar->find_var( HASH_CT( "sv_gravity" ) );

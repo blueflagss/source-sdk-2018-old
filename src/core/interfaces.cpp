@@ -6,7 +6,8 @@ void interfaces::init( ) {
     g_addresses.get_shotgun_spread = signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? EB 38 83 EC 08" ) ).add( 0x1 ).rel32( );
     g_addresses.trace_to_studio_csgo_hitgroups_priority = signature::find( _xs( "client.dll" ), _xs( "55 8B EC 83 E4 ? 81 EC ? ? ? ? 8B C2" ) );
     g_addresses.md5_pseudorandom = signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? 25 ? ? ? ? B9" ) ).add( 0x1 ).rel32( );
-    g_addresses.tier0_allocated_thread_ids = address( reinterpret_cast<uint8_t*>(reinterpret_cast< uintptr_t >( GetModuleHandleA( "tier0.dll" ) ) + 0x51AA0) );
+    g_addresses.trace_filter_simple_vmt = signature::find( _xs( "client.dll" ), _xs( "55 8B EC 83 E4 F0 83 EC 7C 56 52" ) ).add( 0x3D ).deref( );
+    g_addresses.tier0_allocated_thread_ids = address( reinterpret_cast< std::uint8_t * >( reinterpret_cast< std::uintptr_t >( GetModuleHandleA( "tier0.dll" ) ) + 0x51AA0 ) );
 
     engine_client = create_interface< c_engine_client * >( "engine.dll", HASH_CT( "VEngineClient014" ) );
     client = create_interface< c_base_client * >( "client.dll", HASH_CT( "VClient018" ) );

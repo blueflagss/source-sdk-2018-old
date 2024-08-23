@@ -32,14 +32,14 @@ struct mstudiobone_t {
 };
 
 struct mstudiobbox_t {
-    int bone;       // 0x0000
-    int group;      // 0x0004
-    vector_3d min;  // 0x0008
-    vector_3d max;  // 0x0014
-    int name_id;    // 0x0020
-    vector_3d angle;// 0x0024
-    float radius;   // 0x0030
-    PAD( 0x10 );    // 0x0034
+    int bone;        
+    int group;       
+    vector_3d min;   
+    vector_3d max;   
+    int name_id;     
+    vector_3d angle; 
+    float radius;    
+    PAD( 0x10 );     
 
     inline const char *get_hitbox_name( ) {
         if ( name_id == 0 )
@@ -48,7 +48,7 @@ struct mstudiobbox_t {
         return reinterpret_cast< const char * >( reinterpret_cast< std::uint8_t * >( const_cast< mstudiobbox_t * >( this ) ) + this->name_id );
     }
 
-    mstudiobbox_t( ) { }
+    mstudiobbox_t( ) {}
 };
 
 struct mstudiohitboxset_t {
@@ -82,7 +82,7 @@ struct studiohdr_t {
 
     inline mstudiobone_t *bone( int i ) const { return ( mstudiobone_t * ) ( ( ( char * ) this ) + boneindex ) + i; };
     inline mstudiohitboxset_t *hitbox_set( const int n ) const { return ( mstudiohitboxset_t * ) ( ( ( unsigned char * ) this ) + hitboxsetindex ) + n; };
-    inline mstudiobbox_t* hitbox(int i, int set) const {
+    inline mstudiobbox_t *hitbox( int i, int set ) const {
         mstudiohitboxset_t const *s = hitbox_set( set );
         if ( !s )
             return nullptr;
@@ -93,13 +93,30 @@ struct studiohdr_t {
 
 class c_studio_hdr {
 public:
-    studiohdr_t *studio_hdr;
-    void *unk0;
+    __forceinline int get_num_seq( ) {
+        auto &v1 = *( int * ) ( std::uintptr_t( this ) + 4 );
+
+        if ( v1 )
+            return *( int * ) ( std::uintptr_t( v1 ) + 20 );
+        else
+            return *( int * ) ( std::uintptr_t( this ) + 188 );
+    }
+
+    studiohdr_t *studio_hdr;                         
+    virtualmodel_t *virtual_model;                         
+    void *soft_body;                                       
+    c_utl_vector< const studiohdr_t * > studio_hdr_cache; 
+    int frame_unlock_counter;                               
+    int *p_frame_unlock_counter;                                      
+    PAD( 4 );
+    c_utl_vector< int > bone_flags;      
+    c_utl_vector< int > bone_parent;     
+    PAD( 0xE0 );
 };
 
 class c_model_info {
 public:
-    virtual ~c_model_info( void ) { }
+    virtual ~c_model_info( void ) {}
     virtual const model_t *get_model( int index ) = 0;
     virtual int get_model_index( const char *name ) const = 0;
     virtual const char *get_model_name( const model_t *model ) const = 0;

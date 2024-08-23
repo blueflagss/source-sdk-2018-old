@@ -753,7 +753,7 @@ public:
 	// Init and Shutdown must be called when starting/ending use of this interface.
 	// if bExplicitlyCallRunFrame is called then you will need to manually call RunFrame
 	// each frame, otherwise Steam Input will updated when SteamAPI_RunCallbacks() is called
-	virtual bool Init( bool bExplicitlyCallRunFrame ) = 0;
+	virtual bool init( bool bExplicitlyCallRunFrame ) = 0;
 	virtual bool Shutdown() = 0;
 	
 	// Set the absolute path to the Input Action Manifest file containing the in-game actions

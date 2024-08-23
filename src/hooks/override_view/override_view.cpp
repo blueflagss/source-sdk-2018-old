@@ -1,5 +1,5 @@
 #include "override_view.hpp"
-#include <features/grenade_prediction/grenade_prediction.hpp>
+#include <features/grenade/grenade_prediction.hpp>
 
 void __fastcall hooks::override_view::hook( REGISTERS, c_view_setup *setup ) {
     if ( !g_interfaces.engine_client->is_in_game( ) || !g_interfaces.engine_client->is_connected( ) )
@@ -57,13 +57,9 @@ void __fastcall hooks::override_view::hook( REGISTERS, c_view_setup *setup ) {
 
     if ( g_vars.visuals_other_fov.value > 0 ) {
         if ( globals::local_weapon ) {
-            setup->fov = (  globals::local_player->scoped( ) ) ? g_vars.visuals_other_scoped_fov.value : g_vars.visuals_other_fov.value;
+            setup->fov = ( globals::local_player->scoped( ) ) ? g_vars.visuals_other_scoped_fov.value : g_vars.visuals_other_fov.value;
         }
     }
-
-    auto origin = setup->origin;
-
-    g_grenade_prediction.simulate_path( globals::local_player, origin );
 
     return original.fastcall< void >( REGISTERS_OUT, setup );
 }

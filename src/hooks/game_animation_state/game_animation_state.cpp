@@ -15,7 +15,7 @@ void __fastcall hooks::setup_movement::hook( REGISTERS ) {
     if ( !state || !state->m_pPlayer || state->m_pPlayer != globals::local_player )
         return original.fastcall< void >( REGISTERS_OUT );
 
-        return original.fastcall< void >( REGISTERS_OUT );
+    return original.fastcall< void >( REGISTERS_OUT );
 }
 
 void hooks::anim_state::init( ) {

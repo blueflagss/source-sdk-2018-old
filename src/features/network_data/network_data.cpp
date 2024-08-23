@@ -1,5 +1,6 @@
 #include "network_data.hpp"
 #include <features/ragebot/ragebot.hpp>
+#include <hooks/cl_read_packets/cl_read_packets.hpp>
 
 void network_data::init( c_cs_player *player ) {
     if ( initialized )
@@ -31,31 +32,37 @@ void network_data::pre_update( c_cs_player *player ) {
 }
 
 void network_data::ping_reducer( ) {
-    if ( !g_interfaces.engine_client->is_connected( ) || !g_interfaces.engine_client->is_in_game( ) )
-        return;
+    bool read = false;
 
-    if ( !globals::local_player )
-        return;
+    if ( !g_interfaces.engine_client->is_in_game( ) )
+        read = true;
 
-    for ( int i{ 1 }; i <= g_interfaces.global_vars->max_clients; ++i ) {
-        c_cs_player *player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
-
-        if ( !player || player->dormant( ) || !player->alive( ) || player == globals::local_player || player->team( ) == globals::local_player->team( ) )
-            continue;
-
-        g_ragebot.m_backup[ i - 1 ].store( player );
+    if ( auto nci = g_interfaces.engine_client->get_net_channel_info( ) ) {
+        if ( nci->is_loopback( ) )
+            read = true;
     }
 
-    static auto cl_readpackets = signature::find( _xs( "engine.dll" ), _xs( "53 8A D9 8B 0D ? ? ? ? 56 57 8B B9" ) ).get< void( __cdecl * )( bool ) >( );
-    cl_readpackets( true );
+    if ( !read && g_interfaces.client_state ) {
+        const auto cl = ( uintptr_t ) g_interfaces.client_state + 8;
 
-    for ( int i{ 1 }; i <= g_interfaces.global_vars->max_clients; ++i ) {
-        c_cs_player *player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
+        std::array< int, 3 > tmp1 = { *( int * ) ( cl + 0x164 ), *( int * ) ( cl + 0x168 ), *( int * ) ( cl + 0x4C98 ) };
 
-        if ( !player || player->dormant( ) || !player->alive( ) || player == globals::local_player || player->team( ) == globals::local_player->team( ) )
-            continue;
+        c_global_vars_base backup{ };
+        backup.backup( g_interfaces.global_vars );
 
-        g_ragebot.m_backup[ i - 1 ].restore( player );
+        hooks::cl_read_packets::original.fastcall< void >( false );
+
+        globals::backup_clientstate_vars = { *( int * ) ( cl + 0x164 ), *( int * ) ( cl + 0x168 ), *( int * ) ( cl + 0x4C98 ) };
+        globals::backup_global_vars = backup;
+
+        *( int * ) ( cl + 0x164 ) = tmp1[ 0 ];
+        *( int * ) ( cl + 0x168 ) = tmp1[ 1 ];
+        *( int * ) ( cl + 0x4C98 ) = tmp1[ 2 ];
+
+        g_interfaces.global_vars->restore( backup );
+    } else {
+        globals::backup_clientstate_vars = { 0 };
+        globals::backup_global_vars = { 0 };
     }
 }
 

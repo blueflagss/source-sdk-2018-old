@@ -135,8 +135,7 @@ public:
     NETVAR( primary_reserve_ammo_count, int, "DT_BaseCombatWeapon", "m_iPrimaryReserveAmmoCount" );
     NETVAR( view_model_index, int, "DT_BaseCombatWeapon", "m_iViewModelIndex" );
     NETVAR( world_model_index, int, "DT_BaseCombatWeapon", "m_iWorldModelIndex" );
-    NETVAR( entity_quality, int, "DT_BaseCombatWeapon", "m_iEntityQuality" );
-    
+    NETVAR( entity_quality, int, "DT_BaseCombatWeapon", "m_iEntityQuality" ); 
     NETVAR( world_dropped_model_index, int, "DT_BaseCombatWeapon", "m_iWorldDroppedModelIndex" );
     NETVAR( weapon_world_model, uint32_t, "DT_WeaponCSBase", "m_hWeaponWorldModel" );
 
@@ -153,6 +152,17 @@ public:
     void update_accuracy_penalty( );
     float get_lowest_accuracy( );
     bool scoped_weapon( );
+};
+
+class c_base_cs_grenade : public c_cs_weapon_base {
+public:
+    NETVAR( thrower, uint32_t, "DT_BaseCSGrenadeProjectile", "m_hThrower" );
+    OFFSET( spawn_time, float, 0x02D8 );
+    NETVAR( redraw, bool, "DT_BaseCSGrenade", "m_bRedraw" );
+    NETVAR( is_held_by_player, bool, "DT_BaseCSGrenade", "m_bIsHeldByPlayer" );
+    NETVAR( pin_pulled, bool, "DT_BaseCSGrenade", "m_bPinPulled" );
+    NETVAR( throw_time, float, "DT_BaseCSGrenadeProjectile", "m_fThrowTime" );
+    NETVAR( throw_strength, float, "DT_BaseCSGrenade", "m_flThrowStrength" );
 };
 
 class c_base_attribute_item : public c_cs_weapon_base {

@@ -5,19 +5,19 @@ void __cdecl hooks::cl_move::hook( float accumulated_extra_samples, bool final_t
     if ( !g_interfaces.client_state || !g_interfaces.engine_client->is_connected( ) || !g_interfaces.engine_client->is_in_game( ) )
         return original.call< void >( accumulated_extra_samples, final_tick );
     
-    //g_network_data.ping_reducer( );
+    g_network_data.ping_reducer( );
 
-    if ( !globals::local_player || !globals::local_player->alive( ) ) {
-        globals::sent_commands.push_back( g_interfaces.client_state->last_outgoing_command( ) );
-        return original.call< void >( accumulated_extra_samples, final_tick );
-    }
+    //if ( !globals::local_player || !globals::local_player->alive( ) ) {
+        //globals::sent_commands.push_back( g_interfaces.client_state->last_outgoing_command( ) );
+     //   return original.call< void >( accumulated_extra_samples, final_tick );
+    //}
 
-    const auto out_sequence = g_interfaces.client_state->last_outgoing_command( );
+    //const auto out_sequence = g_interfaces.client_state->last_outgoing_command( );
 
     original.call< void >( accumulated_extra_samples, final_tick );
 
-    if ( out_sequence != g_interfaces.client_state->last_outgoing_command( ) && g_interfaces.client_state->net_channel )
-        globals::sent_commands.push_back( g_interfaces.client_state->last_outgoing_command( ) );
+    //if ( out_sequence != g_interfaces.client_state->last_outgoing_command( ) && g_interfaces.client_state->net_channel )
+        //globals::sent_commands.push_back( g_interfaces.client_state->last_outgoing_command( ) );
 }
 
 void hooks::cl_move::init( ) {

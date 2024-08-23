@@ -1173,7 +1173,7 @@
     <ClInclude Include="hooks\is_paused\is_paused.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="features\grenade_prediction\grenade_prediction.hpp">
+    <ClInclude Include="features\grenade\grenade_prediction.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hooks\level_init_pre_entity\level_init_pre_entity.hpp">
@@ -1207,6 +1207,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hooks\sequence_proxy\sequence_proxy.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\addresses.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="features\grenade\grenade_warning.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\syscall.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="features\bone_setup\bone_setup.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="features\bone_setup\ik_context.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\delaunator.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hooks\cl_read_packets\cl_read_packets.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1613,7 +1634,7 @@
     <ClCompile Include="hooks\is_paused\is_paused.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="features\grenade_prediction\grenade_prediction.cpp">
+    <ClCompile Include="features\grenade\grenade_prediction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks\level_init_pre_entity\level_init_pre_entity.cpp">
@@ -1647,6 +1668,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks\sequence_proxy\sequence_proxy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\grenade\grenade_warning.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\bone_setup\bone_setup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\bone_setup\ik_context.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooks\cl_read_packets\cl_read_packets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

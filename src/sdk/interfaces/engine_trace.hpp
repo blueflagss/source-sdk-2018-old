@@ -1,7 +1,7 @@
 #pragma once
 #include <globals.hpp>
-#include <sdk/math/ray.hpp>
 #include <sdk/interfaces/engine_trace.hpp>
+#include <sdk/math/ray.hpp>
 
 #define contents_empty 0
 #define contents_solid 0x1
@@ -128,7 +128,6 @@ public:
     }
 };
 
-
 class c_trace_filter_hit_all : public c_trace_filter {
 public:
     bool should_hit_entity( void *entity_handle, int contents_mask );
@@ -161,10 +160,10 @@ public:
     vector_3d end_pos = vector_3d( );
     cplane_t plane = { };
     float fraction = 0.0f;
-    uint32_t contents;// 0x0034
-    uint16_t flags;   // 0x0038
-    bool all_solid;    // 0x003A
-    bool start_solid;  // 0x003B
+    uint32_t contents;
+    uint16_t flags;
+    bool all_solid;
+    bool start_solid;
 
     c_base_trace( ) {
     }
@@ -203,6 +202,75 @@ public:
     c_game_trace( const c_game_trace &othr );
 };
 
+typedef bool ( *should_hit_func_t )( i_handle_entity *pHandleEntity, int contentsMask );
+
+enum collision_group_t : int {
+    COLLISION_GROUP_NONE = 0,
+    COLLISION_GROUP_DEBRIS,
+    COLLISION_GROUP_DEBRIS_TRIGGER,
+    COLLISION_GROUP_INTERACTIVE_DEBRIS,
+    COLLISION_GROUP_INTERACTIVE,
+    COLLISION_GROUP_PLAYER,
+    COLLISION_GROUP_BREAKABLE_GLASS,
+    COLLISION_GROUP_VEHICLE,
+    COLLISION_GROUP_PLAYER_MOVEMENT,
+    COLLISION_GROUP_NPC,
+    COLLISION_GROUP_IN_VEHICLE,
+    COLLISION_GROUP_WEAPON,
+    COLLISION_GROUP_VEHICLE_CLIP,
+    COLLISION_GROUP_PROJECTILE,
+    COLLISION_GROUP_DOOR_BLOCKER,
+    COLLISION_GROUP_PASSABLE_DOOR,
+    COLLISION_GROUP_DISSOLVING,
+    COLLISION_GROUP_PUSHAWAY,
+    COLLISION_GROUP_NPC_ACTOR,
+    COLLISION_GROUP_NPC_SCRIPTED,
+    COLLISION_GROUP_PZ_CLIP,
+    COLLISION_GROUP_DEBRIS_BLOCK_PROJECTILE,
+    LAST_SHARED_COLLISION_GROUP
+};
+
+class c_trace_filter_simple {
+public:
+    c_trace_filter_simple( ){ };
+
+    c_trace_filter_simple( c_base_entity *pass_ent, int collision_group, should_hit_func_t extra_should_check_hit_fn = NULL ) {
+        this->extra_should_check_hit_fn = extra_should_check_hit_fn;
+        this->vftable = g_addresses.trace_filter_simple_vmt.get< void * >( );
+        this->pass_ent = pass_ent;
+        this->collision_group = collision_group;
+    }
+
+    bool should_hit_entity( c_base_entity *entity, int contents_mask ) {
+        const auto real_vmt = *reinterpret_cast< void ** >( this->vftable );
+
+        return utils::get_method< bool( __thiscall * )( void *, c_base_entity *, int ) >( real_vmt, 0 )( real_vmt, entity, contents_mask );
+    }
+
+    const c_base_entity *get_pass_entity( void ) { return pass_ent; }
+    int get_collision_group( void ) const { return collision_group; }
+
+private:
+    void *vftable;
+    c_base_entity *pass_ent;
+    int collision_group;
+    should_hit_func_t extra_should_check_hit_fn;
+};
+
+class c_trace_filter_entity : public c_trace_filter_simple {
+public:
+    c_trace_filter_entity( c_base_entity *pEntity, int nCollisionGroup );
+
+    trace_type get_trace_type( ) const {
+        return trace_type::entities_only;
+    }
+
+private:
+    c_base_entity *root_parent;
+    c_base_entity *entity;
+    bool check_hash;
+};
+
 class c_engine_trace {
 public:
     virtual int get_point_contents( const vector_3d &origin, int mask, c_base_entity **ent = nullptr ) = 0;
@@ -210,5 +278,5 @@ public:
     virtual void *pad002( ) = 0;
     virtual void clip_ray_to_entity( const ray_t &ray, uint32_t mask, void *entity, c_game_trace *trace ) = 0;
     virtual void clip_ray_to_collideable( const ray_t &ray, unsigned int mask, void *collide, c_game_trace *trace ) = 0;
-    virtual void trace_ray( const ray_t &ray, unsigned int mask, c_trace_filter *filter, c_game_trace *trace ) = 0;
+    virtual void trace_ray( const ray_t &ray, unsigned int mask, void *filter, c_game_trace *trace ) = 0;
 };

@@ -89,6 +89,10 @@ public:
         return utils::get_method< bool( __thiscall * )( void * ) >( this, 27 )( this );
     }
 
+    bool is_paused( ) {
+        return utils::get_method< bool( __thiscall * )( void * ) >( this, 90 )( this );
+    }
+
     void *get_bsp_tree_query( ) {
         return utils::get_method< void *( __thiscall * ) ( void * ) >( this, 43 )( this );
     }

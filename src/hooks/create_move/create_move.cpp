@@ -1,13 +1,16 @@
 #include "create_move.hpp"
 #include <core/config.hpp>
-#include <hooks/send_datagram/send_datagram.hpp>
 #include <features/antiaim/antiaim.hpp>
+#include <features/fake_latency/fake_latency.hpp>
+#include <features/grenade/grenade_prediction.hpp>
+#include <features/grenade/grenade_warning.hpp>
 #include <features/movement/movement.hpp>
+#include <features/network_data/network_data.hpp>
 #include <features/prediction_manager/prediction_manager.hpp>
 #include <features/ragebot/ragebot.hpp>
 #include <features/sound_handler/sound_handler.hpp>
 #include <features/visuals/visuals.hpp>
-#include <features/fake_latency/fake_latency.hpp>
+#include <hooks/send_datagram/send_datagram.hpp>
 
 __forceinline float calculate_lerp( ) {
     auto updaterate = std::clamp< float >( globals::cvars::cl_updaterate->get_float( ), globals::cvars::sv_minupdaterate->get_float( ), globals::cvars::sv_maxupdaterate->get_float( ) );
@@ -17,9 +20,9 @@ __forceinline float calculate_lerp( ) {
 }
 
 __forceinline void apply_leg_movement( c_user_cmd *cmd ) {
-    float side_move;                         // xmm2_4
-    int new_buttons;                         // eax
-    float forward_move;                      // xmm1_4
+    float side_move;   // xmm2_4
+    int new_buttons;   // eax
+    float forward_move;// xmm1_4
 
     side_move = cmd->side_move;
     new_buttons = cmd->buttons & ~0x618u;
@@ -67,7 +70,7 @@ void backup_players( bool restore ) {
     for ( int i{ 1 }; i <= g_interfaces.global_vars->max_clients; ++i ) {
         c_cs_player *player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
 
-        if ( !player || player->dormant( ) || !player->alive( ) || player == globals::local_player || player->team( ) == globals::local_player->team( ) )
+        if ( !player || player->dormant( ) || !player->alive( ) )
             continue;
 
         if ( restore )
@@ -88,6 +91,8 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
 
     if ( ret )
         g_interfaces.engine_client->set_view_angles( cmd->view_angles );
+
+    //g_network_data.ping_reducer( );
 
     std::uintptr_t *stack_ptr;
     __asm mov stack_ptr, ebp
@@ -112,7 +117,7 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
 
     backup_players( false );
 
-    if ( g_interfaces.client_state->delta_tick( ) < 0 ) {
+    if ( g_interfaces.client_state->delta_tick( ) > 0 ) {
         g_interfaces.prediction->update(
                 g_interfaces.client_state->delta_tick( ),
                 g_interfaces.client_state->delta_tick( ) > 0,
@@ -121,6 +126,8 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
     }
 
     if ( globals::local_player->alive( ) ) {
+        auto local_datamap = datamap_util( globals::local_player, _xs( "prediction_content::pre_cm" ), _xs( "prediction_content::post_cm" ) );
+
         if ( globals::local_player ) {
             globals::local_weapon = g_interfaces.entity_list->get_client_entity_from_handle< c_cs_weapon_base * >( globals::local_player->weapon_handle( ) );
 
@@ -138,22 +145,21 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         g_movement.on_create_move( cmd, globals::view_angles );
         g_antiaim.on_create_move( cmd, cmd->view_angles );
 
-        auto local_datamap = datamap_util( globals::local_player, _xs( "prediction_content::pre_cm" ), _xs( "prediction_content::post_cm" ) );
-
         local_datamap.store( );
-
-        g_prediction_context.start( cmd );
         {
-            g_visuals.on_create_move( );
-            g_sound_handler.on_create_move( );
-            g_ragebot.on_create_move( cmd );
-            g_antiaim.fake_walk( cmd );
+            g_grenade_prediction.simulate_path( );
+            g_prediction_context.start( cmd );
+            {
+                g_visuals.on_create_move( );
+                g_sound_handler.on_create_move( );
+                g_ragebot.on_create_move( cmd );
+                g_antiaim.fake_walk( cmd );
 
-            if ( *globals::packet )
-                globals::sent_user_cmd = *cmd;
+                if ( *globals::packet )
+                    globals::sent_user_cmd = *cmd;
+            }
+            g_prediction_context.finish( cmd );
         }
-        g_prediction_context.finish( cmd );
-
         local_datamap.apply( );
 
         if ( g_vars.misc_fake_latency.value )
@@ -169,10 +175,8 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         apply_leg_movement( cmd );
 
         globals::angles = cmd->view_angles;
+    }
 
-        g_animations.update_local_animations( cmd );
-    } 
-    
     else {
         globals::local_weapon = nullptr;
         g_animations.init_local_layers = false;
@@ -183,6 +187,22 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
     if ( !send_datagram::did_hook ) {
         send_datagram::init( );
         send_datagram::did_hook = true;
+    }
+
+    if ( g_interfaces.client_state ) {
+        auto nc = g_interfaces.client_state->net_channel;
+
+        if ( nc ) {
+            if ( !*globals::packet ) {
+                const auto backup_choked = nc->choked_packets;
+                nc->choked_packets = 0;
+                nc->send_datagram( );
+                nc->choked_packets = backup_choked;
+                nc->out_sequence_nr--;
+            } else {
+                globals::outgoing_cmds[ cmd->command_number % 150 ] = { nc->out_sequence_nr, cmd->command_number };
+            }
+        }
     }
 
     //if ( !*globals::packet ) {

@@ -213,7 +213,7 @@ S_API bool S_CALLTYPE SteamAPI_ManualDispatch_GetAPICallResult( HSteamPipe hStea
 
 #ifndef STEAM_API_EXPORTS
 
-inline bool CSteamAPIContext::Init()
+inline bool CSteamAPIContext::init()
 {
 	m_pSteamClient = ::SteamClient();
 	if ( !m_pSteamClient )

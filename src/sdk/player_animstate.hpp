@@ -36,7 +36,7 @@ struct animstate_pose_param_cache_t {
     int m_nIndex;
     const char *m_szName;
 
-    bool Init( c_cs_player *pPlayer, const char *szPoseParamName ) {
+    bool init( c_cs_player *pPlayer, const char *szPoseParamName ) {
         g_interfaces.model_cache->begin_lock( );
         m_szName = szPoseParamName;
         m_nIndex = pPlayer->lookup_pose_parameter( szPoseParamName );
@@ -52,7 +52,7 @@ struct animstate_pose_param_cache_t {
 
     float GetValue( c_cs_player *pPlayer ) {
         if ( !m_bInitialized ) {
-            Init( pPlayer, m_szName );
+            init( pPlayer, m_szName );
         }
 
         if ( m_bInitialized && pPlayer ) {
@@ -64,7 +64,7 @@ struct animstate_pose_param_cache_t {
 
     void SetValue( c_cs_player *pPlayer, float flValue ) {
         if ( !m_bInitialized ) {
-            Init( pPlayer, m_szName );
+            init( pPlayer, m_szName );
         }
         if ( m_bInitialized && pPlayer ) {
             g_interfaces.model_cache->begin_lock( );

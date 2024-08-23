@@ -66,7 +66,6 @@ class ragebot {
 private:
     void search_targets( );
     bool scan_target( c_cs_player *player, lag_record *record, aim_player &target );
-    static void hitscan_thread( hitscan_data *args );
     void adjust_speed( c_user_cmd *ucmd );
     bool get_hitbox_data( vector_3d start, hitbox_data *rtn, c_cs_player *player, int hitbox, matrix_3x4 *matrix );
 

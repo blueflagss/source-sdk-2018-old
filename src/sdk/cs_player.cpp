@@ -9,7 +9,7 @@ studiohdr_t *c_cs_player::get_model_ptr( ) {
 
 float c_cs_player::get_first_sequence_anim_tag( int sequence, int desired_tag, float start, float end ) {
     static auto get_first_sequence_anim_tag = signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? F3 0F 11 86 ? ? ? ? 0F 57 DB E9" ) ).add( 0x1 ).rel32( ).get< float( __thiscall * )( void *, int, int, float, float ) >( );
-    
+
     const auto model_ptr = get_model_ptr( );
     auto ret = 0.0f;
 
@@ -25,8 +25,8 @@ float c_cs_player::get_first_sequence_anim_tag( int sequence, int desired_tag, f
     return ret;
 }
 
-void c_cs_player::get_sequence_linear_motion( void *hdr, int seq, const float poses[ ], vector_3d *vec ) {
-    static auto addr = signature::find( _xs( "client.dll" ), _xs( "55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14" ) ).get< void( __thiscall * )( void *, void *, int, const float[ ], vector_3d * ) >( );
+void c_cs_player::get_sequence_linear_motion( void *hdr, int seq, const float poses[], vector_3d *vec ) {
+    static auto addr = signature::find( _xs( "client.dll" ), _xs( "55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14" ) ).get< void( __thiscall * )( void *, void *, int, const float[], vector_3d * ) >( );
 
     __asm {
 			mov edx, seq
@@ -116,7 +116,7 @@ void c_cs_player::modify_eye_position( c_csgo_player_animstate *state, vector_3d
 
     state->m_bSmoothHeightValid = false;
 
-    if ( state->m_pPlayer && ( state->m_bLanding || state->m_flAnimDuckAmount != 0.f || !g_interfaces.entity_list->get_client_entity_from_handle< c_base_entity * >(state->m_pPlayer->ground_entity_handle( )) ) ) {
+    if ( state->m_pPlayer && ( state->m_bLanding || state->m_flAnimDuckAmount != 0.f || !g_interfaces.entity_list->get_client_entity_from_handle< c_base_entity * >( state->m_pPlayer->ground_entity_handle( ) ) ) ) {
         const auto head_bone = e->lookup_bone( _xs( "head_0" ) );
 
         if ( head_bone != -1 ) {
@@ -131,6 +131,12 @@ void c_cs_player::modify_eye_position( c_csgo_player_animstate *state, vector_3d
             }
         }
     }
+}
+
+int &c_cs_player::anim_lod_flags( ) {
+    static auto anim_lod_flags_offset = signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? F3 0F 10 45 ? 51" ) ).add( 0x1 ).rel32( ).add( 97 ).deref( ).get< uintptr_t >( );
+
+    return *reinterpret_cast< int * >( reinterpret_cast< uintptr_t >( this ) + anim_lod_flags_offset );
 }
 
 int c_cs_player::lookup_sequence( const char *label ) {
@@ -159,7 +165,7 @@ bool c_cs_player::can_attack( ) {
         return false;
 
     const auto next_primary_attack = weapon->next_primary_attack( );
-    const auto time = g_interfaces.global_vars->curtime;
+    const auto time = game::ticks_to_time( globals::local_player->tick_base( ) );
     const auto weapon_definition_idx = weapon->item_definition_index( );
 
     if ( weapon->clip_1( ) == 0 )
@@ -192,6 +198,18 @@ void c_cs_player::update_collision_bounds( ) {
     return utils::get_method< void( __thiscall * )( void * ) >( this, 329 )( this );
 }
 
+void c_cs_player::standard_blending_rules( c_studio_hdr *hdr, vector_3d *pos, vector_4d *q, float time, int mask ) {
+    return utils::get_method< void( __thiscall * )( void *, c_studio_hdr *, vector_3d *, vector_4d *, float, int ) >( this, 200 )( this, hdr, pos, q, time, mask );
+}
+
+void c_cs_player::build_transformations( c_studio_hdr *hdr, vector_3d *pos, vector_4d *q, const matrix_3x4_aligned &mat, int mask, uint8_t *computed ) {
+    return utils::get_method< void( __thiscall * )( void *, c_studio_hdr *, vector_3d *, vector_4d *, const matrix_3x4_aligned &, int, uint8_t * ) >( this, 184 )( this, hdr, pos, q, mat, mask, computed );
+}
+
+void c_cs_player::update_ik_locks( float time ) {
+    return utils::get_method< void( __thiscall * )( void *, float ) >( this, 186 )( this, time );
+}
+
 std::deque< c_base_attribute_item * > c_cs_player::weapons( ) {
     static auto offset = g_netvars.get_offset( HASH_CT( "DT_BaseCombatCharacter" ), HASH_CT( "m_hMyWeapons" ) );
 
@@ -215,15 +233,15 @@ vector_3d c_cs_player::get_shoot_position( ) {
     auto pos = origin( );
 
     if ( this == globals::local_player ) {
-        pos += view_offset( ); 
-	    utils::get_method< void( __thiscall * )( c_cs_player *, vector_3d & ) >( this, 163 )( this, pos );
+        pos += view_offset( );
+        utils::get_method< void( __thiscall * )( c_cs_player *, vector_3d & ) >( this, 163 )( this, pos );
 
         auto state = anim_state( );
 
         if ( state )
-            modify_eye_position( state, &pos, g_animations.animated_bones[ this->index( ) ].data( ) );
+            modify_eye_position( state, &pos, this->bone_cache( ) );
     }
-    
+
     else {
         pos += g_interfaces.game_movement->get_player_view_offset( false );
 

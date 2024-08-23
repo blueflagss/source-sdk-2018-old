@@ -1,7 +1,7 @@
 #pragma once
 
-#include "utils/netvars/netvars.hpp"
 #include "utils/datamaps/datamaps.hpp"
+#include "utils/netvars/netvars.hpp"
 #include <globals.hpp>
 #include <sdk/math/aligned_vector.hpp>
 #include <sdk/user_cmd.hpp>
@@ -78,6 +78,13 @@ public:
     template< typename T >
     __inline T get( ) {
         return reinterpret_cast< T >( this );
+    }
+
+    __inline bool is( const hash32_t &network_name ) {
+        if ( !this->get_client_class( ) )
+            return false;
+
+        return HASH( this->get_client_class( )->network_name ) == network_name;
     }
 
 public:

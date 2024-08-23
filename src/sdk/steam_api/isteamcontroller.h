@@ -592,7 +592,7 @@ class ISteamController
 public:
 	
 	// Init and Shutdown must be called when starting/ending use of this interface
-	virtual bool Init() = 0;
+	virtual bool init() = 0;
 	virtual bool Shutdown() = 0;
 	
 	// Synchronize API state with the latest Steam Controller inputs available. This

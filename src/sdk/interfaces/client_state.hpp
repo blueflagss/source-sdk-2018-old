@@ -79,6 +79,9 @@ class c_client_class;
 
 class c_net_channel_info {
 public:
+    bool is_loopback( ) {
+        return utils::get_method< bool( __thiscall * )( void * ) >( this, 7 )( this );
+    }
 
     float get_latency( int flow ) {
         return utils::get_method< float( __thiscall * )( void *, int ) >( this, 9 )( this, flow );
@@ -91,7 +94,7 @@ public:
 
 class c_net_channel {
 public:
-    PAD( 0x3F );
+    PAD( 0x17 );
     int out_sequence_nr;
     int in_sequence_nr;
     int out_sequence_nr_ack;
@@ -132,6 +135,7 @@ public:
     PAD( 156 );
     c_net_channel *net_channel;
 
+    OFFSET( sign_on_state, int, 0x108 );
     OFFSET( server_tick, int, 0x016C );
     OFFSET( last_command_ack, int, 0x4CB4 );
     OFFSET( delta_tick, int, 0x174 );

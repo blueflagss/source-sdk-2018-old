@@ -18,7 +18,7 @@ void shot_manager::on_shot_fire( c_cs_player *target, float damage, int bullets,
         shot.impacted = false;
         shot.hurt_player = false;
         shot.pos = globals::local_player->get_shoot_position( );
- 
+
         if ( target && i == 0 )
             ++log.shots;
 
@@ -87,7 +87,7 @@ void shot_manager::process_shots( ) {
     if ( !target->collideable( ) )
         return;
 
-        float predicted = shot.time;
+    float predicted = shot.time;
     float delta = std::fabs( g_interfaces.global_vars->curtime - predicted );
 
     if ( shot.matched && shot.impacted && shot.time != -1.0f ) {
@@ -128,7 +128,6 @@ void shot_manager::process_shots( ) {
                     if ( should_hit_player ) {
                         missed_shot = _xs( "resolver" );
 
-                        /* increment missed shots on our current target. */
                         ++player_log->missed_shots;
                     }
                 }
@@ -150,7 +149,7 @@ void shot_manager::process_shots( ) {
     }
 }
 
-void shot_manager::on_fire( event_t* evt ) {
+void shot_manager::on_fire( event_t *evt ) {
     if ( !evt || !globals::local_player )
         return;
 
@@ -159,7 +158,7 @@ void shot_manager::on_fire( event_t* evt ) {
     if ( attacker != g_interfaces.engine_client->get_local_player( ) )
         return;
 
-        if ( shots.empty( ) )
+    if ( shots.empty( ) )
         return;
 
     shot_record_t *shot = &shots.front( );
@@ -186,8 +185,7 @@ void shot_manager::on_impact( event_t *evt ) {
     pos = {
             evt->get_float( _xs( "x" ) ),
             evt->get_float( _xs( "y" ) ),
-            evt->get_float( _xs( "z" ) )
-    };
+            evt->get_float( _xs( "z" ) ) };
 
     time = g_interfaces.global_vars->curtime;
 
@@ -255,6 +253,23 @@ void shot_manager::on_hurt( event_t *evt ) {
     if ( shots.empty( ) )
         return;
 
+    player_info_t info;
+
+    if ( !g_interfaces.engine_client->get_player_info( victim, &info ) )
+        return;
+
+    name = std::string( info.name ).substr( 0, 24 );
+    damage = static_cast< float >( evt->get_int( _xs( "dmg_health" ) ) );
+    hp = evt->get_int( _xs( "health" ) );
+
+    if ( g_vars.misc_hitmarker.value ) {
+        g_visuals.hitmarker_fraction = 1.0f;
+        g_interfaces.engine_client->client_cmd_unrestricted( _xs( "play buttons/arena_switch_press_02.wav" ) );
+    }
+
+    if ( g_vars.misc_events_log_damage.value )
+        g_notify.add( notify_type::none, false, fmt::format( _xs( "Hit {} in the {} for {} ({} health remaining)" ), name, hitgroup_names[ group ], ( int ) damage, hp ) );
+
     auto &shot = shots.front( );
 
     if ( shot.hurt_player )
@@ -268,30 +283,11 @@ void shot_manager::on_hurt( event_t *evt ) {
         return;
     }
 
-
-        shot.hurt_player = true;
-
-    player_info_t info;
-
-    if ( !g_interfaces.engine_client->get_player_info( victim, &info ) )
-        return;
-
-    name = std::string( info.name ).substr( 0, 24 );
-    damage = ( float ) evt->get_int( _xs( "dmg_health" ) );
-    hp = evt->get_int( _xs( "health" ) );
-
-    if ( g_vars.misc_hitmarker.value ) {
-        g_visuals.hitmarker_fraction = 1.0f;
-        g_interfaces.engine_client->client_cmd_unrestricted( _xs( "play buttons/arena_switch_press_02.wav" ) );
-    }
-
-    if ( g_vars.misc_events_log_damage.value )
-        g_notify.add( notify_type::none, false, fmt::format( _xs( "Hit {} in the {} for {} ({} health remaining)" ), name, hitgroup_names[ group ], ( int ) damage, hp ) );
+    shot.hurt_player = true;
 
     if ( group == hitgroup_generic )
         return;
 
-    // if we hit a player, mark vis impacts.
     if ( !vis_impacts.empty( ) ) {
         for ( auto &i : vis_impacts ) {
             if ( i.tickbase == globals::local_player->tick_base( ) )
@@ -299,13 +295,11 @@ void shot_manager::on_hurt( event_t *evt ) {
         }
     }
 
-    // no impacts to match.
     if ( impacts.empty( ) )
         return;
 
     impact_record_t *impact{ nullptr };
 
-    // iterate stored impacts.
     for ( auto &i : impacts ) {
         if ( i.tick != globals::local_player->tick_base( ) )
             continue;
@@ -316,17 +310,13 @@ void shot_manager::on_hurt( event_t *evt ) {
         break;
     }
 
-    // no impact matched.
     if ( !impact )
         return;
 
-    // setup new data for hit track and push to hit track.
     hit_record_t hit;
     hit.impact = impact;
     hit.group = group;
     hit.damage = damage;
-
-    //g_cl.print( "hit %x time: %f lat: %f dmg: %f\n", impact->m_shot->m_record, impact->m_shot->m_time, impact->m_shot->m_lat, impact->m_shot->m_damage );
 
     hits.push_front( hit );
 

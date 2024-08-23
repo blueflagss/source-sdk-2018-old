@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="core\addresses.hpp" />
     <ClInclude Include="core\config.hpp" />
     <ClInclude Include="core\hooks.hpp" />
     <ClInclude Include="core\interfaces.hpp" />
@@ -26,9 +27,14 @@
     <ClInclude Include="dependencies\blur\bBlur.hpp" />
     <ClInclude Include="dependencies\blur\blur.hpp" />
     <ClInclude Include="dependencies\blur\blur_binary.h" />
+    <ClInclude Include="dependencies\delaunator.hpp" />
+    <ClInclude Include="dependencies\syscall.hpp" />
     <ClInclude Include="features\animations\animation_state.hpp" />
+    <ClInclude Include="features\bone_setup\bone_setup.hpp" />
+    <ClInclude Include="features\bone_setup\ik_context.hpp" />
     <ClInclude Include="features\fake_latency\fake_latency.hpp" />
-    <ClInclude Include="features\grenade_prediction\grenade_prediction.hpp" />
+    <ClInclude Include="features\grenade\grenade_prediction.hpp" />
+    <ClInclude Include="features\grenade\grenade_warning.hpp" />
     <ClInclude Include="features\network_data\network_data.hpp" />
     <ClInclude Include="features\penetration\penetration.hpp" />
     <ClInclude Include="features\resolver\resolver.hpp" />
@@ -37,6 +43,7 @@
     <ClInclude Include="features\sound_handler\sound_handler.hpp" />
     <ClInclude Include="features\ui\elements\tooltip\tooltip.hpp" />
     <ClInclude Include="hooks\check_jump_button\check_jump_button.hpp" />
+    <ClInclude Include="hooks\cl_read_packets\cl_read_packets.hpp" />
     <ClInclude Include="hooks\draw_set_color\draw_set_color.hpp" />
     <ClInclude Include="hooks\game_animation_state\game_animation_state.hpp" />
     <ClInclude Include="hooks\base_interpolate_part1\base_interpolate_part1.hpp" />
@@ -425,8 +432,11 @@
     <ClCompile Include="core\interfaces.cpp" />
     <ClCompile Include="dependencies\blur\blur.cpp" />
     <ClCompile Include="features\animations\animation_state.cpp" />
+    <ClCompile Include="features\bone_setup\bone_setup.cpp" />
+    <ClCompile Include="features\bone_setup\ik_context.cpp" />
     <ClCompile Include="features\fake_latency\fake_latency.cpp" />
-    <ClCompile Include="features\grenade_prediction\grenade_prediction.cpp" />
+    <ClCompile Include="features\grenade\grenade_prediction.cpp" />
+    <ClCompile Include="features\grenade\grenade_warning.cpp" />
     <ClCompile Include="features\network_data\network_data.cpp" />
     <ClCompile Include="features\penetration\penetration.cpp" />
     <ClCompile Include="features\resolver\resolver.cpp" />
@@ -435,6 +445,7 @@
     <ClCompile Include="features\sound_handler\sound_handler.cpp" />
     <ClCompile Include="features\ui\elements\tooltip\tooltip.cpp" />
     <ClCompile Include="hooks\check_jump_button\check_jump_button.cpp" />
+    <ClCompile Include="hooks\cl_read_packets\cl_read_packets.cpp" />
     <ClCompile Include="hooks\draw_set_color\draw_set_color.cpp" />
     <ClCompile Include="hooks\game_animation_state\game_animation_state.cpp" />
     <ClCompile Include="hooks\base_interpolate_part1\base_interpolate_part1.cpp" />

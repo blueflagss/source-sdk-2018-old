@@ -18,7 +18,7 @@ public:
         z = clr[ 2 ];
     }
 
-    void Init( float ix = 0.0f, float iy = 0.0f, float iz = 0.0f ) {
+    void init( float ix = 0.0f, float iy = 0.0f, float iz = 0.0f ) {
         x = ix;
         y = iy;
         z = iz;
@@ -185,21 +185,21 @@ class __declspec( align( 16 ) ) VectorAligned : public Vector {
 public:
     inline VectorAligned( void ){ };
     inline VectorAligned( float X, float Y, float Z ) {
-        Init( X, Y, Z );
+        init( X, Y, Z );
     }
 
 public:
     explicit VectorAligned( const Vector &vOther ) {
-        Init( vOther.x, vOther.y, vOther.z );
+        init( vOther.x, vOther.y, vOther.z );
     }
 
     VectorAligned &operator=( const Vector &vOther ) {
-        Init( vOther.x, vOther.y, vOther.z );
+        init( vOther.x, vOther.y, vOther.z );
         return *this;
     }
 
     VectorAligned &operator=( const VectorAligned &vOther ) {
-        Init( vOther.x, vOther.y, vOther.z );
+        init( vOther.x, vOther.y, vOther.z );
         return *this;
     }
 

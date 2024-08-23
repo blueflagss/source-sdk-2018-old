@@ -24,7 +24,7 @@ public:
 	virtual ~ISteamHTMLSurface() {}
 
 	// Must call init and shutdown when starting/ending use of the interface
-	virtual bool Init() = 0;
+	virtual bool init() = 0;
 	virtual bool Shutdown() = 0;
 
 	// Create a browser object for display of a html page, when creation is complete the call handle

@@ -8,8 +8,8 @@ void resolver::on_proxy_update( c_cs_player *player, float updated_value ) {
     if ( !player_log )
         return;
 
-    if ( player_log->body != updated_value )
-        player_log->body = updated_value;
+    //if ( player_log->body != updated_value )
+    //   player_log->body = updated_value;
 }
 
 bool resolver::anti_freestanding( lag_record &record ) {
@@ -38,102 +38,21 @@ bool resolver::anti_freestanding( lag_record &record ) {
     return true;
 }
 
-std::pair< float, bool > resolver::AntiFreestand( c_cs_player *player, lag_record *record, bool include_base, float base_yaw, float delta ) {
-    constexpr float STEP{ 4.f };
-    constexpr float RANGE{ 32.f };
-
-    std::vector< adaptive_angle > angles;
-
-    angles.emplace_back( base_yaw + delta );
-    angles.emplace_back( base_yaw - delta );
-
-    if ( include_base )
-        angles.emplace_back( base_yaw );
-
-    auto start = globals::local_player->get_shoot_position( );
-    bool valid{ false };
-    auto shoot_pos = player->get_shoot_position( );
-
-    for ( auto it = angles.begin( ); it != angles.end( ); ++it ) {
-        vector_3d end{ shoot_pos.x + std::cos( math::deg_to_rad( it->yaw ) ) * RANGE,
-                       shoot_pos.y + std::sin( math::deg_to_rad( it->yaw ) ) * RANGE,
-                       shoot_pos.z };
-
-        vector_3d dir = end - start;
-        float len = math::normalize_place( dir );
-
-        if ( len <= 0.f )
-            continue;
-
-        for ( float i{ 0.f }; i < len; i += STEP ) {
-            vector_3d point = start + ( dir * i );
-            int contents = g_interfaces.engine_trace->get_point_contents( point, mask_shot_hull );
-
-            if ( !( contents & mask_shot_hull ) )
-                continue;
-
-            float mult = 1.f;
-
-            if ( i > ( len * 0.5f ) )
-                mult = 1.25f;
-
-            if ( i > ( len * 0.75f ) )
-                mult = 1.25f;
-
-            if ( i > ( len * 0.9f ) )
-                mult = 2.f;
-
-            it->dist += ( STEP * mult );
-            valid = true;
-        }
-    }
-
-    if ( !valid )
-        return { base_yaw, false };
-
-    std::sort( angles.begin( ), angles.end( ),
-               []( const adaptive_angle &a, const adaptive_angle &b ) {
-                   return a.dist > b.dist;
-               } );
-
-    return { angles.front( ).dist, true };
-}
 void resolver::start( c_cs_player *player, lag_record &record, lag_record *previous ) {
     auto player_log = &g_animations.player_log[ player->index( ) ];
 
-    if ( !player_log )
-        return;
+    const auto anim_state = player->anim_state( );
 
-    if ( player_log->player_info.fake_player ) {
+    if ( !player_log || !anim_state || player_log->player_info.fake_player ) {
         record.mode = resolve_mode::none;
         return;
     }
 
-    player_log->body = record.lower_body_yaw;
-
-    const auto moving = glm::length( record.anim_velocity ) > 0.1f && !record.fake_walk;
-    const auto diff = math::normalize_angle( player_log->body - player_log->walk_record.lower_body_yaw );
+    const auto moving = glm::length( record.velocity ) > 0.1f && !record.fake_walk;
     const auto layer_activity = player->get_sequence_activity( record.layer_records[ ANIMATION_LAYER_ADJUST ].sequence );
-    const auto velyaw = math::rad_to_deg( std::atan2( record.anim_velocity.y, record.anim_velocity.x ) );
+    const auto velyaw = math::rad_to_deg( std::atan2( record.velocity.y, record.velocity.x ) );
     const auto away_target = math::normalize( math::angle_from_vectors( globals::local_player->origin( ), player->origin( ) ).y );
     const auto in_air = !record.on_ground;
-
-    if ( moving && record.on_ground )
-        std::memcpy( &player_log->walk_record, &record, sizeof( lag_record ) );
-
-    auto lby = player->lower_body_yaw_target( );
-
-    static float last_moving_lby[ 64 ];
-    last_moving_lby[ player->index( ) ] = 0.0f;
-    if ( record.sim_time > 0.f ) {
-        const auto delta = player_log->walk_record.origin - record.origin;
-
-        if ( glm::length( delta ) <= 128.f ) {
-            record.moved = true;
-            last_moving_lby[ player->index( ) ] = lby;
-        }
-    }
-
 
     player_log->direction_info.left_damage = 0.0f;
     player_log->direction_info.right_damage = 0.0f;
@@ -169,30 +88,6 @@ void resolver::start( c_cs_player *player, lag_record &record, lag_record *previ
         player_log->resolve_record.predicted_lby_flick = false;
         player_log->resolve_record.lby_flick = false;
         player_log->lby_updated = false;
-
-        record.mode = resolve_mode::standing;
-    }
-   
-    const auto delta_time = record.anim_time - player_log->walk_record.anim_time;
-
-    //bool is_jittering_fake = false;
-    //bool is_static_real = false;
-
-    //if ( player_log->lag_records.size( ) > 2 ) {
-    //    auto &latest_record = player_log->lag_records[ player_log->lag_records.size( ) - 1 ];
-    //    auto &prev_record = player_log->lag_records[ player_log->lag_records.size( ) - 2 ];
-
-    //    if ( abs( latest_record->eye_angles.y - prev_record->eye_angles.y ) > 35.0f ) {
-    //        is_jittering_fake = true;
-    //    }
-
-    //    if ( abs( latest_record->lower_body_yaw - prev_record->lower_body_yaw ) < 1.0f ) {
-    //        is_static_real = true;
-    //    }
-    //}
-
-    if ( moving ) {
- 
     }
 
     if ( !record.on_ground ) {
@@ -220,34 +115,13 @@ void resolver::start( c_cs_player *player, lag_record &record, lag_record *previ
 
     if ( moving ) {
         record.mode = resolve_mode::moving;
+        player_log->last_lby = player->lower_body_yaw_target( );
+        player->eye_angles( ).y = player->lower_body_yaw_target( );
 
         player_log->body_update_time = record.sim_time + 0.22f;
-        last_moving_lby[ player->index( ) ] = lby;
-        player->eye_angles( ).y = lby;
-        player_log->last_lby = lby;
-
+        player_log->lby_updated = false;
         return;
     } else {
-        if ( record.sim_time >= player_log->body_update_time ) {
-            record.mode = resolve_mode::lby_update;
-
-            player_log->body_update_time = record.sim_time + 1.1f;
-            player_log->lby_updated = true;
-            player->eye_angles( ).y = lby;
-
-            return;
-        }
-
-        else if ( player->lower_body_yaw_target( ) != player_log->last_lby ) {
-            player->eye_angles( ).y = lby;
-            record.mode = resolve_mode::lby_update;
-
-            player_log->lby_updated = true;
-            player_log->last_lby = lby;
-
-            return;
-        }
-
         if ( player_log->missed_shots > 0 ) {
             record.mode = resolve_mode::brute;
             switch ( player_log->missed_shots % 5 ) {
@@ -270,13 +144,30 @@ void resolver::start( c_cs_player *player, lag_record &record, lag_record *previ
                     break;
             }
         } else {
-            player->eye_angles( ).y = last_moving_lby[ player->index( ) ];
+            record.mode = resolve_mode::standing;
+            anti_freestanding( record );
 
-                anti_freestanding( record );
+            if ( previous && valve_math::angle_diff( record.lower_body_yaw, previous->lower_body_yaw ) > 1.0f ) {
+                record.mode = resolve_mode::lby_update;
+
+                player->eye_angles( ).y = player_log->last_lby;
+                player_log->body_update_time = record.sim_time + 1.1f;
+                player_log->lby_updated = true;
+                return;
+            }
+
+            if ( record.sim_time >= player_log->body_update_time ) {
+                record.mode = resolve_mode::lby_update;
+
+                player->eye_angles( ).y = player_log->last_lby;
+                player_log->body_update_time = record.sim_time + 1.1f;
+                player_log->lby_updated = true;
+
+                return;
+            }
         }
     }
 }
-
 
 lag_record *resolver::find_ideal_record( c_cs_player *player ) {
     if ( !player )
@@ -304,7 +195,7 @@ lag_record *resolver::find_ideal_record( c_cs_player *player ) {
         if ( !first_valid )
             first_valid = current;
 
-        if ( it->mode == resolve_mode::none || it->mode == resolve_mode::moving || it->mode == resolve_mode::standing || it->mode == resolve_mode::freestand || it->mode == resolve_mode::lby_update )
+        if ( it->mode >= resolve_mode::none || it->mode == resolve_mode::lby_update )
             return current;
     }
 

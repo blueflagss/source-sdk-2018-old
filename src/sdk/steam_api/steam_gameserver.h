@@ -90,7 +90,7 @@ S_API uint64 SteamGameServer_GetSteamID();
 
 #ifndef STEAM_API_EXPORTS
 // This function must be declared inline in the header so the module using steam_api.dll gets the version names they want.
-inline bool CSteamGameServerAPIContext::Init()
+inline bool CSteamGameServerAPIContext::init()
 {
 	m_pSteamClient = ::SteamGameServerClient();
 	if ( !m_pSteamClient )

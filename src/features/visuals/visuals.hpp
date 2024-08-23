@@ -1,5 +1,6 @@
 #pragma once
 #include <features/animations/animation_sync.hpp>
+#include <features/grenade/grenade_warning.hpp>
 #include <globals.hpp>
 
 inline std::map< int, const char * > csgo_hud_icons = 
@@ -62,13 +63,15 @@ inline std::map< int, const char * > csgo_hud_icons =
 class visuals {
 public:
     void render( );
+    void render_grenade_trail( );
     void indicators( );
     void hitmarker( );
     void update_configuration( c_base_entity *entity );
     void render_weapon( c_cs_weapon_base *weapon );
-    void show_manual_indicators( );
-    void render_scope_lines( );
-    void penetration_crosshair( );
+    void manual_arrows( );
+    void render_grenade( c_base_cs_grenade *grenade );
+    void scope_lines( );
+    void autowall_crosshair( );
     void on_create_move( );
     void world_modulation( );
     void render_bar( c_cs_player *player, const box_t &box, const float &value, const float &progress, color col, bool show = false );
@@ -109,6 +112,8 @@ private:
     void render_player( c_cs_player *player );
     void render_offscreen( c_cs_player *player ) const;
     void render_skeleton( c_cs_player *player, matrix_3x4 *bones, color skeleton_color ) const;
+
+    std::map< uint32_t, grenade_warning > predicted_grenades;
 };
 
 inline visuals g_visuals = { };

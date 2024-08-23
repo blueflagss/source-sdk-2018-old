@@ -3,12 +3,19 @@
 #include <sdk/math/matrix3x4.hpp>
 #include <sdk/interfaces/cvar.hpp>
 #include <sdk/interfaces/model_render.hpp>
+#include <sdk/interfaces/global_vars_base.hpp>
 #include <features/renderer/renderer.hpp>
+#include <core/addresses.hpp>
 #include <sdk/user_cmd.hpp>
 
 class c_cs_weapon_base;
 class c_cs_player;
 class c_cs_weapon_info;
+
+struct network_data_t {
+    int sequence;
+    int cmd;
+};
 
 namespace globals
 {
@@ -48,6 +55,8 @@ namespace globals
     namespace cvars
     {
         inline convar *sv_accelerate{ nullptr };
+        inline convar *molotov_throw_detonate_time{ nullptr };
+        inline convar *weapon_molotov_maxdetonateslope{ nullptr };
         inline convar *cl_extrapolate{ nullptr };
         inline convar *sv_friction{ nullptr };
         inline convar *sv_stopspeed{ nullptr };
@@ -115,6 +124,9 @@ namespace globals
     inline c_cs_weapon_info *local_weapon_data{ nullptr };
     inline std::array< bool, 64 > allow_animations{ };
     inline std::array< bool, 65 > is_building_bones{ };
+    inline std::array< int, 3 > backup_clientstate_vars = { };
+    inline c_global_vars_base backup_global_vars = { };
     inline float lerp_amount{ 0.0f };
+    inline std::array< network_data_t, 150 > outgoing_cmds{ };
     inline std::deque< int > sent_commands{ };
 }// namespace globals

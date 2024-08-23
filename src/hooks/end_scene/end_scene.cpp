@@ -1,6 +1,5 @@
 #include "end_scene.hpp"
 #include <features/features.hpp>
-#include <features/grenade_prediction/grenade_prediction.hpp>
 
 long __fastcall hooks::end_scene::hook( REGISTERS, IDirect3DDevice9 *device ) {
     static auto return_address = _ReturnAddress( );
@@ -29,8 +28,7 @@ long __fastcall hooks::end_scene::hook( REGISTERS, IDirect3DDevice9 *device ) {
         g_antiaim.update_manual_direction( );
 
         render::begin( [ & ] 
-        {
-            g_grenade_prediction.render( );
+        {          
             g_visuals.render( );
             g_notify.render( );
             g_menu.render( );
