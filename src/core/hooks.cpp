@@ -72,7 +72,7 @@ void hooks::impl::init( ) {
     cl_dispatch_sound::init( );
     level_init_pre_entity::init( );
     is_paused::init( );
-    update_clientside_animations::init( );
+    //update_clientside_animations::init( );
     update_clientside_animation::init( );
     paint_traverse::init( );
     level_shutdown::init( );
@@ -87,11 +87,11 @@ void hooks::impl::init( ) {
     cl_fire_events::init( );
     packet_start::init( );
     physics_simulate::init( );
-    update_animation_state::init( );
+    //update_animation_state::init( );
     do_procedural_footplant::init( );
     notify_on_layer_change_cycle::init( );
     notify_on_layer_change_weight::init( );
-    notify_on_layer_change_sequence::init( );
+    //notify_on_layer_change_sequence::init( );
     hud_scope_paint::init( );
     render_smoke_overlay::init( );
     calc_viewmodel_bob::init( );
@@ -103,7 +103,7 @@ void hooks::impl::init( ) {
     estimate_abs_velocity::init( );
     is_hltv::init( );
     calc_view::init( );
-    build_transformations::init( );
+    //build_transformations::init( );
     modify_eye_position::init( );
     check_for_sequence_change::init( );
     base_interpolate_part1::init( );
@@ -124,7 +124,7 @@ void hooks::impl::init( ) {
     create_move::init( );
     end_scene::init( );
     reset::init( );
-    // on_screen_size_changed::init( );
+    //// on_screen_size_changed::init( );
     frame_stage_notify::init( );
 
     game_event_handler = std::make_unique< event_handler >( );

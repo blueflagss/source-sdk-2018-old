@@ -1200,9 +1200,6 @@
     <ClInclude Include="hooks\draw_set_color\draw_set_color.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="features\animations\animation_state.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="hooks\post_data_update\post_data_update.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1228,6 +1225,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hooks\cl_read_packets\cl_read_packets.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="features\animations\animation_state_rebuilt.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1661,9 +1661,6 @@
     <ClCompile Include="hooks\draw_set_color\draw_set_color.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="features\animations\animation_state.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="hooks\post_data_update\post_data_update.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1680,6 +1677,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hooks\cl_read_packets\cl_read_packets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="features\animations\animation_state_rebuilt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

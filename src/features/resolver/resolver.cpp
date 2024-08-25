@@ -68,8 +68,8 @@ void resolver::start( c_cs_player *player, lag_record &record, lag_record *previ
         const auto left_eye_pos = record.origin + vector_3d( 0.f, 0.f, 64.f ) + ( direction_1 * 16.f );
         const auto right_eye_pos = record.origin + vector_3d( 0.f, 0.f, 64.f ) + ( direction_2 * 16.f );
 
-        player_log->direction_info.left_damage = g_penetration.run( globals::local_player->get_shoot_position( ), left_eye_pos, player, 0.0f, record.bones, false ).out_damage;
-        player_log->direction_info.right_damage = g_penetration.run( globals::local_player->get_shoot_position( ), right_eye_pos, player, 0.0f, record.bones, false ).out_damage;
+        //player_log->direction_info.left_damage = g_penetration.run( globals::local_player->get_shoot_position( ), left_eye_pos, player, 0.0f, record.bones, false ).out_damage;
+        //player_log->direction_info.right_damage = g_penetration.run( globals::local_player->get_shoot_position( ), right_eye_pos, player, 0.0f, record.bones, false ).out_damage;
 
         ray_t ray;
         c_game_trace trace;

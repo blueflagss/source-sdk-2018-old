@@ -7,7 +7,7 @@ bool __fastcall hooks::setup_bones::hook( REGISTERS, matrix_3x4 *out, int bones,
     if ( !base_entity || !base_entity->alive( ) )
         return reinterpret_cast< decltype( &setup_bones::hook ) >( setup_bones::original.trampoline( ).address( ) )( REGISTERS_OUT, out, bones, mask, curtime );
 
-    if ( base_entity->is_player( ) ) {
+    if ( !globals::allow_bones && base_entity->is_player( ) ) {
         static auto &g_model_bone_counter = *signature::find( _xs( "client.dll" ), _xs( "3B 05 ? ? ? ? 0F 84 ? ? ? ? 8B 47" ) ).add( 2 ).deref( ).get< int * >( );
 
         auto owner = base_entity->get_root_move_parent( );
@@ -39,7 +39,7 @@ bool __fastcall hooks::setup_bones::hook( REGISTERS, matrix_3x4 *out, int bones,
         return true;
     }
 
-    return original.fastcall< bool >( REGISTERS_OUT, out, bones, mask, curtime );
+    return reinterpret_cast< decltype( &setup_bones::hook ) >( setup_bones::original.trampoline( ).address( ) )( REGISTERS_OUT, out, bones, mask, curtime );
 }
 
 void hooks::setup_bones::init( ) {

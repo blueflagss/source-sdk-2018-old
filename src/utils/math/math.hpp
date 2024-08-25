@@ -61,6 +61,7 @@ namespace math
     void rotate_point( glm::vec2 &point, float rotation );
     void random_seed( int seed );
     float random_float( float min_val, float max_value );
+    vector_3d normalize_vector( const vector_3d &val );
     vector_3d normalize_angle( vector_3d angle );
     void vector_transform( const vector_3d in1, const matrix_3x4 &in2, vector_3d &out );
     vector_3d vector_transform( const vector_3d in1, const matrix_3x4 &in2 );
@@ -74,6 +75,8 @@ namespace math
     float length_2d_sqr( const vector_3d &in );
     float length_2d( const vector_3d &a );
     vector_3d vector_angle( const vector_3d &position );
+    matrix_3x4 setup_matrix_scale( const vector_3d &scale );
+    void matrix_multiply( const matrix_3x4 &src1, const matrix_3x4 &src2, matrix_3x4 &dst );
     vector_3d calculate_angle( const vector_3d &source, const vector_3d &destination );
     float calculate_fov( const vector_3d &start, const vector_3d &destination );
     void matrix_position( const matrix_3x4 &matrix, vector_3d &position );

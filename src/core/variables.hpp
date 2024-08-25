@@ -180,7 +180,7 @@ namespace config
         CONFIG_VARIABLE( visuals_other_force_viewmodel_in_scope, bool, false );
         CONFIG_VARIABLE( visuals_other_remove_flash_overlay, bool, false );
         CONFIG_VARIABLE( visuals_other_remove_smoke, bool, false );
-
+        CONFIG_VARIABLE( visuals_other_midget_mode, bool, false );
         CONFIG_VARIABLE( visuals_other_oof_arrows_color, color, color( 149, 43, 255, 150 ) );
         CONFIG_VARIABLE( visuals_other_oof_arrows, bool, false );
         CONFIG_VARIABLE( visuals_other_oof_arrows_size, int, 7 );

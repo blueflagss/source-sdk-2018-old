@@ -23,9 +23,9 @@ void math::matrix_copy( const matrix_3x4 &in, matrix_3x4 &out ) {
 }
 
 void math::vector_rotate( const vector_3d &in1, matrix_3x4 in2, vector_3d &out ) {
-    out.x = glm::dot( in1, (vector_3d)*in2[ 0 ] );
-    out.y = glm::dot( in1, (vector_3d)*in2[ 1 ] );
-    out.z = glm::dot( in1, (vector_3d)*in2[ 2 ] );
+    out.x = glm::dot( in1, ( vector_3d ) *in2[ 0 ] );
+    out.y = glm::dot( in1, ( vector_3d ) *in2[ 1 ] );
+    out.z = glm::dot( in1, ( vector_3d ) *in2[ 2 ] );
 }
 
 vector_3d math::vector_rotate( const vector_3d &in1, const vector_3d &in2 ) {
@@ -222,7 +222,7 @@ void math::vector_irotate( const vector_3d &in1, const matrix_3x4 &in2, vector_3
     out.z = in1.x * in2[ 0 ][ 2 ] + in1.y * in2[ 1 ][ 2 ] + in1.z * in2[ 2 ][ 2 ];
 }
 
-void math::concat_transforms( const matrix_3x4& in1, const matrix_3x4& in2, matrix_3x4& out ) {
+void math::concat_transforms( const matrix_3x4 &in1, const matrix_3x4 &in2, matrix_3x4 &out ) {
     if ( &in1 == &out ) {
         matrix_3x4 in1b;
         matrix_copy( in1, in1b );
@@ -282,15 +282,12 @@ float math::dist_segment_to_segment_sqr( const vector_3d &p1, const vector_3d &p
     const auto u = p2 - p1;
     const auto v = q2 - q1;
     const auto w = p1 - q1;
-    const auto a = glm::dot(u, u );
-    const auto b = glm::dot(u, v );
+    const auto a = glm::dot( u, u );
+    const auto b = glm::dot( u, v );
     const auto c = glm::dot( v, v );
     const auto d = glm::dot( u, w );
     const auto e = glm::dot( v, w );
     const auto f = a * c - b * b;
-
-    // s1,s2 and t1,t2 are the parametric representation of the intersection.
-    // they will be the invariants at the end of this simple computation.
 
     float s1;
     auto s2 = f;
@@ -302,7 +299,6 @@ float math::dist_segment_to_segment_sqr( const vector_3d &p1, const vector_3d &p
         s2 = 1.0;
         t1 = e;
         t2 = c;
-
     } else {
         s1 = ( b * e - c * d );
         t1 = ( a * e - b * d );
@@ -310,7 +306,6 @@ float math::dist_segment_to_segment_sqr( const vector_3d &p1, const vector_3d &p
             s1 = 0.0;
             t1 = e;
             t2 = c;
-
         } else if ( s1 > s2 ) {
             s1 = s2;
             t1 = e + b;
@@ -328,7 +323,6 @@ float math::dist_segment_to_segment_sqr( const vector_3d &p1, const vector_3d &p
             s1 = -d;
             s2 = a;
         }
-
     } else if ( t1 > t2 ) {
         t1 = t2;
         if ( ( -d + b ) < 0.0f )
@@ -349,9 +343,9 @@ float math::dist_segment_to_segment_sqr( const vector_3d &p1, const vector_3d &p
 
 float math::distance_to_ray( const vector_3d &pos, const vector_3d &ray_start, const vector_3d &ray_end, float *along, vector_3d *point_on_ray ) {
     const vector_3d to = ( pos - ray_start );
-    vector_3d dir = ( ray_end - ray_start );
+    vector_3d dir = normalize_vector( ray_end - ray_start );
 
-    float length = normalize_place( dir );
+    float length = glm::length( dir );
     float range_along = glm::dot( dir, to );
 
     if ( along )
@@ -433,7 +427,6 @@ vector_3d math::angle_from_vectors( vector_3d a, vector_3d b ) {
     vector_3d delta = a - b;
     float hyp = glm::length( delta );
 
-    // 57.295f - pi in degrees
     angles.y = std::atan( delta.y / delta.x ) * 57.2957795131f;
     angles.x = std::atan( -delta.z / hyp ) * -57.2957795131f;
     angles.z = 0.0f;
@@ -504,7 +497,7 @@ void math::rotate_point( glm::vec2 &point, float rotation ) {
 
     x = point.x, y = point.y;
     rotate_point( x, y, rotation );
-    point = { x, y };// shitty other function won't let me pass vector as a reference.
+    point = { x, y };
 }
 
 void math::random_seed( int seed ) {
@@ -519,23 +512,31 @@ float math::random_float( float min_val, float max_value ) {
     return random_float( min_val, max_value );
 }
 
+vector_3d math::normalize_vector( const vector_3d &val ) {
+    auto res = val;
+    auto l = glm::length( res );
+
+    if ( l != 0.0f )
+        res /= l;
+    else
+        res.x = res.y = res.z = 0.0f;
+
+    return res;
+}
+
 void math::angle_normalize( float &angle ) {
     float rot;
 
-    // bad number.
     if ( !std::isfinite( angle ) ) {
         angle = 0.f;
         return;
     }
 
-    // no need to normalize this angle.
     if ( angle >= -180.f && angle <= 180.f )
         return;
 
-    // get amount of rotations needed.
     rot = std::round( std::abs( angle / 360.f ) );
 
-    // normalize.
     angle = ( angle < 0.f ) ? angle + ( 360.f * rot ) : angle - ( 360.f * rot );
 }
 
@@ -599,11 +600,59 @@ vector_3d math::vector_angle( const vector_3d &position ) {
     return angles;
 }
 
+matrix_3x4 math::setup_matrix_scale( const vector_3d &scale ) {
+    matrix_3x4 out;
+
+    out.Init(
+            scale.x,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            scale.y,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            scale.z,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            1.0f );
+
+    return out;
+}
+
+void math::matrix_multiply( const matrix_3x4 &src1, const matrix_3x4 &src2, matrix_3x4 &dst ) {
+
+    dst[ 0 ][ 0 ] = src1[ 0 ][ 0 ] * src2[ 0 ][ 0 ] + src1[ 0 ][ 1 ] * src2[ 1 ][ 0 ] + src1[ 0 ][ 2 ] * src2[ 2 ][ 0 ] + src1[ 0 ][ 3 ] * src2[ 3 ][ 0 ];
+    dst[ 0 ][ 1 ] = src1[ 0 ][ 0 ] * src2[ 0 ][ 1 ] + src1[ 0 ][ 1 ] * src2[ 1 ][ 1 ] + src1[ 0 ][ 2 ] * src2[ 2 ][ 1 ] + src1[ 0 ][ 3 ] * src2[ 3 ][ 1 ];
+    dst[ 0 ][ 2 ] = src1[ 0 ][ 0 ] * src2[ 0 ][ 2 ] + src1[ 0 ][ 1 ] * src2[ 1 ][ 2 ] + src1[ 0 ][ 2 ] * src2[ 2 ][ 2 ] + src1[ 0 ][ 3 ] * src2[ 3 ][ 2 ];
+    dst[ 0 ][ 3 ] = src1[ 0 ][ 0 ] * src2[ 0 ][ 3 ] + src1[ 0 ][ 1 ] * src2[ 1 ][ 3 ] + src1[ 0 ][ 2 ] * src2[ 2 ][ 3 ] + src1[ 0 ][ 3 ] * src2[ 3 ][ 3 ];
+
+    dst[ 1 ][ 0 ] = src1[ 1 ][ 0 ] * src2[ 0 ][ 0 ] + src1[ 1 ][ 1 ] * src2[ 1 ][ 0 ] + src1[ 1 ][ 2 ] * src2[ 2 ][ 0 ] + src1[ 1 ][ 3 ] * src2[ 3 ][ 0 ];
+    dst[ 1 ][ 1 ] = src1[ 1 ][ 0 ] * src2[ 0 ][ 1 ] + src1[ 1 ][ 1 ] * src2[ 1 ][ 1 ] + src1[ 1 ][ 2 ] * src2[ 2 ][ 1 ] + src1[ 1 ][ 3 ] * src2[ 3 ][ 1 ];
+    dst[ 1 ][ 2 ] = src1[ 1 ][ 0 ] * src2[ 0 ][ 2 ] + src1[ 1 ][ 1 ] * src2[ 1 ][ 2 ] + src1[ 1 ][ 2 ] * src2[ 2 ][ 2 ] + src1[ 1 ][ 3 ] * src2[ 3 ][ 2 ];
+    dst[ 1 ][ 3 ] = src1[ 1 ][ 0 ] * src2[ 0 ][ 3 ] + src1[ 1 ][ 1 ] * src2[ 1 ][ 3 ] + src1[ 1 ][ 2 ] * src2[ 2 ][ 3 ] + src1[ 1 ][ 3 ] * src2[ 3 ][ 3 ];
+
+    dst[ 2 ][ 0 ] = src1[ 2 ][ 0 ] * src2[ 0 ][ 0 ] + src1[ 2 ][ 1 ] * src2[ 1 ][ 0 ] + src1[ 2 ][ 2 ] * src2[ 2 ][ 0 ] + src1[ 2 ][ 3 ] * src2[ 3 ][ 0 ];
+    dst[ 2 ][ 1 ] = src1[ 2 ][ 0 ] * src2[ 0 ][ 1 ] + src1[ 2 ][ 1 ] * src2[ 1 ][ 1 ] + src1[ 2 ][ 2 ] * src2[ 2 ][ 1 ] + src1[ 2 ][ 3 ] * src2[ 3 ][ 1 ];
+    dst[ 2 ][ 2 ] = src1[ 2 ][ 0 ] * src2[ 0 ][ 2 ] + src1[ 2 ][ 1 ] * src2[ 1 ][ 2 ] + src1[ 2 ][ 2 ] * src2[ 2 ][ 2 ] + src1[ 2 ][ 3 ] * src2[ 3 ][ 2 ];
+    dst[ 2 ][ 3 ] = src1[ 2 ][ 0 ] * src2[ 0 ][ 3 ] + src1[ 2 ][ 1 ] * src2[ 1 ][ 3 ] + src1[ 2 ][ 2 ] * src2[ 2 ][ 3 ] + src1[ 2 ][ 3 ] * src2[ 3 ][ 3 ];
+
+    dst[ 3 ][ 0 ] = src1[ 3 ][ 0 ] * src2[ 0 ][ 0 ] + src1[ 3 ][ 1 ] * src2[ 1 ][ 0 ] + src1[ 3 ][ 2 ] * src2[ 2 ][ 0 ] + src1[ 3 ][ 3 ] * src2[ 3 ][ 0 ];
+    dst[ 3 ][ 1 ] = src1[ 3 ][ 0 ] * src2[ 0 ][ 1 ] + src1[ 3 ][ 1 ] * src2[ 1 ][ 1 ] + src1[ 3 ][ 2 ] * src2[ 2 ][ 1 ] + src1[ 3 ][ 3 ] * src2[ 3 ][ 1 ];
+    dst[ 3 ][ 2 ] = src1[ 3 ][ 0 ] * src2[ 0 ][ 2 ] + src1[ 3 ][ 1 ] * src2[ 1 ][ 2 ] + src1[ 3 ][ 2 ] * src2[ 2 ][ 2 ] + src1[ 3 ][ 3 ] * src2[ 3 ][ 2 ];
+    dst[ 3 ][ 3 ] = src1[ 3 ][ 0 ] * src2[ 0 ][ 3 ] + src1[ 3 ][ 1 ] * src2[ 1 ][ 3 ] + src1[ 3 ][ 2 ] * src2[ 2 ][ 3 ] + src1[ 3 ][ 3 ] * src2[ 3 ][ 3 ];
+}
+
+
 vector_3d math::calculate_angle( const vector_3d &source, const vector_3d &destination ) {
     vector_3d delta = source - destination;
     vector_3d angles;
 
-    angles.x = math::rad_to_deg( asinf( delta.z / delta.length( ) ) );
+    angles.x = math::rad_to_deg( asinf( delta.z / glm::length( delta ) ) );
     angles.y = math::rad_to_deg( atanf( delta.y / delta.x ) );
     angles.z = 0.0f;
 

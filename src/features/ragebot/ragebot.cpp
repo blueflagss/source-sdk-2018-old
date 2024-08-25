@@ -212,7 +212,7 @@ std::vector< int > ragebot::get_hitboxes( ) {
     return hitboxes;
 }
 
-void hitscan_thread( hitscan_data *data ) {
+static void hitscan_thread( hitscan_data *data ) {
     if ( !data || !data->valid || reinterpret_cast< uintptr_t >( data->target ) == 0xCCCCCCCC || data->hb > hitbox_max )
         return;
 
@@ -377,7 +377,7 @@ bool ragebot::scan_target( c_cs_player *player, lag_record *record, aim_player &
     best.record = record;
 
     Threading::QueueJobRef( hitscan_thread, ( void * ) &args );
-    //run_hitscan( &args );
+    //hitscan_thread( &args );
     Threading::FinishQueue( true );
 
     return true;

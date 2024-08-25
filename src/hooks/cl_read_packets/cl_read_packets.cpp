@@ -20,7 +20,7 @@ void __fastcall hooks::cl_read_packets::hook( bool a1 ) {
         *( int * ) ( cl + 0x168 ) = globals::backup_clientstate_vars[ 1 ];
         *( int * ) ( cl + 0x4C98 ) = globals::backup_clientstate_vars[ 2 ];
 
-        g_interfaces.global_vars->restore( globals::backup_global_vars );
+        *g_interfaces.global_vars = globals::backup_global_vars;
     }
 
     //original.fastcall< void >( a1 );

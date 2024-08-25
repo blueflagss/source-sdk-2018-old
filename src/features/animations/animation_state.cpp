@@ -351,7 +351,7 @@ void c_animation_state_rebuilt::update_animation_state( c_csgo_player_animstate 
     const auto max_speed_run = weapon ? std::max( weapon->get_weapon_data( )->max_speed, 0.001f ) : CS_PLAYER_SPEED_RUN;
     const auto velocity = animstate->m_pPlayer->velocity( );
 
-    animstate->m_flVelocityLengthXY = std::min< float >( velocity.length( ), CS_PLAYER_SPEED_RUN );
+    animstate->m_flVelocityLengthXY = std::min< float >( glm::length( velocity ), CS_PLAYER_SPEED_RUN );
 
     if ( animstate->m_flVelocityLengthXY > 0.0f )
         animstate->m_vecVelocityNormalizedNonZero = math::normalize_angle( velocity );

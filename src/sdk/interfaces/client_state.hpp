@@ -106,8 +106,8 @@ public:
         return utils::get_method< bool( __thiscall * )( void *, void *, bool, bool ) >( this, 40 )( this, msg, reliable, voice );
     }
 
-    void send_datagram( ) {
-        utils::get_method< int( __thiscall * )( void *, void * ) >( this, 48 )( this, 0 );
+    int send_datagram( ) {
+        return utils::get_method< int( __thiscall * )( void *, void * ) >( this, 48 )( this, nullptr );
     }
 };
 

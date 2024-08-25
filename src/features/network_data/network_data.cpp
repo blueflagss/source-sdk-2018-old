@@ -47,19 +47,17 @@ void network_data::ping_reducer( ) {
 
         std::array< int, 3 > tmp1 = { *( int * ) ( cl + 0x164 ), *( int * ) ( cl + 0x168 ), *( int * ) ( cl + 0x4C98 ) };
 
-        c_global_vars_base backup{ };
-        backup.backup( g_interfaces.global_vars );
-
+        const auto tmp = *g_interfaces.global_vars;
         hooks::cl_read_packets::original.fastcall< void >( false );
 
         globals::backup_clientstate_vars = { *( int * ) ( cl + 0x164 ), *( int * ) ( cl + 0x168 ), *( int * ) ( cl + 0x4C98 ) };
-        globals::backup_global_vars = backup;
+        globals::backup_global_vars = *g_interfaces.global_vars;
 
         *( int * ) ( cl + 0x164 ) = tmp1[ 0 ];
         *( int * ) ( cl + 0x168 ) = tmp1[ 1 ];
         *( int * ) ( cl + 0x4C98 ) = tmp1[ 2 ];
 
-        g_interfaces.global_vars->restore( backup );
+        *g_interfaces.global_vars = tmp;
     } else {
         globals::backup_clientstate_vars = { 0 };
         globals::backup_global_vars = { 0 };

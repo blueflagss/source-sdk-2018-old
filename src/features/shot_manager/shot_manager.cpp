@@ -245,14 +245,6 @@ void shot_manager::on_hurt( event_t *evt ) {
     if ( !target )
         return;
 
-    time = g_interfaces.global_vars->curtime;
-
-    shot_record_t *matched_shot = nullptr;
-    auto best_delta = std::numeric_limits< float >::max( );
-
-    if ( shots.empty( ) )
-        return;
-
     player_info_t info;
 
     if ( !g_interfaces.engine_client->get_player_info( victim, &info ) )
@@ -269,6 +261,14 @@ void shot_manager::on_hurt( event_t *evt ) {
 
     if ( g_vars.misc_events_log_damage.value )
         g_notify.add( notify_type::none, false, fmt::format( _xs( "Hit {} in the {} for {} ({} health remaining)" ), name, hitgroup_names[ group ], ( int ) damage, hp ) );
+
+    time = g_interfaces.global_vars->curtime;
+
+    shot_record_t *matched_shot = nullptr;
+    auto best_delta = std::numeric_limits< float >::max( );
+
+    if ( shots.empty( ) )
+        return;
 
     auto &shot = shots.front( );
 

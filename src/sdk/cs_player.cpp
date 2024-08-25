@@ -43,7 +43,7 @@ float c_cs_player::get_sequence_move_dist( void *hdr, int seq ) {
 
     get_sequence_linear_motion( hdr, seq, this->pose_parameters( ).data( ), &ret );
 
-    return ret.length( );
+    return glm::length( ret );
 }
 
 int c_cs_player::lookup_pose_parameter( const char *name ) {

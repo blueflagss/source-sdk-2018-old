@@ -19,6 +19,44 @@ public:
         mat[ 2 ][ 2 ] = m22;
         mat[ 2 ][ 3 ] = m23;
     }
+    inline void Init(
+            float m00, float m01, float m02, float m03,
+            float m10, float m11, float m12, float m13,
+            float m20, float m21, float m22, float m23,
+            float m30, float m31, float m32, float m33 ) {
+        mat[ 0 ][ 0 ] = m00;
+        mat[ 0 ][ 1 ] = m01;
+        mat[ 0 ][ 2 ] = m02;
+        mat[ 0 ][ 3 ] = m03;
+        
+        mat[ 1 ][ 0 ] = m10;
+        mat[ 1 ][ 1 ] = m11;
+        mat[ 1 ][ 2 ] = m12;
+        mat[ 1 ][ 3 ] = m13;
+        
+        mat[ 2 ][ 0 ] = m20;
+        mat[ 2 ][ 1 ] = m21;
+        mat[ 2 ][ 2 ] = m22;
+        mat[ 2 ][ 3 ] = m23;
+        
+        mat[ 3 ][ 0 ] = m30;
+        mat[ 3 ][ 1 ] = m31;
+        mat[ 3 ][ 2 ] = m32;
+        mat[ 3 ][ 3 ] = m33;
+    }
+
+
+    //-----------------------------------------------------------------------------
+    // Initialize from a 3x4
+    //-----------------------------------------------------------------------------
+    inline void Init( const matrix_3x4 &m ) {
+        memcpy( mat, m.base( ), sizeof( matrix_3x4 ) );
+
+        mat[ 3 ][ 0 ] = 0.0f;
+        mat[ 3 ][ 1 ] = 0.0f;
+        mat[ 3 ][ 2 ] = 0.0f;
+        mat[ 3 ][ 3 ] = 1.0f;
+    }
 
     void init( const vector_3d &x, const vector_3d &y, const vector_3d &z, const vector_3d &origin ) {
         mat[ 0 ][ 0 ] = x.x;

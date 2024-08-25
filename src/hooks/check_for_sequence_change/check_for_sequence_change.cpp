@@ -1,7 +1,7 @@
 #include "check_for_sequence_change.hpp"
 
 void __fastcall hooks::check_for_sequence_change::hook( REGISTERS, void *hdr, int sequence, bool force_new_sequence, bool interpolate ) {
-    return original.fastcall< void >( REGISTERS_OUT, hdr, sequence, force_new_sequence, interpolate );
+    return original.fastcall< void >( REGISTERS_OUT, hdr, sequence, force_new_sequence, true );
 }
 
 void hooks::check_for_sequence_change::init( ) {

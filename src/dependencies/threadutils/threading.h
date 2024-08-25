@@ -18,7 +18,7 @@ typedef pthread_t thread_t;
 #else
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <Windows.h>
 #include <Psapi.h>
 #include "stdint.h"
 
@@ -58,7 +58,7 @@ struct LList
 
 	PackedHeapL<LEntry> entries;
 
-    Mutex lock;
+	Mutex lock;
 	bool quit;
 	idx_t front;
 	idx_t back;
@@ -169,7 +169,7 @@ struct JobThread
 	Mutex* jLock;
 	LList<struct Job>* jobs;
 	int id;
-	HANDLE handle;
+	void* handle;
 };
 
 namespace Threading
@@ -181,8 +181,8 @@ namespace Threading
 	void FinishQueue(bool executeJobs = false);
 	JobThread* BindThread(LList<struct Job>* jobsQueue);
 	void UnbindThread(LList<struct Job>* jobsQueue);
-    thread_t StartThread( threadFn start, void *param, bool detached = true );
-    thread_t StartThread( threadFn start, void *param, bool detached, thread_t *thread );
+	thread_t StartThread(threadFn start, void* param, bool detached = true);
+	thread_t StartThread(threadFn start, void* param, bool detached, thread_t* thread);
 	void JoinThread(thread_t thread, void** returnVal);
 
 	template<typename N, typename T>
@@ -199,4 +199,3 @@ namespace Threading
 }
 
 #endif
-

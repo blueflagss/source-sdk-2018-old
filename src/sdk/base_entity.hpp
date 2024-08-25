@@ -27,7 +27,7 @@ struct mstudioseqdesc_t {
     int actweight;
     int numevents;
     int eventindex;
-    vector_3d bbmin;    
+    vector_3d bbmin;
     vector_3d bbmax;
     int numblends;
     int animindexindex;
@@ -47,22 +47,22 @@ struct mstudioseqdesc_t {
         return value;
     }
 
-    int movementindex;      
+    int movementindex;
     int groupsize[ 2 ];
-    int paramindex[ 2 ];        
-    float paramstart[ 2 ];    
-    float paramend[ 2 ];      
+    int paramindex[ 2 ];
+    float paramstart[ 2 ];
+    float paramend[ 2 ];
     int paramparent;
-    float fadeintime;        
-    float fadeouttime;      
-    int localentrynode;    
-    int localexitnode;     
-    int nodeflags;       
-    float entryphase;     
-    float exitphase;      
-    float lastframe;     
-    int nextseq;   
-    int pose;           
+    float fadeintime;
+    float fadeouttime;
+    int localentrynode;
+    int localexitnode;
+    int nodeflags;
+    float entryphase;
+    float exitphase;
+    float lastframe;
+    int nextseq;
+    int pose;
     int numikrules;
     int numautolayers;
     int autolayerindex;
@@ -88,7 +88,7 @@ struct mstudioseqdesc_t {
     };
 
     int rootDriverIndex;
-    int unused[ 2 ];           
+    int unused[ 2 ];
 
     mstudioseqdesc_t( ) {}
 
@@ -172,13 +172,12 @@ enum csgo_hitbox : int {
     hitbox_max
 };
 
-inline static const csgo_hitbox player_hitboxes[ ] = {
+inline static const csgo_hitbox player_hitboxes[] = {
         hitbox_head, hitbox_neck, hitbox_pelvis, hitbox_body,
         hitbox_thorax, hitbox_chest, hitbox_upper_chest, hitbox_r_thigh,
         hitbox_l_thigh, hitbox_r_calf, hitbox_l_calf, hitbox_r_foot,
         hitbox_l_foot, hitbox_r_hand, hitbox_l_hand, hitbox_r_upper_arm,
-        hitbox_r_forearm, hitbox_l_upper_arm, hitbox_l_forearm 
-};
+        hitbox_r_forearm, hitbox_l_upper_arm, hitbox_l_forearm };
 
 class c_base_entity : public c_base_player {
 public:
@@ -194,7 +193,7 @@ public:
     NETVAR( cycle, float, "DT_BaseAnimating", "m_flCycle" );
     NETVAR( model_scale, float, "DT_BaseAnimating", "m_flModelScale" );
     OFFSET( old_origin, vector_3d, 0x3A8 );
-    
+
     bool is_player( ) {
         return utils::get_method< bool( __thiscall * )( void * ) >( this, 152 )( this );
     }
@@ -203,13 +202,8 @@ public:
         return reinterpret_cast< var_mapping_t * >( reinterpret_cast< uintptr_t >( this ) + 0x14 );
     }
 
-    vector_3d world_space_center( ) {
-        const auto collideable = this->collideable( );
-
-        if ( !collideable )
-            return { };
-
-        return this->origin( ) + ( ( collideable->mins( ) + collideable->maxs( ) ) * 0.5f );
+    const vector_3d &world_space_center( ) {
+        return utils::get_method< const vector_3d &( __thiscall * ) ( void * ) >( this, 78 )( this );
     }
 
     bool get_hitbox_position( const int hit_group, vector_3d &position );

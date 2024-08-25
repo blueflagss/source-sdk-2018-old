@@ -29,7 +29,7 @@
     <ClInclude Include="dependencies\blur\blur_binary.h" />
     <ClInclude Include="dependencies\delaunator.hpp" />
     <ClInclude Include="dependencies\syscall.hpp" />
-    <ClInclude Include="features\animations\animation_state.hpp" />
+    <ClInclude Include="features\animations\animation_state_rebuilt.hpp" />
     <ClInclude Include="features\bone_setup\bone_setup.hpp" />
     <ClInclude Include="features\bone_setup\ik_context.hpp" />
     <ClInclude Include="features\fake_latency\fake_latency.hpp" />
@@ -431,7 +431,7 @@
     <ClCompile Include="core\hooks.cpp" />
     <ClCompile Include="core\interfaces.cpp" />
     <ClCompile Include="dependencies\blur\blur.cpp" />
-    <ClCompile Include="features\animations\animation_state.cpp" />
+    <ClCompile Include="features\animations\animation_state_rebuilt.cpp" />
     <ClCompile Include="features\bone_setup\bone_setup.cpp" />
     <ClCompile Include="features\bone_setup\ik_context.cpp" />
     <ClCompile Include="features\fake_latency\fake_latency.cpp" />
@@ -707,6 +707,12 @@
       <ForcedIncludeFiles>precompiled.hpp</ForcedIncludeFiles>
       <BuildStlModules>false</BuildStlModules>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <Optimization>Disabled</Optimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

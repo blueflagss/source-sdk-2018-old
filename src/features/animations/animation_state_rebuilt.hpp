@@ -1177,12 +1177,12 @@ namespace valve_math
     __forceinline vector_3d approach( vector_3d target, vector_3d value, float speed ) {
         vector_3d diff = ( target - value );
 
-        float delta = diff.length( );
+        float delta = glm::length( diff );
 
         if ( delta > speed )
-            value += math::normalize_angle( diff ) * speed;
+            value += math::normalize_vector( diff ) * speed;
         else if ( delta < -speed )
-            value -= math::normalize_angle( diff ) * speed;
+            value -= math::normalize_vector( diff ) * speed;
         else
             value = target;
 

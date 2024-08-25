@@ -111,7 +111,7 @@ void menu::init( ) {
         skinchanger->is_window_resizeable = false;
     }
 
-    main_window = this->add_window( _xs( "Penumbra" ), _xs( "" ), nullptr, window_center, this->main_window_dimensions, WINDOW_MAIN );
+    main_window = this->add_window( _xs( "hawk-tuah" ), _xs( "" ), nullptr, window_center, this->main_window_dimensions, WINDOW_MAIN );
     {
         auto ragebot = main_window->add_tab( "Rage", ICON_FA_CROSSHAIRS, 3 );
         {
@@ -268,6 +268,7 @@ void menu::init( ) {
             {
                 local_model->add_object< penumbra::checkbox >( "Blend while scoped", &g_vars.visuals_other_local_blend_while_scoped.value );
                 local_model->add_object< penumbra::slider< float > >( _xs( "Transparency#b" ), &g_vars.visuals_other_local_blend_transparency.value, 0.0f, 100.0f, "%" );
+                local_model->add_object< penumbra::checkbox >( "Midget mode", &g_vars.visuals_other_midget_mode.value );
             }
 
             auto dropped_weapons = visuals->add_child( "Dropped weapons", 1, false );

@@ -24,9 +24,9 @@ void __fastcall hooks::build_transformations::hook( REGISTERS, c_studio_hdr *hdr
     
     const auto backup_is_jiggle_bones_enabled = entity->is_jiggle_bones_enabled( );
 
-    entity->is_jiggle_bones_enabled( ) = false;
+    //entity->is_jiggle_bones_enabled( ) = false;
     reinterpret_cast< decltype( &hooks::build_transformations::hook ) >( hooks::build_transformations::original.trampoline( ).address( ) )( REGISTERS_OUT, hdr, pos, quaternion, matrix, mask, computed );
-    entity->is_jiggle_bones_enabled( ) = backup_is_jiggle_bones_enabled;
+    //entity->is_jiggle_bones_enabled( ) = backup_is_jiggle_bones_enabled;
 
     if ( entity == globals::local_player )
         studio_hdr->flags = backup_bone_flags;

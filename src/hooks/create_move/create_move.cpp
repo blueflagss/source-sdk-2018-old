@@ -70,7 +70,7 @@ void backup_players( bool restore ) {
     for ( int i{ 1 }; i <= g_interfaces.global_vars->max_clients; ++i ) {
         c_cs_player *player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
 
-        if ( !player || player->dormant( ) || !player->alive( ) )
+        if ( !player || player->dormant( ) || !player->alive( ) || player == globals::local_player )
             continue;
 
         if ( restore )
@@ -92,7 +92,16 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
     if ( ret )
         g_interfaces.engine_client->set_view_angles( cmd->view_angles );
 
-    //g_network_data.ping_reducer( );
+    g_network_data.ping_reducer( );
+
+    if ( g_interfaces.client_state->delta_tick( ) > 0 ) {
+        g_interfaces.prediction->update(
+                g_interfaces.client_state->delta_tick( ),
+                g_interfaces.client_state->delta_tick( ) > 0,
+                g_interfaces.client_state->last_command_ack( ),
+                g_interfaces.client_state->last_outgoing_command( ) + g_interfaces.client_state->choked_commands( ) 
+        );
+    }
 
     std::uintptr_t *stack_ptr;
     __asm mov stack_ptr, ebp
@@ -116,14 +125,6 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
     const auto old_cmd_angles = cmd->view_angles;
 
     backup_players( false );
-
-    if ( g_interfaces.client_state->delta_tick( ) > 0 ) {
-        g_interfaces.prediction->update(
-                g_interfaces.client_state->delta_tick( ),
-                g_interfaces.client_state->delta_tick( ) > 0,
-                g_interfaces.client_state->last_command_ack( ),
-                g_interfaces.client_state->last_outgoing_command( ) + g_interfaces.client_state->choked_commands( ) );
-    }
 
     if ( globals::local_player->alive( ) ) {
         auto local_datamap = datamap_util( globals::local_player, _xs( "prediction_content::pre_cm" ), _xs( "prediction_content::post_cm" ) );
@@ -173,6 +174,7 @@ bool __fastcall hooks::create_move::hook( REGISTERS, float input_sample_time, c_
         g_interfaces.engine_client->set_view_angles( math::clamp_angle( engine_angles ) );
         g_movement.correct_movement( cmd, math::clamp_angle( globals::view_angles ) );
         apply_leg_movement( cmd );
+        g_animations.update_local_animations( cmd );
 
         globals::angles = cmd->view_angles;
     }

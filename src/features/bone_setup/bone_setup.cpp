@@ -16,13 +16,13 @@ void bone_setup::build( c_cs_player *pl, matrix_3x4 *bone_to_world, int mask, co
     if ( !backup_matrix )
         return;
 
+    globals::allow_bones = true;
+
     matrix_3x4_aligned tmp[ 128 ];
     accessor->m_pBones = tmp;
 
     mask |= bone_always_setup;
     mask &= ~( bone_used_by_bone_merge );
-
-    globals::is_building_bones[ pl->index( ) ] = true;
 
     if ( pl == globals::local_player )
         pl->anim_overlays( )[ 12 ].weight = 0.f;
@@ -82,7 +82,8 @@ void bone_setup::build( c_cs_player *pl, matrix_3x4 *bone_to_world, int mask, co
     pl->view_offset( ) = backup_view_offset;
     pl->anim_lod_flags( ) = backup_lod_flags;
     pl->last_bone_setup_time( ) = backup_bone_setup_time;
+
     g_interfaces.global_vars->curtime = backup_time;
 
-    globals::is_building_bones[ pl->index( ) ] = false;
+    globals::allow_bones = false;
 }

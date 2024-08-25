@@ -123,7 +123,7 @@ namespace globals
     inline c_cs_weapon_base *local_weapon{ nullptr };
     inline c_cs_weapon_info *local_weapon_data{ nullptr };
     inline std::array< bool, 64 > allow_animations{ };
-    inline std::array< bool, 65 > is_building_bones{ };
+    inline bool allow_bones = false;
     inline std::array< int, 3 > backup_clientstate_vars = { };
     inline c_global_vars_base backup_global_vars = { };
     inline float lerp_amount{ 0.0f };

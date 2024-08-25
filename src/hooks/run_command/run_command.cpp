@@ -16,11 +16,6 @@ void __fastcall hooks::run_command::hook( REGISTERS, c_base_player *player, c_us
         return original.fastcall< void >( REGISTERS_OUT, player, ucmd, move_helper );
     }
 
-    if ( ucmd->command_number > last_command_time ) {
-        g_animations.update_local_animations( ucmd );
-        last_command_time = ucmd->command_number;
-    }
-
     original.fastcall< void >( REGISTERS_OUT, player, ucmd, move_helper );
 }
 

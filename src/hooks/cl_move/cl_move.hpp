@@ -7,7 +7,7 @@ namespace hooks
     {
         inline SafetyHookInline original = { };
 
-        void __cdecl hook( float accumulated_extra_samples, bool final_tick );
+        void __vectorcall hook( float accumulated_extra_samples, bool final_tick );
 
         void init( );
     }// namespace cl_move

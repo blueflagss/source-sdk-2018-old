@@ -68,7 +68,7 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
 
     fire_info.did_hit = false;
 
-    c_trace_filter_skip_two_entities filter;
+    static c_trace_filter_skip_two_entities filter;
     filter.skip1 = globals::local_player;
     filter.skip2 = nullptr;
 
@@ -80,18 +80,11 @@ bool penetration_system::simulate_fire_bullet( const c_cs_weapon_info *data, vec
         r.init( src, end );
         g_interfaces.engine_trace->trace_ray( r, mask_shot, &filter, &enter_trace );
 
-        //vector_3d delta_endpos = enter_trace.end_pos - src;
-        //vector_3d clip_trace_end = pos + direction * 40.0f;
-        //vector_3d delta_clip_trace_end = src - clip_trace_end;
-        vector_3d vecEndExtended = end + (direction * 40.0f);
-
-        //clip_trace_to_player( ent, src, clip_trace_end, contents_hitbox, &filter, &enter_trace, glm::length( delta_endpos ) / glm::length( delta_clip_trace_end ) );
-        if ( ent ) {
-            // clip trace to one player
-            clip_trace_to_player( ent, src, vecEndExtended, mask_shot, &filter, &enter_trace );
-        } else {
-            clip_trace_to_players( src, vecEndExtended, mask_shot, ( c_trace_filter_hitscan * ) & filter, &enter_trace );
-        }
+        if ( ent ) 
+            clip_trace_to_player( ent, src, end + ( direction * 40.0f ), mask_shot, &filter, enter_trace );
+        
+        else
+            UTIL_ClipTraceToPlayers( src, end + ( direction * 40.0f ), mask_shot, &filter, &enter_trace, -60.0f );
 
         if ( enter_trace.fraction == 1.f )
             return false;
@@ -186,6 +179,9 @@ bool penetration_system::trace_to_exit( c_game_trace &enter_trace, c_game_trace 
             filter.skip2 = nullptr;
 
             g_interfaces.engine_trace->trace_ray( r, mask_shot_hull | contents_hitbox, &filter, &exit_trace );
+
+            if ( globals::cvars::sv_clip_penetration_traces_to_players->get_int( ) == 1 )
+                UTIL_ClipTraceToPlayers( start, end, mask_shot, nullptr, &exit_trace, -60.f );
 
             if ( exit_trace.start_solid && exit_trace.surface.flags & surf_hitbox ) {
                 r.init( start, start_position );
@@ -348,29 +344,53 @@ float penetration_system::scale_damage( c_cs_player *player, float damage, float
     return damage;
 }
 
-void penetration_system::clip_trace_to_player( c_cs_player *player, const vector_3d &start, const vector_3d &end, unsigned int mask, c_trace_filter *filter, c_game_trace *tr, float max_distance ) {
-    if ( !player || !player->alive( ) || player->dormant( ) || !player->collideable( ) )
+void penetration_system::UTIL_ClipTraceToPlayers( const vector_3d &start, const vector_3d &end, uint32_t mask, c_trace_filter *filter, c_game_trace *tr, float range ) {
+    static auto func = signature::find( _xs( "client.dll" ), _xs( "E8 ? ? ? ? 83 C4 14 8A 56 37" ) ).add( 0x1 ).rel32( ).get< uintptr_t >( );
+    if ( !func )
         return;
 
-    float smallest_fraction = tr->fraction;
+    __asm {
+			mov  ecx, start
+			mov	 edx, end
+			push range
+			push tr
+			push filter
+			push mask
+			call func
+			add	 esp, 16
+    }
+}
 
-    vector_3d world_space_center = player->origin( ) + ( ( player->collideable( )->mins( ) + player->collideable( )->maxs( ) ) * 0.5f );
+void penetration_system::clip_trace_to_player( c_cs_player *player, const vector_3d &start, const vector_3d &end, unsigned int mask, c_trace_filter *filter, c_game_trace &tr, float max_distance ) {
+    vector_3d pos, to, dir, on_ray;
+    float len, range_along;
+    c_game_trace new_trace;
 
-    float range = math::distance_to_ray( world_space_center, start, end );
-
-    if ( range >= max_distance )
+    if ( !player->collideable( ) )
         return;
+
+    pos = player->origin( ) + ( ( player->collideable( )->mins( ) + player->collideable( )->maxs( ) ) * 0.5f );
+    to = pos - start;
+    dir = start - end;
+
+    float smallest_fraction = tr.fraction;
+
+    if ( filter && filter->should_hit_entity( player, mask ) == false )
+        return;
+
+    float range = math::distance_to_ray( pos, start, end );
 
     ray_t ray;
     c_game_trace player_trace;
-
     ray.init( start, end );
 
-    g_interfaces.engine_trace->clip_ray_to_entity( ray, mask | contents_hitbox, player, &player_trace );
+    if ( range <= 60.f ) {
+        g_interfaces.engine_trace->clip_ray_to_entity( ray, mask | contents_hitbox, player, &player_trace );
 
-    if ( player_trace.fraction < smallest_fraction ) {
-        *tr = player_trace;
-        smallest_fraction = player_trace.fraction;
+        if ( player_trace.fraction < smallest_fraction ) {
+            tr = player_trace;
+            smallest_fraction = player_trace.fraction;
+        }
     }
 }
 
@@ -379,7 +399,7 @@ void penetration_system::clip_trace_to_players( const vector_3d &start, const ve
         auto player = g_interfaces.entity_list->get_client_entity< c_cs_player * >( i );
 
         if ( player )
-            clip_trace_to_player( player, start, end, mask, filter, tr );
+            clip_trace_to_player( player, start, end, mask, filter, *tr );
     }
 }
 
